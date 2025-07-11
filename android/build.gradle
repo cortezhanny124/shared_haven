@@ -1,0 +1,34 @@
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+        mavenLocal()  
+        gradlePluginPortal()
+        maven { url 'https://storage.googleapis.com/download.flutter.io' } // ✅ Flutter Maven Repo
+    }
+}
+
+rootProject.buildDir = "../build"
+subprojects {
+    project.buildDir = "${rootProject.buildDir}/${project.name}"
+}
+subprojects {
+    project.evaluationDependsOn(":app")
+}
+
+tasks.register("clean", Delete) {
+    delete rootProject.buildDir
+}
+
+buildscript {
+    repositories {
+        google()       // ✅ Add Google Maven Repository
+        mavenCentral() // ✅ Add Maven Central Repository
+        mavenLocal()
+    }
+
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.20"
+        classpath 'com.android.tools.build:gradle:8.3.0'  // Upgrade Gradle Plugin
+    }
+}

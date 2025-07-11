@@ -1,0 +1,7 @@
+Initial release:
+    - Single Personal Wallet
+    - Shared Wallet
+        - Multisig
+        - Timelock
+            - After
+            - Older

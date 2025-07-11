@@ -1,0 +1,20 @@
+{
+  "buildFiles": [
+    "/home/ciprian/snap/flutter/common/flutter/packages/flutter_tools/gradle/src/main/groovy/CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "/usr/bin/ninja",
+      "-C",
+      "/home/ciprian/Desktop/flutterProjects/flutter_wallet/android/app/.cxx/Debug/3719ls3s/armeabi-v7a",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "/usr/bin/ninja",
+    "-C",
+    "/home/ciprian/Desktop/flutterProjects/flutter_wallet/android/app/.cxx/Debug/3719ls3s/armeabi-v7a",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {}
+}
