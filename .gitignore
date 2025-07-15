@@ -1,0 +1,113 @@
+# ─────────────────────────────────────────────
+# Bash scripts (optional)
+build_mainnet_apk.sh
+build_testnet_apk.sh
+
+# ─────────────────────────────────────────────
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+*.sw?
+*.out
+*.bak
+*~
+*.backup*
+.DS_Store
+.history
+.project
+.classpath
+.c9/
+.RELEASE_NOTES.md
+migrate_working_dir/
+
+# ─────────────────────────────────────────────
+# IDEs and Editors
+.idea/
+.vscode/
+.atom/
+*.iml
+*.ipr
+*.iws
+
+# ─────────────────────────────────────────────
+# Dart & Flutter
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+*.lock
+!pubspec.lock
+
+# Symbolication & Obfuscation
+app.*.symbols
+app.*.map.json
+
+# Generated documentation
+**/doc/api/
+
+# ─────────────────────────────────────────────
+# Android
+android/.gradle/
+android/captures/
+android/local.properties
+android/key.properties
+**/android/**/GeneratedPluginRegistrant.java
+**/android/**/gradle-wrapper.jar
+**/android/gradlew
+**/android/gradlew.bat
+android/app/debug/
+android/app/profile/
+android/app/release/
+
+# ─────────────────────────────────────────────
+# iOS
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/
+ios/Flutter/App.framework/
+ios/Flutter/Flutter.framework/
+ios/Flutter/Flutter.podspec
+ios/Flutter/Generated.xcconfig
+ios/Flutter/flutter_export_environment.sh
+ios/Flutter/.last_build_id
+ios/Pods.xcodeproj/
+**/ios/**/*.mode1v3
+**/ios/**/*.mode2v3
+**/ios/**/*.pbxuser
+**/ios/*.perspectivev3
+**/ios/**/xcuserdata
+**/ios/.generated/
+
+# ─────────────────────────────────────────────
+# macOS
+macos/Flutter/
+macos/.dart_tool/
+DerivedData/
+
+# ─────────────────────────────────────────────
+# Linux
+linux/flutter/
+linux/.dart_tool/
+
+# ─────────────────────────────────────────────
+# Windows
+windows/flutter/
+windows/.dart_tool/
+
+# ─────────────────────────────────────────────
+# Web
+web/.dart_tool/
+**/web/**/.last_build_id
+
+# ─────────────────────────────────────────────
+# Keystore Files (Sensitive)
+*.jks
+
+# ─────────────────────────────────────────────
+# Exceptions (for test data)
+!/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
