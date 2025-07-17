@@ -1,0 +1,8 @@
+name: Release
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set flutter version
+        run: echo "flutter-version: '3.31.0-0.1.pre'"
