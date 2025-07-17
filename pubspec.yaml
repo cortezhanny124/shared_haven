@@ -18,9 +18,9 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # of the product and file versions while build-number is used as the build suffix.
 version: 1.6.4+1
 
+# Flutter version: 3.31.0-0.1.pre
 environment:
   sdk: ^3.5.1
-
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
 # consider running `flutter pub upgrade --major-versions`. Alternatively,
