@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:bdk_flutter/bdk_flutter.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_wallet/exceptions/validation_result.dart';
 import 'package:flutter_wallet/languages/app_localizations.dart';
 import 'package:flutter_wallet/services/utilities_service.dart';
@@ -60,7 +61,7 @@ class ImportSharedWalletState extends State<ImportSharedWallet> {
     _walletService =
         WalletService(Provider.of<SettingsProvider>(context, listen: false));
 
-    // print(Provider.of<SettingsProvider>(context, listen: false).network);
+    print(Provider.of<SettingsProvider>(context, listen: false).network);
 
     // Add a listner to the TextEditingController
     _descriptorController.addListener(() {
@@ -88,7 +89,7 @@ class ImportSharedWalletState extends State<ImportSharedWallet> {
     final mnemonic = await Mnemonic.fromString(savedMnemonic);
 
     final hardenedDerivationPath =
-        await DerivationPath.create(path: "m/86h/1h/0h");
+        await DerivationPath.create(path: "m/84h/1h/0h");
 
     final receivingDerivationPath = await DerivationPath.create(path: "m/0");
     final changeDerivationPath = await DerivationPath.create(path: "m/1");
@@ -462,14 +463,8 @@ class ImportSharedWalletState extends State<ImportSharedWallet> {
                       final result =
                           await Navigator.of(context, rootNavigator: true).push(
                         MaterialPageRoute(
-                          builder: (_) => QRScannerPage(
-                            title: 'Scan Descriptor',
-                            isValid: (data) => true,
-                            // data.startsWith('cHUB') || data.startsWith('psbt'),
-                            extractValue: (data) => data,
-                            errorKey: 'invalid_descriptor',
-                          ),
-                        ),
+                            builder: (_) => const QRScannerPage(
+                                title: 'Scan Bitcoin Address')),
                       );
 
                       if (result != null) {
@@ -481,7 +476,8 @@ class ImportSharedWalletState extends State<ImportSharedWallet> {
                     foregroundColor: AppColors.gradient(context),
                     icon: Icons.qr_code_scanner,
                     iconColor: AppColors.text(context),
-                    label: AppLocalizations.of(context)!.translate('scan_qr'),
+                    label: AppLocalizations.of(context)!
+                        .translate('scan_qr_descriptor'),
                   ),
                 ),
 

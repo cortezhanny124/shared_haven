@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:bdk_flutter/bdk_flutter.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_wallet/exceptions/validation_result.dart';
 import 'package:flutter_wallet/languages/app_localizations.dart';
@@ -30,6 +31,8 @@ class CreateSharedWallet extends StatefulWidget {
 }
 
 class CreateSharedWalletState extends State<CreateSharedWallet> {
+  late final WalletService _walletService;
+
   final TextEditingController _thresholdController = TextEditingController();
   List<TextEditingController> additionalPublicKeyControllers = [
     TextEditingController()
@@ -64,9 +67,6 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
   bool _isYourPubKeyMissing = false;
   bool _arePublicKeysMissing = false;
 
-  late final SettingsProvider settingsProvider;
-  late final WalletService walletService;
-
   final GlobalKey<BaseScaffoldState> baseScaffoldKey =
       GlobalKey<BaseScaffoldState>();
 
@@ -82,9 +82,8 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
     //   }
     // });
 
-    settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
-
-    walletService = WalletService(settingsProvider);
+    _walletService =
+        WalletService(Provider.of<SettingsProvider>(context, listen: false));
 
     _generatePublicKey(isGenerating: false);
   }
@@ -116,19 +115,21 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
 
       // print('Mnemonic: $savedMnemonic');
 
+      // TODO: "m/84h/1h/0h/0"
+
       final hardenedDerivationPath =
-          await DerivationPath.create(path: "m/86h/1h/0h");
+          await DerivationPath.create(path: "m/84h/1h/0h");
       final receivingDerivationPath = await DerivationPath.create(path: "m/0");
 
-      final (_, receivingPublicKey) = await walletService.deriveDescriptorKeys(
+      final (_, receivingPublicKey) = await _walletService.deriveDescriptorKeys(
         hardenedDerivationPath,
         receivingDerivationPath,
         mnemonic,
       );
 
-      // print(receivingPublicKey
-      //     .toString()
-      //     .substring(0, receivingPublicKey.toString().length - 2));
+      print(receivingPublicKey
+          .toString()
+          .substring(0, receivingPublicKey.toString().length - 2));
 
       setState(() {
         if (isGenerating) {
@@ -144,33 +145,10 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
     }
   }
 
-  // Future<void> _generatePublicKey({bool isGenerating = true}) async {
-  //   setState(() => isLoading = true);
-  //   try {
-  //     final walletBox = Hive.box('walletBox');
-  //     final savedMnemonic = walletBox.get('walletMnemonic');
-
-  //     final receivingPublicKey =
-  //         _walletService.getXOnlyPubKey(savedMnemonic, "m/86'/1'/0'/0/0");
-
-  //     setState(() {
-  //       if (isGenerating) {
-  //         _publicKey = receivingPublicKey.toString();
-  //       }
-  //       initialPubKey = receivingPublicKey.toString();
-  //       _mnemonic = savedMnemonic;
-  //     });
-  //   } catch (e) {
-  //     print("Error generating public key: $e");
-  //   } finally {
-  //     setState(() => isLoading = false);
-  //   }
-  // }
-
   // Asynchronous method to validate the descriptor
   Future<bool> _validateDescriptor(String descriptor) async {
     try {
-      ValidationResult result = await walletService.isValidDescriptor(
+      ValidationResult result = await _walletService.isValidDescriptor(
         descriptor,
         initialPubKey.toString(),
         context,
@@ -196,7 +174,7 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
 
   void _navigateToSharedWallet() async {
     bool isValid = await _validateDescriptor(_finalDescriptor);
-    // print(isValid);
+    print(isValid);
     // setState(() {
     //   _status = 'Loading';
     // });
@@ -206,7 +184,7 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
       //   _status = 'Success';
       // });
 
-      // walletService.printInChunks(_finalDescriptor.toString());
+      _walletService.printInChunks(_finalDescriptor.toString());
 
       Navigator.push(
         context,
@@ -219,12 +197,12 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
           ),
         ),
       );
-    } else {
-      print('Cannot navigate: Invalid Descriptor');
-      // setState(() {
-      //   _status = 'Cannot navigate: Invalid Descriptor';
-      // });
     }
+    // else {
+    //   setState(() {
+    //     _status = 'Cannot navigate: Invalid Descriptor';
+    //   });
+    // }
   }
 
   String buildTimelockCondition(List<String> formattedTimelocks) {
@@ -621,11 +599,11 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                         });
                         // print(isSelected);
 
-                        // print('publicKeysWithAlias: $publicKeysWithAlias');
+                        print('publicKeysWithAlias: $publicKeysWithAlias');
 
-                        // print(
-                        //     'publicKeysWithAliasMultisig: $publicKeysWithAliasMultisig');
-                        // print('selectedPubKeys: $selectedPubKeys');
+                        print(
+                            'publicKeysWithAliasMultisig: $publicKeysWithAliasMultisig');
+                        print('selectedPubKeys: $selectedPubKeys');
                       },
                       onLongPress: () {
                         _showAddPublicKeyDialog(key: key, isUpdating: true);
@@ -904,14 +882,8 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                     final result =
                         await Navigator.of(context, rootNavigator: true).push(
                       MaterialPageRoute(
-                        builder: (_) => QRScannerPage(
-                          title: 'Scan PubKey',
-                          isValid: (data) => true,
-                          // data.startsWith('cHUB') || data.startsWith('psbt'),
-                          extractValue: (data) => data,
-                          errorKey: 'invalid_pub_key',
-                        ),
-                      ),
+                          builder: (_) => const QRScannerPage(
+                              title: 'Scan Bitcoin Address')),
                     );
 
                     if (result != null) {
@@ -1171,18 +1143,15 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                     controller: olderController,
                     onChanged: (value) {
                       setDialogState(() {
-                        if (int.tryParse(value) != null &&
-                            int.parse(value) > 65530) {
-                          // If the entered value exceeds the max, reset it to the max
-                          olderController.text = '65530';
+                        final n = int.tryParse(value);
+                        if (n != null && n > 65535) {
+                          olderController.text = '65535';
                           olderController.selection =
                               TextSelection.fromPosition(
-                            TextPosition(
-                              offset: olderController.text.length,
-                            ),
+                            TextPosition(offset: olderController.text.length),
                           );
                         } else {
-                          olderController.text = value;
+                          // keep what the user typed; no extra formatting here
                         }
                       });
 
@@ -1200,6 +1169,34 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                       hintText:
                           AppLocalizations.of(rootContext)!.translate('older'),
                       borderColor: AppColors.background(context),
+                    ).copyWith(
+                      // add a time-picker button on the right
+                      suffixIcon: IconButton(
+                        tooltip: AppLocalizations.of(rootContext)!
+                            .translate('pick_time'),
+                        icon: const Icon(Icons.schedule),
+                        color: AppColors.icon(context),
+                        onPressed: () async {
+                          // initial from current blocks (if any)
+                          final currentBlocks =
+                              int.tryParse(olderController.text) ?? 0;
+                          final pickedBlocks =
+                              await _pickBlocksFromTime(context, currentBlocks);
+                          if (pickedBlocks != null) {
+                            setDialogState(() {
+                              final blocks = pickedBlocks.clamp(0, 65535);
+                              olderController.text = blocks.toString();
+                              olderController.selection =
+                                  TextSelection.fromPosition(
+                                TextPosition(
+                                    offset: olderController.text.length),
+                              );
+                              // mirror your existing rule: filling 'older' clears 'after'
+                              afterController.clear();
+                            });
+                          }
+                        },
+                      ),
                     ),
                     style: TextStyle(
                       color: AppColors.text(context),
@@ -1213,8 +1210,13 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                   TextFormField(
                     controller: afterController,
                     onChanged: (value) async {
+                      final settingsProvider =
+                          Provider.of<SettingsProvider>(context, listen: false);
+
+                      final WalletService wallServ =
+                          WalletService(settingsProvider);
                       final String blockApiUrl =
-                          '${walletService.baseUrl}/blocks/tip/height';
+                          '${wallServ.baseUrl}/blocks/tip/height';
 
                       try {
                         final response = await http.get(Uri.parse(blockApiUrl));
@@ -1253,6 +1255,35 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                       hintText:
                           AppLocalizations.of(rootContext)!.translate('after'),
                       borderColor: AppColors.background(context),
+                    ).copyWith(
+                      suffixIcon: IconButton(
+                        tooltip: AppLocalizations.of(rootContext)!
+                            .translate('pick_time'),
+                        icon: const Icon(Icons.schedule),
+                        color: AppColors.icon(context),
+                        onPressed: () async {
+                          // Pass current target height (if any) so picker can prefill a duration
+                          final int? currentTarget =
+                              int.tryParse(afterController.text.trim());
+                          final pickedTargetHeight =
+                              await _pickAfterHeightFromTime(context,
+                                  currentTargetHeight: currentTarget);
+
+                          if (pickedTargetHeight != null) {
+                            setDialogState(() {
+                              afterController.text =
+                                  pickedTargetHeight.toString();
+                              afterController.selection =
+                                  TextSelection.fromPosition(
+                                TextPosition(
+                                    offset: afterController.text.length),
+                              );
+                              // Mirror your rule: setting 'after' clears 'older'
+                              olderController.clear();
+                            });
+                          }
+                        },
+                      ),
                     ),
                     style: TextStyle(
                       color: AppColors.text(context),
@@ -1322,7 +1353,7 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                             'after': afterController.text,
                             'pubkeys': jsonEncode(newPubkeys),
                           });
-                          // print(timelockConditions);
+                          print(timelockConditions);
                         });
 
                         // Close the dialog after adding the condition
@@ -1405,172 +1436,95 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
     // print('Updated Timelock Conditions: $timelockConditions');
   }
 
-  void _createDescriptor() async {
-    // print('🚀 Starting descriptor creation...');
+  void _createDescriptor() {
+    print('Starting descriptor creation...');
 
-    // Step 1: Validate inputs
-    // print('🧪 Validating inputs...');
+    // Validate inputs
     _validateInputs();
 
     if (_isDescriptorNameMissing ||
         _isThresholdMissing ||
         _arePublicKeysMissing ||
         _isYourPubKeyMissing) {
-      print('❌ Validation failed: Missing descriptor fields.');
+      print('Validation failed: Missing descriptor fields.');
       return;
     }
-    // print('✅ Validation passed.');
 
-    // Step 2: Extract and sort public keys
-    // print('🔍 Extracting public keys from user input...');
+    // Extract and sort public keys
     List<String> extractedPublicKeys = publicKeysWithAliasMultisig
         .map((entry) => entry['publicKey']!)
         .toList()
       ..sort();
 
-    // print('📋 Sorted Public Keys: $extractedPublicKeys');
+    print('Extracted public keys: $extractedPublicKeys');
 
     String formattedKeys =
         extractedPublicKeys.toString().replaceAll(RegExp(r'^\[|\]$'), '');
-    // print('🔧 Formatted keys string for descriptor: $formattedKeys');
 
-    // ⚠️ Fixed: Do not prepend a key outside of multi_a
-    String multi = 'multi_a($threshold,$formattedKeys)';
-    // print('🔗 Multi_a expression: $multi');
+    String multi = 'multi($threshold,$formattedKeys)';
+    print('Multi condition: $multi');
 
     String finalDescriptor;
 
     _handleTimelocks(); // Optional: Add debug log inside that method if needed
-    // print('Timelock conditions after handling: $timelockConditions');
+    print('Timelock conditions after handling: $timelockConditions');
 
-    final deadKey = await mutateXpubUntilAccepted(extractedPublicKeys.first);
-
-    // Step 3: Handle optional timelocks
     if (timelockConditions.isNotEmpty) {
-      // print('⏱ Handling timelock conditions...');
-
-      // Sort timelocks by block/time
       timelockConditions.sort((a, b) {
         int getTimeLock(Map cond) =>
             int.tryParse(cond['older'] ?? cond['after'] ?? '0') ?? 0;
         return getTimeLock(a).compareTo(getTimeLock(b));
       });
 
-      // print('📋 Sorted timelock conditions: $timelockConditions');
+      print('Sorted timelock conditions: $timelockConditions');
 
-      // Format each timelock into Miniscript
       List<String> formattedTimelocks = timelockConditions.map((condition) {
         String threshold = condition['threshold'];
-        String older = condition['older'] ?? '';
-        String after = condition['after'] ?? '';
+        String older = condition['older'];
+        String after = condition['after'];
 
-        // print('⏳ Processing timelock condition:');
-        // print('  🔐 Threshold: $threshold');
-        // print('  🔁 Older: $older');
-        // print('  📆 After: $after');
+        print('olderCondition: $older');
+        print('afterCondition: $after');
 
         String timeCondition = older.isNotEmpty
             ? 'older($older)'
             : after.isNotEmpty
                 ? 'after($after)'
-                : throw Exception(
-                    '⚠️ Timelock condition missing `older` or `after` value');
+                : throw Exception('Missing TimeLock condition');
 
         List<String> pubkeys = (condition['pubkeys'] as List)
             .map((key) => key['publicKey'] as String)
             .toList()
           ..sort();
 
-        // print('  🔑 Sorted pubkeys for this condition: $pubkeys');
-
         String pubkeysString = pubkeys.join(',');
         String multiCondition = pubkeys.length > 1
-            ? 'multi_a($threshold,$pubkeysString)'
+            ? 'multi($threshold,$pubkeysString)'
             : 'pk(${pubkeys.first})';
 
-        // print('  🔧 Script expression: $multiCondition');
-
         String result = 'and_v(v:$timeCondition,$multiCondition)';
-        // print('  🧱 Final formatted timelock expression: $result');
+        print('Formatted timelock: $result');
 
         return result;
       }).toList();
 
-      // Combine the timelocks and the multi_a base
       String timelockCondition = buildTimelockCondition(formattedTimelocks);
-      // print('🧩 Combined timelock condition: $timelockCondition');
+      print('Combined timelock condition: $timelockCondition');
 
-      // Use nested logic for final tr() descriptor
-      finalDescriptor =
-          'tr($deadKey, ${nestConditions(multi, [timelockCondition])})';
-
-      // print('🧬 Final descriptor with timelocks: $finalDescriptor');
+      finalDescriptor = 'wsh(or_d($multi,$timelockCondition))';
     } else {
-      // No timelocks, just use multi_a in tr()
-      // print('🟢 No timelock conditions. Using only multisig policy.');
-      finalDescriptor = 'tr($deadKey,$multi)';
-      // print('🧬 Final descriptor: $finalDescriptor');
+      finalDescriptor = 'wsh($multi)';
     }
 
-    // Clean and store descriptor
-    finalDescriptor = finalDescriptor.replaceAll(' ', '');
-    // print('✅ Final descriptor after cleaning: $finalDescriptor');
+    print('Final descriptor before cleaning: $finalDescriptor');
 
     setState(() {
-      _finalDescriptor = finalDescriptor;
+      _finalDescriptor = finalDescriptor.replaceAll(' ', '');
     });
 
-    // print('📦 Descriptor stored to state.');
+    print('Final descriptor stored: $_finalDescriptor');
 
     _createDescriptorDialog(context);
-  }
-
-  String nestConditions(String base, List<String> conditions) {
-    for (final cond in conditions) {
-      base = 'or_d($base,$cond)';
-    }
-    return base;
-  }
-
-  Future<String> mutateXpubUntilAccepted(String xpub) async {
-    // print('🧪 Starting xpub mutation process...');
-    final chars = xpub.split('');
-
-    for (int i = 0; i < chars.length; i++) {
-      final original = chars[i];
-
-      for (final replacement in ['A', 'B', 'C', 'D']) {
-        if (replacement == original) continue;
-
-        chars[i] = replacement;
-        final mutated = chars.join();
-
-        // Log mutation attempt
-        // print('🔄 Trying mutation at index $i: "$original" → "$replacement"');
-        // print('📦 Mutated xpub: $mutated');
-
-        final descriptorStr =
-            'tr($mutated,pk(0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798))';
-
-        try {
-          await Descriptor.create(
-            descriptor: descriptorStr,
-            network: settingsProvider.network,
-          );
-          // print('✅ Descriptor accepted with mutated xpub.');
-          return mutated;
-        } catch (e) {
-          print('❌ Rejected: $e');
-          // Restore original and continue
-        }
-      }
-
-      chars[i] = original;
-    }
-
-    // print('🚫 No valid mutation found.');
-    throw Exception(
-        'Unable to generate a valid mutated xpub that Descriptor accepts.');
   }
 
   void _createDescriptorDialog(BuildContext context) {
@@ -1959,6 +1913,290 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
         ),
       ],
       actionsLayout: Axis.vertical,
+    );
+  }
+
+  /// Lets the user pick a relative time and converts it to blocks (≈10 min per block).
+  /// Returns the computed number of blocks, or null if cancelled.
+  Future<int?> _pickBlocksFromTime(
+      BuildContext context, int initialBlocks) async {
+    final maxBlocks = 65535;
+    final initial =
+        Duration(minutes: (initialBlocks * 10).clamp(0, maxBlocks * 10));
+    final max = Duration(minutes: maxBlocks * 10);
+
+    final dur = await _pickRelativeDuration(
+      context,
+      initial: initial,
+      max: max,
+      minuteStep: 5,
+    );
+    if (dur == null) return null;
+
+    final estBlocks = (dur.inMinutes / 10).round().clamp(0, maxBlocks);
+    return estBlocks;
+  }
+
+  Future<int?> _pickAfterHeightFromTime(
+    BuildContext context, {
+    int? currentTargetHeight,
+  }) async {
+    try {
+      final settingsProvider =
+          Provider.of<SettingsProvider>(context, listen: false);
+      final wallServ = WalletService(settingsProvider);
+      final url = '${wallServ.baseUrl}/blocks/tip/height';
+
+      final resp = await http.get(Uri.parse(url));
+      final int currHeight = json.decode(resp.body);
+
+      const int maxBlocksAhead = 262800; // ~5 years
+      final int initialBlocksAhead = (() {
+        if (currentTargetHeight == null) return 0;
+        final d = (currentTargetHeight - currHeight);
+        if (d < 0) return 0;
+        return d.clamp(0, maxBlocksAhead);
+      })();
+
+      final initial = Duration(minutes: initialBlocksAhead * 10);
+      final max = Duration(minutes: maxBlocksAhead * 10);
+
+      final dur = await _pickRelativeDuration(
+        context,
+        initial: initial,
+        max: max,
+        minuteStep: 5,
+      );
+      if (dur == null) return null;
+
+      final estBlocks = (dur.inMinutes / 10).round().clamp(0, maxBlocksAhead);
+      final estTargetHeight = currHeight + estBlocks;
+      return estTargetHeight;
+    } catch (e) {
+      print('Error in _pickAfterHeightFromTime: $e');
+      return null;
+    }
+  }
+
+  Future<Duration?> _pickRelativeDuration(
+    BuildContext context, {
+    required Duration initial,
+    required Duration max,
+    int minuteStep = 5,
+  }) {
+    // normalize initial within [0, max]
+    if (initial.isNegative) initial = Duration.zero;
+    if (initial > max) initial = max;
+
+    // --- decompose initial into y/d/h/m (approx 365d per year) ---
+    int initTotalDays = initial.inDays;
+    int years = initTotalDays ~/ 365;
+    int days = initTotalDays % 365;
+    int hours = initial.inHours % 24;
+    int minutes = initial.inMinutes % 60;
+    minutes = (minutes ~/ minuteStep) * minuteStep; // snap to step
+
+    // --- limits derived from max ---
+    final int maxTotalDays = max.inDays;
+    final int maxYears = maxTotalDays ~/ 365;
+
+    Duration buildDuration() =>
+        Duration(days: years * 365 + days, hours: hours, minutes: minutes);
+
+    // Given current `years`, how many days are allowed for that year selection
+    int daysCapForYears(int y) {
+      final usedDaysByYears = y * 365;
+      final remainingDays = maxTotalDays - usedDaysByYears;
+      if (remainingDays <= 0) return 0;
+      // If we're at the final year bucket, days cap equals remainingDays (could be <365)
+      // Otherwise we can scroll a full 0..364 range.
+      return y == maxYears ? remainingDays : 365;
+    }
+
+    // Ensure initial days fit for the initial years
+    days = days.clamp(
+        0, daysCapForYears(years) == 0 ? 0 : daysCapForYears(years) - 1);
+
+    return showModalBottomSheet<Duration>(
+      context: context,
+      useRootNavigator: true,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetCtx) {
+        final bg = Theme.of(sheetCtx).dialogBackgroundColor;
+
+        return StatefulBuilder(
+          builder: (ctx, setState) {
+            // live compute and cap
+            Duration chosen = buildDuration();
+            if (chosen > max) chosen = max;
+
+            final textStyle = Theme.of(sheetCtx).textTheme.bodyMedium;
+
+            Widget _col({
+              required int itemCount,
+              required int selected,
+              required ValueChanged<int> onSelected,
+              required String Function(int) label,
+              double width = 90,
+            }) {
+              // guard selected bounds
+              final safeSelected =
+                  selected.clamp(0, (itemCount - 1).clamp(0, itemCount - 1));
+              return SizedBox(
+                width: width,
+                height: 200,
+                child: CupertinoPicker(
+                  itemExtent: 34,
+                  scrollController:
+                      FixedExtentScrollController(initialItem: safeSelected),
+                  useMagnifier: true,
+                  magnification: 1.08,
+                  onSelectedItemChanged: onSelected,
+                  children: List.generate(
+                      itemCount, (i) => Center(child: Text(label(i)))),
+                ),
+              );
+            }
+
+            // dynamic cap for days based on current years
+            final int daysCap = daysCapForYears(years);
+            final int daysCount =
+                daysCap == 0 ? 1 : (years == maxYears ? daysCap + 0 : 365);
+            // if user scrolled years so days is now out of range, clamp it
+            if (daysCount > 0 && days >= daysCount) {
+              days = daysCount - 1;
+            }
+
+            // compute live blocks (10 minutes per block)
+            final int estBlocks = (chosen.inMinutes / 10).round();
+
+            return SafeArea(
+              top: false,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: bg,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(16),
+                    topRight: Radius.circular(16),
+                  ),
+                  boxShadow: const [
+                    BoxShadow(
+                        blurRadius: 24,
+                        offset: Offset(0, -6),
+                        color: Colors.black38),
+                  ],
+                ),
+                padding: EdgeInsets.only(
+                    bottom: MediaQuery.of(sheetCtx).viewInsets.bottom),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(height: 12),
+                    Container(
+                      width: 36,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Theme.of(sheetCtx)
+                            .textTheme
+                            .bodyMedium
+                            ?.color
+                            ?.withOpacity(0.25),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // pickers: Years / Days / Hours / Minutes
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Years
+                        _col(
+                          itemCount: maxYears + 1,
+                          selected: years,
+                          onSelected: (i) {
+                            setState(() {
+                              years = i;
+                              // clamp days to the new cap
+                              final cap = daysCapForYears(years);
+                              final newCount = cap == 0
+                                  ? 1
+                                  : (years == maxYears ? cap : 365);
+                              if (days >= newCount)
+                                days = (newCount - 1).clamp(0, newCount - 1);
+                            });
+                          },
+                          label: (i) => '$i y',
+                          width: 76,
+                        ),
+                        // Days (0..364 normally; shortened if in last year bucket)
+                        _col(
+                          itemCount: daysCount, // dynamic
+                          selected: daysCount == 0 ? 0 : days,
+                          onSelected: (i) => setState(() => days = i),
+                          label: (i) => '$i d',
+                          width: 76,
+                        ),
+                        // Hours
+                        _col(
+                          itemCount: 24,
+                          selected: hours,
+                          onSelected: (i) => setState(() => hours = i),
+                          label: (i) => '$i h',
+                          width: 72,
+                        ),
+                        // Minutes (stepped)
+                        _col(
+                          itemCount: (60 ~/ minuteStep),
+                          selected: (minutes ~/ minuteStep)
+                              .clamp(0, (60 ~/ minuteStep) - 1),
+                          onSelected: (i) =>
+                              setState(() => minutes = i * minuteStep),
+                          label: (i) => '${i * minuteStep} m',
+                          width: 78,
+                        ),
+                      ],
+                    ),
+
+                    // live hint: Y D H M  + ≈ blocks
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      child: Text(
+                        '${chosen.inDays ~/ 365}y ${(chosen.inDays % 365)}d '
+                        '${chosen.inHours % 24}h ${chosen.inMinutes % 60}m   '
+                        '≈ $estBlocks blocks',
+                        style: textStyle,
+                      ),
+                    ),
+
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton(
+                          onPressed: () =>
+                              Navigator.of(sheetCtx, rootNavigator: true)
+                                  .pop(null),
+                          child: const Text('Cancel'),
+                        ),
+                        const SizedBox(width: 4),
+                        TextButton(
+                          onPressed: () =>
+                              Navigator.of(sheetCtx, rootNavigator: true)
+                                  .pop(chosen > max ? max : chosen),
+                          child: const Text('Confirm'),
+                        ),
+                        const SizedBox(width: 12),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

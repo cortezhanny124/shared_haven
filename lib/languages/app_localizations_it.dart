@@ -309,6 +309,7 @@ const Map<String, String> localizedStringsIt = {
       'Il tuo portafoglio deve sincronizzarsi con la blockchain.\n\nPer favore, connettiti a Internet per continuare.',
   'refreshing': 'Aggiornamento...',
   'request_sent': 'Richiesta inviata, controlla il saldo tra qualche minuto!',
+  'select_custom_fee': 'Seleziona commissione personalizzata',
 
   // Messaggi generali dell'assistente
   'assistant_welcome':

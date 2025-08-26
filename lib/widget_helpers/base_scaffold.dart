@@ -11,7 +11,6 @@ import 'package:flutter_wallet/widget_helpers/assistant_widget.dart';
 import 'package:flutter_wallet/widget_helpers/dialog_helper.dart';
 import 'package:flutter_wallet/widget_helpers/snackbar_helper.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:lottie/lottie.dart';
 import 'package:provider/provider.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:flutter_wallet/utilities/app_colors.dart';
@@ -522,7 +521,6 @@ class BaseScaffoldState extends State<BaseScaffold> {
                         ],
                       ),
                     ),
-                    _buildSettingsTile(context),
                   ],
                 ),
               ),
@@ -611,16 +609,11 @@ class BaseScaffoldState extends State<BaseScaffold> {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Flexible(
-            flex: 2,
-            child: SizedBox(
-              height: 60,
-              width: 60,
-              child: Lottie.asset(
-                'assets/animations/bitcoin_splash.json',
-                repeat: true,
-              ),
-            ),
+          GestureDetector(
+            child: Icon(Icons.settings),
+            onTap: () {
+              Navigator.of(context).pushNamed('/settings');
+            },
           ),
           const SizedBox(height: 10),
           Flexible(
@@ -866,33 +859,6 @@ class BaseScaffoldState extends State<BaseScaffold> {
         onTap: () {
           Navigator.of(context).pushNamedAndRemoveUntil(
               '/shared_wallet', (Route<dynamic> route) => false);
-        },
-      ),
-    );
-  }
-
-  Widget _buildSettingsTile(BuildContext context) {
-    return Card(
-      elevation: 6,
-      color: AppColors.gradient(context),
-      shadowColor: AppColors.background(context),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: ListTile(
-        leading: Icon(
-          Icons.settings,
-          color: AppColors.cardTitle(context),
-        ),
-        title: Text(
-          AppLocalizations.of(context)!.translate('settings'),
-          style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: AppColors.text(context)),
-        ),
-        onTap: () {
-          Navigator.of(context).pushNamed('/settings');
         },
       ),
     );

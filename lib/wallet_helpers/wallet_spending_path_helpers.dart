@@ -32,6 +32,7 @@ class WalletSpendingPathHelpers {
   final BigInt avBalance;
   final void Function(String newAddress)? onNewAddressGenerated;
   final String? descriptor;
+  Future<void> Function() syncWallet;
 
   bool _isUserInteracting = false;
   bool _isScrollingForward = true;
@@ -55,6 +56,7 @@ class WalletSpendingPathHelpers {
     required this.address,
     required this.avBalance,
     required this.onNewAddressGenerated,
+    required this.syncWallet,
     this.descriptor,
 
     // SharedWallet Variables
@@ -79,6 +81,7 @@ class WalletSpendingPathHelpers {
           pubKeysAlias: pubKeysAlias,
           wallet: wallet,
           onNewAddressGenerated: onNewAddressGenerated,
+          syncWallet: syncWallet,
         ) {
     _startAutoScroll(); // Start scrolling when the class is initialized
   }
@@ -266,7 +269,7 @@ class WalletSpendingPathHelpers {
 
       final totalSeconds = remainingBlocks * avgBlockTime;
       timeRemaining = walletService.formatTime(totalSeconds, context);
-      // print('TimeRemaining: $timeRemaining');
+      print('TimeRemaining: $timeRemaining');
 
       if (i == 0) {
         waitingTransactions.add(
@@ -364,10 +367,6 @@ class WalletSpendingPathHelpers {
       }
     }
 
-    // print('Thresh: ${path['threshold']}');
-    // print('Aliases: ${pathAliases.length}');
-    // print('Type: $timelockType');
-
     return Stack(
       children: [
         // 🌟 Main Card
@@ -426,7 +425,6 @@ class WalletSpendingPathHelpers {
                     const SizedBox(width: 10),
 
                     // Send available balance from spending path
-
                     GestureDetector(
                       onTap: () async {
                         final rootContext = context;
@@ -504,10 +502,8 @@ class WalletSpendingPathHelpers {
                               amount: totalSpendable,
                             );
                           } finally {
-                            Navigator.of(
-                              rootContext,
-                              rootNavigator: true,
-                            ).pop();
+                            Navigator.of(rootContext, rootNavigator: true)
+                                .pop();
                           }
                         }
                       },
@@ -640,78 +636,6 @@ class WalletSpendingPathHelpers {
                           size: 22,
                         ),
                       ),
-
-                    const SizedBox(width: 10),
-
-                    // BACKUP Transaction Broadcast
-
-                    // if ((path['threshold'] == null || path['threshold'] == 1) &&
-                    //     pathAliases.isNotEmpty &&
-                    //     (timelockType == 'older' || timelockType == 'after'))
-                    //   GestureDetector(
-                    //     onTap: () async {
-                    //       final psbtString = await showDialog<String>(
-                    //         context: context,
-                    //         builder: (context) {
-                    //           String input = '';
-                    //           return AlertDialog(
-                    //             backgroundColor: AppColors.dialog(context),
-                    //             title: const Text('Enter PSBT String'),
-                    //             content: TextField(
-                    //               autofocus: true,
-                    //               maxLines: null,
-                    //               decoration: const InputDecoration(
-                    //                 hintText: 'Paste your PSBT here',
-                    //               ),
-                    //               onChanged: (value) => input = value,
-                    //             ),
-                    //             actions: [
-                    //               TextButton(
-                    //                 onPressed: () =>
-                    //                     Navigator.of(context).pop(), // Cancel
-                    //                 child: const Text('Cancel'),
-                    //               ),
-                    //               TextButton(
-                    //                 onPressed: () => Navigator.of(context)
-                    //                     .pop(input), // Return input
-                    //                 child: const Text('OK'),
-                    //               ),
-                    //             ],
-                    //           );
-                    //         },
-                    //       );
-
-                    //       if (psbtString == null || psbtString.trim().isEmpty) {
-                    //         SnackBarHelper.showError(
-                    //           context,
-                    //           message:
-                    //               "PSBT string is empty or canceled. Signing aborted.",
-                    //         );
-                    //         return;
-                    //       }
-
-                    //       try {
-                    //         await walletService
-                    //             .broadcastBackupTx(psbtString.trim());
-
-                    //         SnackBarHelper.show(
-                    //           context,
-                    //           message: "PSBT broadcast successfully.",
-                    //         );
-                    //       } catch (e) {
-                    //         SnackBarHelper.showError(
-                    //           context,
-                    //           message:
-                    //               "Failed to broadcast PSBT: ${e.toString()}",
-                    //         );
-                    //       }
-                    //     },
-                    //     child: Icon(
-                    //       Icons.sign_language,
-                    //       color: AppColors.icon(context),
-                    //       size: 22,
-                    //     ),
-                    //   ),
                   ],
                 ),
 
@@ -807,9 +731,8 @@ class WalletSpendingPathHelpers {
       titleKey: 'spending_paths_available',
       content: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: spendingPaths.skip(1).map<Widget>((pathInfo) {
+        children: spendingPaths.map<Widget>((pathInfo) {
           // Extract aliases for the current pathInfo's fingerprints
-
           final List<String> pathAliases =
               (pathInfo['fingerprints'] as List<dynamic>)
                   .map<String>((fingerprint) {

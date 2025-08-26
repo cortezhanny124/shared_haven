@@ -313,6 +313,7 @@ const Map<String, String> localizedStringsEs = {
       'Tu monedero necesita sincronizarse con la blockchain.\n\nPor favor, conéctate a Internet para continuar.',
   'refreshing': 'Actualizando...',
   'request_sent': 'Solicitud enviada, revisa tu saldo en unos minutos!',
+  'select_custom_fee': 'Seleccionar tarifa personalizada',
 
   // Mensajes generales del asistente
   'assistant_welcome':

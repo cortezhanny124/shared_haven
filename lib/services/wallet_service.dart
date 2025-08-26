@@ -920,7 +920,7 @@ class WalletService extends ChangeNotifier {
     final trueMnemonic = await Mnemonic.fromString(mnemonic);
 
     final hardenedDerivationPath = await DerivationPath.create(
-      path: "m/86h/1h/0h",
+      path: "m/84h/1h/0h",
     );
 
     final receivingDerivationPath = await DerivationPath.create(path: "m/0");
@@ -989,7 +989,7 @@ class WalletService extends ChangeNotifier {
           mnemonic: mnemonicObj,
         );
 
-        final descriptor = await Descriptor.newBip86(
+        final descriptor = await Descriptor.newBip84(
           secretKey: descriptorSecretKey,
           network: settingsProvider.network,
           keychain: e,
@@ -1256,7 +1256,7 @@ class WalletService extends ChangeNotifier {
     void traverse(dynamic node, List<int> currentPath, List<String> idPath) {
       if (node == null) return;
 
-      // Debugging: Print the current node and paths being processed
+      // // Debugging: Print the current node and paths being processed
       // print('Traversing Node: ${node['id'] ?? 'No ID'}');
       // print('Current Path: $currentPath');
       // print('ID Path: $idPath');
@@ -1315,101 +1315,116 @@ class WalletService extends ChangeNotifier {
       List<String> path,
       List<dynamic>? parentItems,
     ) {
+      // print("\n🔍 Traversing node: ${node['id'] ?? 'Unknown ID'}");
+      // print("📍 Current path: ${path.join(' > ')}");
       // print(
-      //     "Traversing node: ${node['id'] ?? 'Unknown ID'}, Path: ${path.join(' > ')}");
+      //     "📦 Node type: ${node['type']}, Keys: ${node['keys']?.length ?? 0}, Items: ${node['items']?.length ?? 0}");
 
-      // Check for keys in the current node
+      // === Check for keys ===
       if (node['keys'] != null) {
-        // print("Checking keys in node: ${node['id'] ?? 'Unknown ID'}");
+        // print("🔑 Node has keys. Checking for fingerprint matches...");
         List<dynamic> keys = node['keys'];
         final matchingKeys =
             keys.where((key) => key['fingerprint'] == fingerprint).toList();
 
         if (matchingKeys.isNotEmpty) {
+          // print("✅ Fingerprint match found in keys!");
+
           String type = node['type'];
           int? timelockValue;
 
           if (node['threshold'] != null) {
             type = "THRESH > $type";
+            // print("🔢 Threshold detected. Adjusted type: $type");
           }
 
-          // Check sibling constraints
+          // === Check sibling constraints ===
           if (parentItems != null) {
             for (var sibling in parentItems) {
               if (sibling['type'] == 'RELATIVETIMELOCK') {
                 type = "RELATIVETIMELOCK > $type";
-                timelockValue = sibling['value']; // Capture timelock value
+                timelockValue = sibling['value'];
+                // print(
+                //     "⏱️ RELATIVETIMELOCK detected. Updated type: $type | Timelock: $timelockValue");
               } else if (sibling['type'] == 'ABSOLUTETIMELOCK') {
                 type = "ABSOLUTETIMELOCK > $type";
                 timelockValue = sibling['value'];
+                // print(
+                //     "🕰️ ABSOLUTETIMELOCK detected. Updated type: $type | Timelock: $timelockValue");
               }
             }
           }
 
-          // print(
-          //     "Fingerprint match found in node: ${node['id'] ?? 'Unknown ID'}");
-          result.add({
+          final entry = {
             'type': type,
             'threshold': node['threshold'],
             'fingerprints': keys.map((key) => key['fingerprint']).toList(),
             'path': path.join(' > '),
             'timelock': timelockValue,
-          });
-          // print("Added to result: ${result.last}");
+          };
+
+          result.add(entry);
+          // print("📥 Added to result: $entry");
         } else {
-          // print("No fingerprint match in node: ${node['id'] ?? 'Unknown ID'}");
+          // print("❌ No fingerprint match in keys.");
         }
       }
 
-      // Check if this node has a direct fingerprint reference (e.g., SCHNORRSIGNATURE)
-      if (node['type'] == 'SCHNORRSIGNATURE' &&
+      // === Check for direct fingerprint match in ECDSASIGNATURE ===
+      if (node['type'] == 'ECDSASIGNATURE' &&
           node['fingerprint'] == fingerprint) {
+        // print("🖊️ Direct fingerprint match in ECDSASIGNATURE node.");
+
         String type = node['type'];
         int? timelockValue;
 
-        // Check sibling constraints for timelocks
         if (parentItems != null) {
           for (var sibling in parentItems) {
             if (sibling['type'] == 'RELATIVETIMELOCK') {
               type = "RELATIVETIMELOCK > $type";
               timelockValue = sibling['value'];
+              // print(
+              //     "⏱️ RELATIVETIMELOCK affects ECDSASIGNATURE. Timelock: $timelockValue");
             } else if (sibling['type'] == 'ABSOLUTETIMELOCK') {
               type = "ABSOLUTETIMELOCK > $type";
               timelockValue = sibling['value'];
+              // print(
+              //     "🕰️ ABSOLUTETIMELOCK affects ECDSASIGNATURE. Timelock: $timelockValue");
             }
           }
         }
 
-        result.add({
+        final entry = {
           'type': type,
           'threshold': null,
           'fingerprints': [fingerprint],
           'path': path.join(' > '),
           'timelock': timelockValue,
-        });
-        // print("Added SCHNORRSIGNATURE to result: ${result.last}");
+        };
+
+        result.add(entry);
+        // print("📥 Added ECDSASIGNATURE to result: $entry");
       }
 
-      // Recursively traverse child nodes in "items"
+      // === Traverse child nodes ===
       if (node['items'] != null) {
-        // print(
-        //     "Node has child items: ${node['items'].length} found in node: ${node['id'] ?? 'Unknown ID'}");
+        // print("🔁 Traversing ${node['items'].length} child items...");
         List<dynamic> items = node['items'];
         for (int i = 0; i < items.length; i++) {
           traverse(
             items[i],
             [...path, '${node['type']}[$i]'],
-            items, // Pass sibling items for constraint checks
+            items,
           );
         }
       } else {
-        // print("No child items in node: ${node['id'] ?? 'Unknown ID'}");
+        // print("🚫 No child items.");
       }
     }
 
-    // print("Starting traversal with fingerprint: $fingerprint");
+    // print("🚀 Starting fingerprint extraction for: $fingerprint\n");
     traverse(json, [], null);
-    // print("Traversal complete. Results: $result");
+    // print("\n✅ Traversal complete. Total matches: ${result.length}");
     return result;
   }
 
@@ -1463,11 +1478,10 @@ class WalletService extends ChangeNotifier {
         // print("Added to result: ${result.last}");
       }
 
-      // Check if this node has a direct fingerprint reference (e.g., SCHNORRSIGNATURE)
-      if (node['type'] == 'SCHNORRSIGNATURE') {
-        // print(
-        //     "Checking SCHNORRSIGNATURE in node: ${node['id'] ?? 'Unknown ID'}");
-        String type = "SCHNORRSIGNATURE";
+      // Check if this node has a direct fingerprint reference (e.g., ECDSASIGNATURE)
+      if (node['type'] == 'ECDSASIGNATURE') {
+        // print("Checking ECDSASIGNATURE in node: ${node['id'] ?? 'Unknown ID'}");
+        String type = "ECDSASIGNATURE";
         int? timelockValue;
 
         // Look for sibling constraints (e.g., RELATIVETIMELOCK)
@@ -1485,12 +1499,12 @@ class WalletService extends ChangeNotifier {
 
         result.add({
           'type': type,
-          'threshold': null, // No threshold for SCHNORRSIGNATURE
+          'threshold': null, // No threshold for ECDSASIGNATURE
           'fingerprints': [node['fingerprint']], // Single fingerprint
           'path': path.join(' > '),
           'timelock': timelockValue,
         });
-        // print("Added SCHNORRSIGNATURE to result: ${result.last}");
+        // print("Added ECDSASIGNATURE to result: ${result.last}");
       }
 
       // Recursively traverse child nodes in "items"
@@ -1508,10 +1522,9 @@ class WalletService extends ChangeNotifier {
             items,
           );
         }
+      } else {
+        // print("No child items in node: ${node['id'] ?? 'Unknown ID'}");
       }
-      //  else {
-      //   print("No child items in node: ${node['id'] ?? 'Unknown ID'}");
-      // }
     }
 
     // print("Starting traversal for all paths");
@@ -1697,7 +1710,7 @@ class WalletService extends ChangeNotifier {
     Mnemonic trueMnemonic = await Mnemonic.fromString(mnemonic);
 
     final hardenedDerivationPath = await DerivationPath.create(
-      path: "m/86h/1h/0h",
+      path: "m/84h/1h/0h",
     );
 
     final receivingDerivationPath = await DerivationPath.create(path: "m/0");
@@ -1865,7 +1878,7 @@ class WalletService extends ChangeNotifier {
                 .feeRate(feeRate)
                 .finish(wallet);
           } else {
-            // print(timeLockPath);
+            print(timeLockPath);
             await txBuilder
                 .addRecipient(recipientScript, amount)
                 .policyPath(KeychainKind.internalChain, timeLockPath!)
@@ -1880,7 +1893,9 @@ class WalletService extends ChangeNotifier {
 
           final utxos = await getUtxos();
 
+          // print('SpendingPaths');
           // print(spendingPaths);
+          // print('Chosen Path');
           // print(chosenPath);
 
           List<dynamic> spendableUtxos = [];
@@ -2185,7 +2200,7 @@ class WalletService extends ChangeNotifier {
     Mnemonic trueMnemonic = await Mnemonic.fromString(mnemonic);
 
     final hardenedDerivationPath = await DerivationPath.create(
-      path: "m/86h/1h/0h",
+      path: "m/84h/1h/0h",
     );
 
     final receivingDerivationPath = await DerivationPath.create(path: "m/0");
@@ -2653,7 +2668,7 @@ class WalletService extends ChangeNotifier {
     Mnemonic trueMnemonic = await Mnemonic.fromString(mnemonic);
 
     final hardenedDerivationPath = await DerivationPath.create(
-      path: "m/86h/1h/0h",
+      path: "m/84h/1h/0h",
     );
 
     final receivingDerivationPath = await DerivationPath.create(path: "m/0");

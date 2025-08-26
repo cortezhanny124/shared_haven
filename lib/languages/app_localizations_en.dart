@@ -315,6 +315,7 @@ const Map<String, String> localizedStringsEn = {
       'Your wallet needs to sync with the blockchain.\n\nPlease connect to the internet to proceed.',
   'refreshing': 'Refreshing...',
   'request_sent': 'Request sent, check your balance again in a few minutes!',
+  'select_custom_fee': 'Select Custom Fee',
 
 // General Assistant Messages
   'assistant_welcome':

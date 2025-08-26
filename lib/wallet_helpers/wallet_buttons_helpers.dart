@@ -20,6 +20,7 @@ class WalletButtonsHelper {
   final WalletService walletService;
   final Set<String> myAddresses;
   final void Function(String newAddress)? onNewAddressGenerated;
+  Future<void> Function() syncWallet;
 
   WalletButtonsHelper({
     required this.context,
@@ -31,6 +32,7 @@ class WalletButtonsHelper {
     required this.walletService,
     required this.myAddresses,
     required this.onNewAddressGenerated,
+    required this.syncWallet,
 
     // Common Variables
     required TextEditingController recipientController,
@@ -73,6 +75,7 @@ class WalletButtonsHelper {
           pubKeysAlias: pubKeysAlias ?? [],
           wallet: wallet,
           onNewAddressGenerated: onNewAddressGenerated,
+          syncWallet: syncWallet,
         ),
         receiveHelper = WalletReceiveHelpers(
           context: context,
@@ -180,17 +183,14 @@ class WalletButtonsHelper {
           },
           child: CustomButton(
             onPressed: () async {
+              print("[ScanButton] Opening QRScannerPage…");
               final recipientAddressStr = await Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => QRScannerPage(
-                    title: 'Scan Bitcoin Address',
-                    isValid: (data) => extractBitcoinAddress(data) != null,
-                    extractValue: (data) => extractBitcoinAddress(data)!,
-                    errorKey: 'invalid_address',
-                  ),
-                ),
+                    builder: (_) =>
+                        const QRScannerPage(title: 'Scan Bitcoin Address')),
               );
+              debugPrint("[ScanButton] pop result: $recipientAddressStr");
 
               // If a valid Bitcoin address was scanned, show the transaction dialog
               if (recipientAddressStr != null) {

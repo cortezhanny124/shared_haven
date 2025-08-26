@@ -8,7 +8,7 @@ import 'package:flutter_wallet/settings/settings_provider.dart';
 import 'package:flutter_wallet/services/wallet_service.dart';
 import 'package:flutter_wallet/loading_screens/splash_screen.dart';
 import 'package:flutter_wallet/wallet_pages/ca_wallet_page.dart';
-import 'package:flutter_wallet/wallet_pages/create_assisted_shared_wallet.dart';
+// import 'package:flutter_wallet/wallet_pages/create_assisted_shared_wallet.dart';
 import 'package:flutter_wallet/wallet_pages/create_shared_wallet.dart';
 import 'package:flutter_wallet/wallet_pages/import_shared_wallet.dart';
 import 'package:flutter_wallet/security_pages/pin_setup_page.dart';
@@ -171,8 +171,6 @@ class MyApp extends StatelessWidget {
         '/create_shared_wallet': (context) => const CreateSharedWallet(),
         '/import_shared': (context) => const ImportSharedWallet(),
         '/settings': (context) => const SettingsPage(),
-        '/create_assisted_shared_wallet': (context) =>
-            const CreateAssistedSharedWalletPage(),
       },
     );
   }

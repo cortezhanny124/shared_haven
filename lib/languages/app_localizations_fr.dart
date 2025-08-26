@@ -315,6 +315,7 @@ const Map<String, String> localizedStringsFr = {
   'refreshing': 'Actualisation...',
   'request_sent':
       'Requête envoyée, vérifiez votre solde dans quelques minutes !',
+  'select_custom_fee': 'Sélectionner des frais personnalisés',
 
 // Messages généraux de l'assistant
   'assistant_welcome':

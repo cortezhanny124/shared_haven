@@ -98,11 +98,26 @@ class _FeeSelectorState extends State<FeeSelector> {
       return const Text("Failed to fetch fee recommendations.");
     }
 
-    final options = {
-      'fastestFee': '⚡',
-      'halfHourFee': '🚗',
-      'hourFee': '🐢',
-    };
+    final dropdownItems = [
+      if (recommendedFees != null) ...[
+        DropdownMenuItem(
+          value: 'fastestFee',
+          child: Text('⚡ ${recommendedFees!['fastestFee']} sat/vB'),
+        ),
+        DropdownMenuItem(
+          value: 'halfHourFee',
+          child: Text('🚗 ${recommendedFees!['halfHourFee']} sat/vB'),
+        ),
+        DropdownMenuItem(
+          value: 'hourFee',
+          child: Text('🐢 ${recommendedFees!['hourFee']} sat/vB'),
+        ),
+      ],
+      const DropdownMenuItem(
+        value: 'custom',
+        child: Text('✏️ Custom'),
+      ),
+    ];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -110,70 +125,41 @@ class _FeeSelectorState extends State<FeeSelector> {
         Text(
           AppLocalizations.of(rootContext)!.translate('select_custom_fee'),
           style: TextStyle(
-              fontWeight: FontWeight.bold, color: AppColors.cardTitle(context)),
-        ),
-        const SizedBox(height: 8),
-
-        if (recommendedFees != null)
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: options.entries.map((entry) {
-                return Padding(
-                  padding: const EdgeInsets.only(right: 16.0),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Radio<String>(
-                        value: entry.key,
-                        groupValue: selectedOption,
-                        activeColor: AppColors.background(context),
-                        onChanged: (value) => _onOptionSelected(value!),
-                      ),
-                      Text(
-                        '${entry.value} (${recommendedFees![entry.key]} sat/vB)',
-                        style: const TextStyle(fontSize: 14),
-                      ),
-                    ],
-                  ),
-                );
-              }).toList(),
-            ),
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
+            color: AppColors.cardTitle(context),
           ),
-
-        if (recommendedFees != null) const SizedBox(height: 12),
-
-        // Always show the custom fee option
-        Row(
-          children: [
-            Radio<String>(
-              value: 'custom',
-              groupValue: selectedOption,
-              activeColor: AppColors.background(context),
-              onChanged: (value) => _onOptionSelected(value!),
-            ),
-            const Text('✏️ Custom'),
-          ],
+        ),
+        const SizedBox(height: 4),
+        DropdownButton<String>(
+          value: selectedOption,
+          items: dropdownItems,
+          onChanged: (value) {
+            _onOptionSelected(value!);
+          },
+          isExpanded: true,
+          underline: Container(height: 1, color: AppColors.text(context)),
         ),
 
-        // Show custom field if 'custom' is selected OR fallback is triggered
+        // Show input only if "Custom" is selected
         if (selectedOption == 'custom' || showFallbackCustomFee)
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: TextFormField(
-              controller: customFeeController,
-              onChanged: _onCustomFeeChanged,
-              decoration: CustomTextFieldStyles.textFieldDecoration(
-                context: context,
-                labelText:
-                    "${AppLocalizations.of(rootContext)!.translate('amount')} (sats)",
-                hintText: AppLocalizations.of(rootContext)!
-                    .translate('enter_amount_sats'),
+            padding: const EdgeInsets.only(top: 8.0),
+            child: SizedBox(
+              height: 40,
+              child: TextFormField(
+                controller: customFeeController,
+                onChanged: _onCustomFeeChanged,
+                decoration: CustomTextFieldStyles.textFieldDecoration(
+                  context: context,
+                  labelText:
+                      "${AppLocalizations.of(rootContext)!.translate('amount')} (sats)",
+                  hintText: AppLocalizations.of(rootContext)!
+                      .translate('enter_amount_sats'),
+                ),
+                style: TextStyle(fontSize: 13, color: AppColors.text(context)),
+                keyboardType: TextInputType.number,
               ),
-              style: TextStyle(
-                color: AppColors.text(context),
-              ),
-              keyboardType: TextInputType.number,
             ),
           ),
       ],

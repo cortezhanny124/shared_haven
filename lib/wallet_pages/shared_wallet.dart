@@ -398,7 +398,7 @@ class SharedWalletState extends State<SharedWallet> {
 
       // Define derivation paths
       final hardenedDerivationPath =
-          await DerivationPath.create(path: "m/86h/1h/0h");
+          await DerivationPath.create(path: "m/84h/1h/0h");
       final receivingDerivationPath = await DerivationPath.create(path: "m/0");
 
       // Derive descriptor keys
@@ -676,6 +676,7 @@ class SharedWalletState extends State<SharedWallet> {
           address = newAddr;
         });
       },
+      syncWallet: _syncWallet,
     );
 
     final walletButtonsHelper = WalletButtonsHelper(
@@ -709,6 +710,7 @@ class SharedWalletState extends State<SharedWallet> {
           address = newAddr;
         });
       },
+      syncWallet: _syncWallet,
     );
 
     return BaseScaffold(

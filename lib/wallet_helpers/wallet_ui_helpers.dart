@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:bdk_flutter/bdk_flutter.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
@@ -123,7 +124,6 @@ class WalletUiHelpers {
                             ),
                           ),
                           Row(
-                            // Wrap the two icons inside another Row
                             children: [
                               GestureDetector(
                                 onLongPress: () {

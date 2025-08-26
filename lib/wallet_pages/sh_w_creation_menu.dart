@@ -50,32 +50,6 @@ class ShWCreationMenuState extends State<ShWCreationMenu> {
             ),
           ),
           const SizedBox(height: 40),
-          // Buttons
-          // GestureDetector(
-          //   onLongPress: () {
-          //     final BaseScaffoldState? baseScaffoldState =
-          //         baseScaffoldKey.currentState;
-
-          //     if (baseScaffoldState != null) {
-          //       baseScaffoldState.updateAssistantMessage(
-          //           context, 'assistant_assisted_create_shared');
-          //     }
-          //   },
-          //   child: CustomButton(
-          //     onPressed: () {
-          //       Navigator.pushNamed(context, '/create_assisted_shared_wallet');
-          //     },
-          //     backgroundColor: AppColors.background(context),
-          //     foregroundColor: AppColors.gradient(context),
-          //     icon: Icons.family_restroom,
-          //     iconColor: AppColors.text(context),
-          //     label: AppLocalizations.of(context)!
-          //         .translate('create_assisted_shared_wallet'),
-          //     padding: 16.0,
-          //     iconSize: 28.0,
-          //   ),
-          // ),
-          // const SizedBox(height: 16),
           GestureDetector(
             onLongPress: () {
               final BaseScaffoldState? baseScaffoldState =
