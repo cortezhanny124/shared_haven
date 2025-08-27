@@ -7,7 +7,6 @@ import 'package:flutter_wallet/services/wallet_service.dart';
 import 'package:flutter_wallet/utilities/custom_text_field_styles.dart';
 import 'package:flutter_wallet/utilities/inkwell_button.dart';
 import 'package:flutter_wallet/utilities/app_colors.dart';
-import 'package:flutter_wallet/wallet_pages/qr_scanner_page.dart';
 import 'package:flutter_wallet/wallet_utility_helpers/spending_path_details_card.dart';
 import 'package:flutter_wallet/wallet_utility_helpers/spending_path_dropdown.dart';
 import 'package:flutter_wallet/widget_helpers/dialog_helper.dart';
@@ -76,16 +75,11 @@ class WalletSendtxHelpers {
 
   Future<void> sendTx(
     bool isCreating, {
-    String? recipientAddressQr,
     bool isFromSpendingPath = false,
     int? index,
     int? amount,
   }) async {
     final rootContext = context;
-
-    if (recipientAddressQr != null) {
-      recipientController.text = recipientAddressQr;
-    }
 
     if (!mounted) {
       return;
@@ -132,31 +126,6 @@ class WalletSendtxHelpers {
       },
       actionsBuilder: (setDialogState) {
         return [
-          if (!isCreating)
-            InkwellButton(
-              onTap: () async {
-                // Navigator.of(context, rootNavigator: true).pop();
-
-                // Slight delay ensures smooth transition before scanner opens
-                await Future.delayed(Duration(milliseconds: 100));
-
-                final result =
-                    await Navigator.of(context, rootNavigator: true).push(
-                  MaterialPageRoute(
-                      builder: (_) =>
-                          const QRScannerPage(title: 'Scan Bitcoin Address')),
-                );
-
-                if (result != null) {
-                  // ✅ If needed, reopen the dialog here with updated data
-                  psbtController?.text = result;
-                }
-              },
-              backgroundColor: AppColors.primary(context),
-              textColor: AppColors.text(context),
-              icon: Icons.qr_code_scanner,
-              iconColor: AppColors.gradient(context),
-            ),
           _buildSubmitButton(
             isCreating,
             setDialogState,
@@ -616,31 +585,6 @@ class WalletSendtxHelpers {
               ),
             ),
             // const SizedBox(height: 10),
-
-            const SizedBox(height: 16),
-            GestureDetector(
-              onTap: () {
-                DialogHelper.showFullscreenQrDialog(
-                  context: context,
-                  data: psbt.text,
-                  titleKey: 'psbt',
-                );
-              },
-              child: AbsorbPointer(
-                child: TextField(
-                  controller: psbt,
-                  readOnly: true,
-                  decoration: CustomTextFieldStyles.textFieldDecoration(
-                    context: context,
-                    labelText:
-                        AppLocalizations.of(context)!.translate('psbt_tap'),
-                  ),
-                  style: TextStyle(
-                    color: AppColors.text(context),
-                  ),
-                ),
-              ),
-            ),
           ],
         ),
       ),
@@ -755,26 +699,15 @@ class WalletSendtxHelpers {
           mainAxisSize: MainAxisSize.min, // Prevents unnecessary expansion
           children: [
             const SizedBox(height: 16),
-            GestureDetector(
-              onTap: () {
-                DialogHelper.showFullscreenQrDialog(
-                  context: context,
-                  data: hex.text,
-                  titleKey: 'hex',
-                );
-              },
-              child: AbsorbPointer(
-                child: TextField(
-                  controller: hex,
-                  readOnly: true,
-                  decoration: CustomTextFieldStyles.textFieldDecoration(
-                    context: context,
-                    labelText: 'show_qr',
-                  ),
-                  style: TextStyle(
-                    color: AppColors.text(context),
-                  ),
-                ),
+            TextField(
+              controller: hex,
+              readOnly: true,
+              decoration: CustomTextFieldStyles.textFieldDecoration(
+                context: context,
+                labelText: 'psbt_created',
+              ),
+              style: TextStyle(
+                color: AppColors.text(context),
               ),
             ),
           ],

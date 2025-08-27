@@ -41,7 +41,6 @@ dependencies:
   http: ^1.2.2
   hive: ^2.0.0
   hive_flutter: ^1.1.0
-  qr_flutter: ^4.0.0
   connectivity_plus: ^6.0.5
   dependency_validator: ^4.1.1
   flutter_secure_storage: ^9.2.2
@@ -62,7 +61,6 @@ dependencies:
   intl: ^0.20.2
   crypto: ^3.0.6
   convert: ^3.1.2
-  ai_barcode_scanner: ^7.0.0
 
 dev_dependencies:
   flutter_test:

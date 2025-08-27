@@ -712,40 +712,106 @@ class WalletService extends ChangeNotifier {
     String amount,
     int currentHeight,
   ) {
-    // Ensure 'timelock' has a default value if it's null
-    final timelock = data['timelock'] ?? 0;
+    final type = (data['type'] ?? '').toString();
+    final rawTimelock = data['timelock'];
+    final int timelock = (rawTimelock is int) ? rawTimelock : 0;
 
-    // print('Amount: $amount');
-
-    // Parse the required amount into a number
     final requiredAmount = double.tryParse(amount) ?? 0.0;
 
-    // Accumulate the total value of spendable UTXOs
-    double totalSpendableValue = 0.0;
+    debugPrint(
+        "[WalletService.checkCondition] → type=$type, timelock=$rawTimelock (norm=$timelock), "
+        "amount='$amount' ($requiredAmount), height=$currentHeight, utxos=${utxos.length}");
 
-    for (var utxo in utxos) {
-      final blockHeight =
-          utxo['status']['block_height'] ?? 0; // Default to 0 if null
-      final utxoValue = utxo['value'] ?? 0.0; // Ensure a default value for UTXO
+    // MULTISIG with no timelock: keep your original short-circuit
+    final isMultisigNoTimelock =
+        type.contains('MULTISIG') && rawTimelock == null;
+    if (isMultisigNoTimelock) {
+      debugPrint(
+          "[WalletService.checkCondition] MULTISIG (no timelock) → TRUE");
+      return true;
+    }
 
-      final isSpendable =
-          blockHeight + timelock <= currentHeight || timelock == 0;
+    final isAbsolute =
+        type.contains('ABSOLUTETIMELOCK'); // CLTV / AFTER <height>
+    final isRelative =
+        type.contains('RELATIVETIMELOCK'); // CSV / OLDER <blocks>
 
-      if (isSpendable) {
-        totalSpendableValue +=
-            int.parse(utxoValue.toString()); // Add spendable UTXO value
+    double totalSpendable = 0.0;
+
+    if (isAbsolute) {
+      // CLTV: path is unlocked iff chain height reached/passed absolute height
+      final pathUnlocked = (timelock == 0) || (currentHeight >= timelock);
+      debugPrint(
+          "[WalletService.checkCondition] ABSOLUTE (AFTER height=$timelock) → "
+          "currentHeight($currentHeight) >= timelock($timelock)? $pathUnlocked");
+
+      if (!pathUnlocked) {
+        debugPrint(
+            "[WalletService.checkCondition] REASON: absolute height not reached.");
+        return false;
       }
 
-      // Check if MULTISIG condition is satisfied
-      if (data['type'] != null &&
-          data['type'].contains('MULTISIG') &&
-          data['timelock'] == null) {
-        return true; // MULTISIG condition with null timelock
+      // If unlocked, all UTXOs are eligible (no per-UTXO CSV needed)
+      for (var i = 0; i < utxos.length; i++) {
+        final utxoValueRaw = utxos[i]['value'] ?? 0.0;
+        final v = double.tryParse(utxoValueRaw.toString()) ?? 0.0;
+        totalSpendable += v;
+        debugPrint(
+            "[WalletService.checkCondition]   ABS add UTXO[$i] value=$v → total=$totalSpendable");
+      }
+    } else if (isRelative) {
+      // CSV: per-UTXO confirmations must reach 'timelock'
+      for (var i = 0; i < utxos.length; i++) {
+        final status =
+            (utxos[i]['status'] is Map) ? utxos[i]['status'] as Map : const {};
+        final blockHeight = status['block_height'] ?? 0; // 0 → unconfirmed
+        final utxoValueRaw = utxos[i]['value'] ?? 0.0;
+        final v = double.tryParse(utxoValueRaw.toString()) ?? 0.0;
+
+        final hasHeight = blockHeight is int && blockHeight > 0;
+        final confirmations = hasHeight ? (currentHeight - blockHeight) : 0;
+        final spendable =
+            (timelock == 0) ? true : (hasHeight && confirmations >= timelock);
+
+        debugPrint("[WalletService.checkCondition] RELATIVE UTXO[$i] "
+            "bh=$blockHeight, conf=$confirmations, need=$timelock → spendable=$spendable, value=$v");
+
+        if (spendable) {
+          totalSpendable += v;
+          debugPrint(
+              "[WalletService.checkCondition]   CSV add → total=$totalSpendable");
+        }
+      }
+    } else {
+      // Fallback (unknown type): keep old conservative per-UTXO rule
+      debugPrint(
+          "[WalletService.checkCondition] Unknown type → fallback CSV-style per-UTXO check");
+      for (var i = 0; i < utxos.length; i++) {
+        final status =
+            (utxos[i]['status'] is Map) ? utxos[i]['status'] as Map : const {};
+        final blockHeight = status['block_height'] ?? 0;
+        final utxoValueRaw = utxos[i]['value'] ?? 0.0;
+        final v = double.tryParse(utxoValueRaw.toString()) ?? 0.0;
+
+        final spendable =
+            (timelock == 0) || (blockHeight + timelock <= currentHeight);
+        debugPrint(
+            "[WalletService.checkCondition] FALLBACK UTXO[$i] bh=$blockHeight, "
+            "bh+timelock=${blockHeight + timelock} <= $currentHeight ? $spendable, value=$v");
+        if (spendable) {
+          totalSpendable += v;
+        }
       }
     }
 
-    // Check if the total spendable value is sufficient
-    return totalSpendableValue >= requiredAmount;
+    final decision = totalSpendable >= requiredAmount;
+    debugPrint("[WalletService.checkCondition] totalSpendable=$totalSpendable "
+        "vs required=$requiredAmount → DECISION=$decision");
+    if (!decision) {
+      debugPrint(
+          "[WalletService.checkCondition] REASON: insufficient spendable for chosen path.");
+    }
+    return decision;
   }
 
   Future<bool> areEqualAddresses(List<TxOut> outputs) async {
@@ -1590,44 +1656,88 @@ class WalletService extends ChangeNotifier {
     return signingFingerprints.toSet().toList();
   }
 
+  ScriptHints _scanScriptHexForHints(String? hex) {
+    if (hex == null || hex.isEmpty) {
+      return const ScriptHints(hasCLTV: false, hasCSV: false, hasMS: false);
+    }
+
+    bool has(int opcode) =>
+        hex.toLowerCase().contains(opcode.toRadixString(16).padLeft(2, '0'));
+    // Note: this is a heuristic; a proper script parser is ideal.
+    final hasCLTV = has(0xB1);
+    final hasCSV = has(0xB2);
+    final hasMS = has(0xAE);
+    return ScriptHints(hasCLTV: hasCLTV, hasCSV: hasCSV, hasMS: hasMS);
+  }
+
+  /// Returns: 'ABSOLUTETIMELOCK', 'RELATIVETIMELOCK', or 'MULTISIG'
+  String _classifyPathFromInput(Map<String, dynamic> psbtInput) {
+    final ws = psbtInput['witness_script'] as String?;
+    final hints = _scanScriptHexForHints(ws);
+
+    if (hints.hasCLTV) return 'ABSOLUTETIMELOCK';
+    if (hints.hasCSV) return 'RELATIVETIMELOCK';
+    if (hints.hasMS) return 'MULTISIG';
+    // Fallback (unknown script): assume multisig if partial_sigs exist, else unknown
+    if ((psbtInput['partial_sigs'] as Map?)?.isNotEmpty == true) {
+      return 'MULTISIG';
+    }
+    return 'UNKNOWN';
+  }
+
   Map<String, dynamic> extractSpendingPathFromPsbt(
     PartiallySignedTransaction psbt,
     List<Map<String, dynamic>> spendingPaths,
   ) {
-    final serializedPsbt = psbt.jsonSerialize();
+    final serialized = psbt.jsonSerialize();
+    final psbtDecoded = jsonDecode(serialized) as Map<String, dynamic>;
 
-    // Parse JSON
-    Map<String, dynamic> psbtDecoded = jsonDecode(serializedPsbt);
+    final utx = psbtDecoded['unsigned_tx'] as Map?;
+    final lockTime = (utx?['lock_time'] as int?) ?? 0;
 
-    if (!psbtDecoded.containsKey("unsigned_tx") ||
-        !psbtDecoded["unsigned_tx"].containsKey("input")) {
-      throw Exception("Invalid PSBT format or missing inputs.");
+    final psbtInputs =
+        (psbtDecoded['inputs'] as List?)?.cast<Map<String, dynamic>>() ??
+            const [];
+
+    // Classify by scripts (use the first PSBT input; usually same policy for all inputs)
+    if (psbtInputs.isEmpty) {
+      throw Exception("No PSBT inputs found.");
     }
+    final pathType = _classifyPathFromInput(psbtInputs.first);
 
-    List<dynamic> inputs = psbtDecoded["unsigned_tx"]["input"];
-    Set<int> sequenceValues =
-        inputs.map((input) => input["sequence"] as int).toSet();
+    debugPrint(
+        "[extractSpendingPathFromPsbt] lock_time=$lockTime, pathType=$pathType");
 
-    if (sequenceValues.length != 1) {
-      throw Exception("Mismatched sequence values in inputs.");
-    }
+    switch (pathType) {
+      case 'ABSOLUTETIMELOCK':
+        // Match by type first; optionally use lock_time to match a specific timelock if present
+        return spendingPaths.firstWhere(
+          (p) =>
+              (p['type'] as String).contains('ABSOLUTETIMELOCK') &&
+              (p['timelock'] == null || p['timelock'] == lockTime),
+          orElse: () => spendingPaths.firstWhere(
+            (p) => (p['type'] as String).contains('ABSOLUTETIMELOCK'),
+          ),
+        );
 
-    int sequence = sequenceValues.first;
+      case 'RELATIVETIMELOCK':
+        // For CSV, the relative value is pushed in the script; extracting the exact number
+        // requires full scriptnum parsing. If you store `timelock` in spendingPaths, just match by type.
+        return spendingPaths.firstWhere(
+          (p) => (p['type'] as String).contains('RELATIVETIMELOCK'),
+          orElse: () =>
+              throw Exception("No matching relative timelock path found."),
+        );
 
-    if (sequence == 4294967294) {
-      // Multisig case
-      return spendingPaths.firstWhere(
-        (path) => path["type"].contains("MULTISIG"),
-        orElse: () =>
-            throw Exception("No matching multisig spending path found."),
-      );
-    } else {
-      // Check for a timelock match
-      return spendingPaths.firstWhere(
-        (path) => path["timelock"] != null && path["timelock"] == sequence,
-        orElse: () =>
-            throw Exception("No matching timelock spending path found."),
-      );
+      case 'MULTISIG':
+        return spendingPaths.firstWhere(
+          (p) => (p['type'] as String).contains('MULTISIG'),
+          orElse: () => throw Exception("No matching multisig path found."),
+        );
+
+      default:
+        throw Exception(
+            "Unknown/unsupported script path; cannot match spending path.");
     }
   }
 
@@ -1871,6 +1981,7 @@ class WalletService extends ChangeNotifier {
         // print('AmountSendAll: ${amount.toInt()}');
         try {
           if (chosenPath == 0) {
+            print('multisig');
             await txBuilder
                 .addRecipient(recipientScript, amount)
                 .policyPath(KeychainKind.internalChain, multiSigPath!)
@@ -1878,6 +1989,7 @@ class WalletService extends ChangeNotifier {
                 .feeRate(feeRate)
                 .finish(wallet);
           } else {
+            print('timelock');
             print(timeLockPath);
             await txBuilder
                 .addRecipient(recipientScript, amount)
@@ -2031,7 +2143,7 @@ class WalletService extends ChangeNotifier {
       }
 
       if (chosenPath == 0) {
-        // print('MultiSig Builder');
+        print('MultiSig Builder');
 
         // for (var spendableOutpoint in spendableOutpoints) {
         //   print('Spendable Outputs: ${spendableOutpoint.txid}');
@@ -2103,7 +2215,7 @@ class WalletService extends ChangeNotifier {
 
         // print('Transaction Built');
       } else {
-        // print('TimeLock Builder');
+        print('TimeLock Builder');
         // for (var spendableOutpoint in spendableOutpoints) {
         //   print('Spendable Outputs: ${spendableOutpoint.txid}');
         // }
@@ -2823,4 +2935,12 @@ class WalletService extends ChangeNotifier {
 // Used to generate a random SharedWallet descriptorName
 extension StringExtension on String {
   String capitalize() => this[0].toUpperCase() + substring(1);
+}
+
+class ScriptHints {
+  final bool hasCLTV; // OP_CHECKLOCKTIMEVERIFY (0xB1)
+  final bool hasCSV; // OP_CHECKSEQUENCEVERIFY (0xB2)
+  final bool hasMS; // OP_CHECKMULTISIG (0xAE)
+  const ScriptHints(
+      {required this.hasCLTV, required this.hasCSV, required this.hasMS});
 }

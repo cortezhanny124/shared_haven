@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_wallet/services/wallet_service.dart';
 import 'package:flutter_wallet/utilities/custom_button.dart';
 import 'package:flutter_wallet/wallet_helpers/wallet_sendtx_helpers.dart';
-import 'package:flutter_wallet/wallet_pages/qr_scanner_page.dart';
-import 'package:flutter_wallet/wallet_helpers/wallet_receive_helpers.dart';
 import 'package:flutter_wallet/utilities/app_colors.dart';
 import 'package:flutter_wallet/widget_helpers/base_scaffold.dart';
 
@@ -13,7 +11,6 @@ class WalletButtonsHelper {
   final String address;
   final bool isSingleWallet;
   final WalletSendtxHelpers sendTxHelper;
-  final WalletReceiveHelpers receiveHelper;
   final GlobalKey<BaseScaffoldState> baseScaffoldKey;
   final BigInt avBalance;
   final Wallet wallet;
@@ -54,7 +51,7 @@ class WalletButtonsHelper {
     List<Map<String, dynamic>>? spendingPaths,
     List<String>? signersList,
     String? myAlias,
-  })  : sendTxHelper = WalletSendtxHelpers(
+  }) : sendTxHelper = WalletSendtxHelpers(
           isSingleWallet: isSingleWallet,
           context: context,
           recipientController: recipientController,
@@ -76,12 +73,7 @@ class WalletButtonsHelper {
           wallet: wallet,
           onNewAddressGenerated: onNewAddressGenerated,
           syncWallet: syncWallet,
-        ),
-        receiveHelper = WalletReceiveHelpers(
-          context: context,
-          onNewAddressGenerated: onNewAddressGenerated,
         );
-
   Widget buildButtons() {
     return SafeArea(
       child: Column(
@@ -94,139 +86,59 @@ class WalletButtonsHelper {
     );
   }
 
-  // Widget _buildTopButtons() {
-  //   return Wrap(
-  //     alignment:
-  //         isSingleWallet ? WrapAlignment.center : WrapAlignment.spaceBetween,
-  //     spacing: 8, // Adjusts horizontal space between buttons
-  //     runSpacing: 8, // Adjusts vertical space if buttons wrap to the next line
-  //     children: [
-  //       CustomButton(
-  //         onPressed: () {
-  //           securityHelper.showPinDialog('Your Private Data',
-  //               isSingleWallet: isSingleWallet);
-  //         },
-  //         backgroundColor: AppColors.background(context),
-  //         foregroundColor: AppColors.gradient(context),
-  //         icon: Icons.remove_red_eye, // Icon for the new button
-  //         iconColor: AppColors.gradient(context),
-  //         label: AppLocalizations.of(context)!.translate('private_data'),
-  //       ),
-  //       if (!isSingleWallet)
-  //         CustomButton(
-  //           onPressed: spendingPathHelpers!.showPathsDialog,
-  //           backgroundColor: AppColors.background(context),
-  //           foregroundColor: AppColors.gradient(context),
-  //           icon: Icons.pattern,
-  //           iconColor: AppColors.gradient(context),
-  //           label: AppLocalizations.of(context)!.translate('spending_summary'),
-  //         ),
-  //     ],
-  //   );
-  // }
-
   Widget _buildBottomButtons() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         // Send Button
-        GestureDetector(
-          onLongPress: () {
-            final BaseScaffoldState? baseScaffoldState =
-                baseScaffoldKey.currentState;
-
-            if (baseScaffoldState != null) {
-              baseScaffoldState.updateAssistantMessage(
-                  context, 'assistant_send_button');
-            }
-          },
-          child: CustomButton(
-            onPressed: () => sendTxHelper.sendTx(true),
-            backgroundColor: AppColors.background(context),
-            foregroundColor: AppColors.text(context),
-            icon: Icons.arrow_upward,
-            iconColor: AppColors.gradient(context),
-          ),
-        ),
-
-        // Sign PSBT Button
-        if (!isSingleWallet)
-          GestureDetector(
+        Expanded(
+          child: GestureDetector(
             onLongPress: () {
               final BaseScaffoldState? baseScaffoldState =
                   baseScaffoldKey.currentState;
 
               if (baseScaffoldState != null) {
                 baseScaffoldState.updateAssistantMessage(
-                    context, 'assistant_sign_button');
+                    context, 'assistant_send_button');
               }
             },
-            child: CustomButton(
-              onPressed: () => sendTxHelper.sendTx(false),
-              backgroundColor: AppColors.background(context),
-              foregroundColor: AppColors.gradient(context),
-              icon: Icons.draw,
-              iconColor: AppColors.text(context),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: CustomButton(
+                onPressed: () => sendTxHelper.sendTx(true),
+                backgroundColor: AppColors.background(context),
+                foregroundColor: AppColors.text(context),
+                icon: Icons.arrow_upward,
+                iconColor: AppColors.gradient(context),
+              ),
             ),
           ),
-
-        // Scan To Send Button
-        GestureDetector(
-          onLongPress: () {
-            final BaseScaffoldState? baseScaffoldState =
-                baseScaffoldKey.currentState;
-
-            if (baseScaffoldState != null) {
-              baseScaffoldState.updateAssistantMessage(
-                  context, 'assistant_scan_button');
-            }
-          },
-          child: CustomButton(
-            onPressed: () async {
-              print("[ScanButton] Opening QRScannerPage…");
-              final recipientAddressStr = await Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (_) =>
-                        const QRScannerPage(title: 'Scan Bitcoin Address')),
-              );
-              debugPrint("[ScanButton] pop result: $recipientAddressStr");
-
-              // If a valid Bitcoin address was scanned, show the transaction dialog
-              if (recipientAddressStr != null) {
-                sendTxHelper.sendTx(
-                  true,
-                  recipientAddressQr: recipientAddressStr,
-                );
-              }
-            },
-            backgroundColor: AppColors.background(context),
-            foregroundColor: AppColors.gradient(context),
-            icon: Icons.qr_code,
-            iconColor: AppColors.text(context),
-          ),
         ),
 
-        // Receive Button
-        GestureDetector(
-          onLongPress: () {
-            final BaseScaffoldState? baseScaffoldState =
-                baseScaffoldKey.currentState;
+        if (!isSingleWallet)
+          Expanded(
+            child: GestureDetector(
+              onLongPress: () {
+                final BaseScaffoldState? baseScaffoldState =
+                    baseScaffoldKey.currentState;
 
-            if (baseScaffoldState != null) {
-              baseScaffoldState.updateAssistantMessage(
-                  context, 'assistant_receive_button');
-            }
-          },
-          child: CustomButton(
-            onPressed: () =>
-                receiveHelper.showQRCodeDialog(walletService, wallet),
-            backgroundColor: AppColors.background(context),
-            foregroundColor: AppColors.text(context),
-            icon: Icons.arrow_downward,
-            iconColor: AppColors.gradient(context),
+                if (baseScaffoldState != null) {
+                  baseScaffoldState.updateAssistantMessage(
+                      context, 'assistant_sign_button');
+                }
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: CustomButton(
+                  onPressed: () => sendTxHelper.sendTx(false),
+                  backgroundColor: AppColors.background(context),
+                  foregroundColor: AppColors.gradient(context),
+                  icon: Icons.draw,
+                  iconColor: AppColors.text(context),
+                ),
+              ),
+            ),
           ),
-        ),
       ],
     );
   }

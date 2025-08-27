@@ -25,7 +25,6 @@ import 'package:provider/provider.dart';
 /// - View wallet details such as address, balance, and transactions.
 /// - Create and sign multi-signature transactions.
 /// - Explore spending paths and check available UTXOs.
-/// - Interact with the wallet using QR codes for sending and receiving Bitcoin.
 ///
 /// ### Features and Functionalities:
 ///
@@ -43,7 +42,6 @@ import 'package:provider/provider.dart';
 /// - **`_sortTransactionsByConfirmations`**: Sorts transactions by block confirmation time.
 ///
 /// #### User Interaction and Dialogs
-/// - **`_showQRCodeDialog`**: Displays the wallet's QR code for receiving Bitcoin.
 /// - **`_showPinDialog`**: Prompts the user to enter their PIN for accessing private data.
 /// - **`_showPathsDialog`**: Displays all available spending paths, including multi-signature and time-locked options.
 /// - **`_showTransactionsDialog`**: Displays detailed information about a specific transaction.
@@ -70,7 +68,7 @@ import 'package:provider/provider.dart';
 /// 4. **Spending Paths**:
 ///    - Users can view all available paths for spending UTXOs, including conditions like time-locks and multi-signature thresholds.
 /// 5. **Receive and Send Bitcoin**:
-///    - Users can receive Bitcoin using QR codes and send Bitcoin by specifying an address and amount.
+///    - Users can receive and send Bitcoin by specifying an address and amount.
 ///
 /// ### Notes:
 /// - The class heavily relies on the `bdk_flutter` library for Bitcoin wallet functionalities.
@@ -82,7 +80,6 @@ import 'package:provider/provider.dart';
 /// - `hive_flutter`: For local data storage.
 /// - `connectivity_plus`: To check the network connectivity status.
 /// - `flutter_secure_storage`: For securely storing sensitive user data.
-/// - `qr_flutter`: For generating QR codes.
 ///
 /// ### UI Highlights:
 /// - A clean, consistent design with rounded cards and a gradient background.

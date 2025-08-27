@@ -2,12 +2,10 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:bdk_flutter/bdk_flutter.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_wallet/exceptions/validation_result.dart';
 import 'package:flutter_wallet/languages/app_localizations.dart';
 import 'package:flutter_wallet/services/utilities_service.dart';
 import 'package:flutter_wallet/settings/settings_provider.dart';
-import 'package:flutter_wallet/wallet_pages/qr_scanner_page.dart';
 import 'package:flutter_wallet/widget_helpers/base_scaffold.dart';
 import 'package:flutter_wallet/utilities/custom_button.dart';
 import 'package:flutter_wallet/utilities/custom_text_field_styles.dart';
@@ -442,42 +440,6 @@ class ImportSharedWalletState extends State<ImportSharedWallet> {
                     iconColor: AppColors.gradient(context),
                     label: AppLocalizations.of(context)!
                         .translate('generate_public_key'),
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                // Select File Button
-                GestureDetector(
-                  onLongPress: () {
-                    final BaseScaffoldState? baseScaffoldState =
-                        baseScaffoldKey.currentState;
-
-                    if (baseScaffoldState != null) {
-                      baseScaffoldState.updateAssistantMessage(
-                          context, 'assistant_scan_qr_descriptor');
-                    }
-                  },
-                  child: CustomButton(
-                    onPressed: () async {
-                      final result =
-                          await Navigator.of(context, rootNavigator: true).push(
-                        MaterialPageRoute(
-                            builder: (_) => const QRScannerPage(
-                                title: 'Scan Bitcoin Address')),
-                      );
-
-                      if (result != null) {
-                        // ✅ If needed, reopen the dialog here with updated data
-                        _descriptorController.text = result;
-                      }
-                    },
-                    backgroundColor: AppColors.background(context),
-                    foregroundColor: AppColors.gradient(context),
-                    icon: Icons.qr_code_scanner,
-                    iconColor: AppColors.text(context),
-                    label: AppLocalizations.of(context)!
-                        .translate('scan_qr_descriptor'),
                   ),
                 ),
 

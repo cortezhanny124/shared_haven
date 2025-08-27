@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_wallet/languages/app_localizations.dart';
 import 'package:flutter_wallet/utilities/app_colors.dart';
 import 'package:flutter_wallet/widget_helpers/assistant_widget.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 
 class DialogHelper {
   /// Generic dialog helper that can return any type (`bool`, `String`, `int`, etc.).
@@ -255,87 +254,6 @@ class DialogHelper {
               ],
             );
           },
-        );
-      },
-    );
-  }
-
-  static Future<void> showFullscreenQrDialog({
-    required BuildContext context,
-    required String data,
-    String? titleKey,
-  }) async {
-    final rootContext = context;
-
-    await showGeneralDialog(
-      context: rootContext,
-      barrierDismissible: true,
-      barrierLabel: 'fullscreen_qr',
-      pageBuilder: (BuildContext dialogContext, _, __) {
-        final size = MediaQuery.of(dialogContext).size;
-        final qrSize = size.shortestSide * 0.85;
-
-        return Material(
-          color: AppColors.black(),
-          child: Stack(
-            children: [
-              Center(
-                child: Container(
-                  width: qrSize,
-                  height: qrSize,
-                  padding: const EdgeInsets.all(16.0),
-                  decoration: BoxDecoration(
-                    color: AppColors.white(),
-                    borderRadius: BorderRadius.circular(16.0),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.background(rootContext),
-                        blurRadius: 8.0,
-                        spreadRadius: 2.0,
-                      ),
-                    ],
-                  ),
-                  child: QrImageView(
-                    data: data,
-                    version: QrVersions.auto,
-                    size: qrSize - 32,
-                    backgroundColor: AppColors.white(),
-                    errorCorrectionLevel: QrErrorCorrectLevel.L,
-                  ),
-                ),
-              ),
-
-              // Optional: close button
-              Positioned(
-                top: 40,
-                right: 20,
-                child: IconButton(
-                  icon: Icon(
-                    Icons.close,
-                    color: AppColors.white(),
-                    size: 32,
-                  ),
-                  onPressed: () {
-                    Navigator.of(dialogContext, rootNavigator: true).pop();
-                  },
-                ),
-              ),
-
-              if (titleKey != null)
-                Positioned(
-                  top: 40,
-                  left: 20,
-                  child: Text(
-                    AppLocalizations.of(rootContext)!.translate(titleKey),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-            ],
-          ),
         );
       },
     );

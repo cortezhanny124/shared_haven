@@ -29,8 +29,66 @@ class SpendingPathDropdown extends StatelessWidget {
     required this.setDialogState,
   });
 
+  /// Best-effort textual reason based on visible data.
+  /// NOTE: This does not know walletService internals; it just infers obvious things.
+  String _inferReason(Map<String, dynamic> data) {
+    final type = (data['type'] ?? '').toString();
+    final timelock = data['timelock'];
+
+    if (type.contains('ABSOLUTETIMELOCK')) {
+      if (timelock is int) {
+        if (currentHeight < timelock) {
+          return "absolute height not reached (current=$currentHeight, needed=$timelock)";
+        }
+      }
+      return "absolute timelock condition may not be satisfied";
+    }
+
+    if (type.contains('RELATIVETIMELOCK')) {
+      // We don't have UTXO confirmations here to be precise.
+      // Provide a generic hint:
+      return "relative timelock may not be satisfied (requires OLDER=$timelock blocks)";
+    }
+
+    if (type.contains('MULTISIG')) {
+      final threshold = data['threshold'];
+      final fps = (data['fingerprints'] as List?)?.length ?? 0;
+      if (threshold is int && threshold > fps) {
+        return "threshold ($threshold) > available keys ($fps)";
+      }
+      return "multisig condition may not be satisfied";
+    }
+
+    return "unknown reason (no explicit rule matched)";
+  }
+
+  void _logDecision({
+    required Map<String, dynamic> data,
+    required bool isSelectable,
+    required List<String> aliases,
+  }) {
+    final type = data['type'];
+    final timelock = data['timelock'];
+    final threshold = data['threshold'];
+    final amountTxt = amountController.text;
+    final utxosLen = utxos?.length ?? 0;
+
+    debugPrint("[Dropdown] Decision → selectable=$isSelectable | "
+        "type=$type, timelock=$timelock, threshold=$threshold, "
+        "aliases=$aliases | amount='$amountTxt', utxos=$utxosLen, height=$currentHeight");
+
+    if (!isSelectable) {
+      final inferred = _inferReason(data);
+      debugPrint("[Dropdown]  └─ inferred reason (best-effort): $inferred");
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Log current selection at build time
+    debugPrint(
+        "[Dropdown] build() | selectedPath=${selectedPath?['type']} timelock=${selectedPath?['timelock']}");
+
     return DropdownButtonFormField(
       value: selectedPath,
       items: extractedData.map((data) {
@@ -47,8 +105,13 @@ class SpendingPathDropdown extends StatelessWidget {
             (alias) => alias['publicKey']!.contains(fp),
             orElse: () => {'alias': fp},
           );
-          return match['alias'] ?? fp;
+          final alias = match['alias'] ?? fp;
+          debugPrint("[Dropdown] Fingerprint $fp → alias=$alias");
+          return alias;
         }).toList();
+
+        // Centralized decision log (with all inputs)
+        _logDecision(data: data, isSelectable: isSelectable, aliases: aliases);
 
         return DropdownMenuItem<Map<String, dynamic>>(
           value: data,
@@ -56,7 +119,8 @@ class SpendingPathDropdown extends StatelessWidget {
           child: Text(
             "${AppLocalizations.of(rootContext)!.translate('type')}: "
             "${data['type'].contains('RELATIVETIMELOCK') ? 'OLDER: ${data['timelock']} ${AppLocalizations.of(rootContext)!.translate('blocks')}' : data['type'].contains('ABSOLUTETIMELOCK') ? 'AFTER: ${data['timelock']} ${AppLocalizations.of(rootContext)!.translate('height')}' : 'MULTISIG'}, "
-            "${data['threshold'] != null ? '${data['threshold']} of ${aliases.length}, ' : ''} ${AppLocalizations.of(rootContext)!.translate('keys')}: ${aliases.join(', ')}",
+            "${data['threshold'] != null ? '${data['threshold']} of ${aliases.length}, ' : ''} ${AppLocalizations.of(rootContext)!.translate('keys')}: ${aliases.join(', ')}"
+            "${isSelectable ? '' : '  (disabled)'}",
             style: TextStyle(
               fontSize: 14,
               color: isSelectable
@@ -68,19 +132,56 @@ class SpendingPathDropdown extends StatelessWidget {
       }).toList(),
       onTap: () {
         setDialogState(() {
-          // print('Rebuilding');
+          // When the menu opens, dump a summary of enabled/disabled
+          final summary = extractedData.map((d) {
+            final ok = walletService.checkCondition(
+              d,
+              utxos!,
+              amountController.text,
+              currentHeight,
+            );
+            return {
+              'type': d['type'],
+              'timelock': d['timelock'],
+              'enabled': ok,
+              'reason': ok ? 'eligible' : _inferReason(d),
+            };
+          }).toList();
+
+          debugPrint("[Dropdown] Menu opened – summary (${summary.length}):");
+          for (final row in summary) {
+            debugPrint(
+                "  → type=${row['type']}, timelock=${row['timelock']}, enabled=${row['enabled']} (${row['reason']})");
+          }
         });
       },
       onChanged: (value) {
         if (value != null) {
           setDialogState(() {
             final index = extractedData.indexOf(value);
+            // Re-evaluate and log at selection time too
+            final recheck = walletService.checkCondition(
+              value,
+              utxos!,
+              amountController.text,
+              currentHeight,
+            );
+            debugPrint(
+                "[Dropdown] User selected index=$index, type=${value['type']}, timelock=${value['timelock']}, selectableNow=$recheck");
+            if (!recheck) {
+              debugPrint(
+                  "[Dropdown]  └─ selection appears disabled; inferred: ${_inferReason(value)}");
+            }
             onSelected(value, index);
           });
+        } else {
+          debugPrint("[Dropdown] Selection cleared (null)");
         }
       },
       selectedItemBuilder: (context) {
         return extractedData.map((data) {
+          debugPrint(
+              "[Dropdown] Building selectedItem preview for type=${data['type']}, timelock=${data['timelock']}");
           return FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,

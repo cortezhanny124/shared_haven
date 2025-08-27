@@ -8,7 +8,6 @@ import 'package:flutter_wallet/languages/app_localizations.dart';
 import 'package:flutter_wallet/services/utilities_service.dart';
 import 'package:flutter_wallet/services/wallet_service.dart';
 import 'package:flutter_wallet/settings/settings_provider.dart';
-import 'package:flutter_wallet/wallet_pages/qr_scanner_page.dart';
 import 'package:flutter_wallet/widget_helpers/base_scaffold.dart';
 import 'package:flutter_wallet/utilities/custom_button.dart';
 import 'package:flutter_wallet/utilities/custom_text_field_styles.dart';
@@ -876,25 +875,6 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                       color: AppColors.text(context),
                     ),
                   ),
-                ),
-                InkwellButton(
-                  onTap: () async {
-                    final result =
-                        await Navigator.of(context, rootNavigator: true).push(
-                      MaterialPageRoute(
-                          builder: (_) => const QRScannerPage(
-                              title: 'Scan Bitcoin Address')),
-                    );
-
-                    if (result != null) {
-                      // ✅ If needed, reopen the dialog here with updated data
-                      publicKeyController.text = result;
-                    }
-                  },
-                  backgroundColor: AppColors.gradient(context),
-                  textColor: AppColors.text(context),
-                  icon: Icons.qr_code_scanner,
-                  iconColor: AppColors.icon(context),
                 ),
               ],
             ),

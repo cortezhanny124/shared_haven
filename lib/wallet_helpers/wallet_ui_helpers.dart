@@ -17,7 +17,6 @@ import 'package:flutter_wallet/wallet_helpers/wallet_security_helpers.dart';
 import 'package:flutter_wallet/wallet_helpers/wallet_transaction_helpers.dart';
 import 'package:lottie/lottie.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:flutter_wallet/utilities/app_colors.dart';
 
@@ -540,31 +539,6 @@ class WalletUiHelpers {
                       ),
                     ),
                   ),
-
-                  const SizedBox(height: 16),
-
-                  Container(
-                    width: 200,
-                    height: 200,
-                    decoration: BoxDecoration(
-                      color: AppColors.white(),
-                      borderRadius: BorderRadius.circular(16.0),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.background(context),
-                          blurRadius: 8.0,
-                          spreadRadius: 2.0,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: QrImageView(
-                      data: pubKeyController.text,
-                      version: QrVersions.auto,
-                      size: 180.0,
-                      backgroundColor: AppColors.white(),
-                    ),
-                  ),
                 ],
                 if (!isSingleWallet) ...[
                   // 🔹 Saved Descriptor Label
@@ -623,31 +597,6 @@ class WalletUiHelpers {
                           ),
                         ],
                       ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  Container(
-                    width: 200,
-                    height: 200,
-                    decoration: BoxDecoration(
-                      color: AppColors.white(),
-                      borderRadius: BorderRadius.circular(16.0),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.background(context),
-                          blurRadius: 8.0,
-                          spreadRadius: 2.0,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: QrImageView(
-                      data: descriptor.toString(),
-                      version: QrVersions.auto,
-                      size: 180.0,
-                      backgroundColor: AppColors.white(),
                     ),
                   ),
                 ],
