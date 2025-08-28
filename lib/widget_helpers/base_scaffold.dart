@@ -8,6 +8,7 @@ import 'package:flutter_wallet/settings/settings_provider.dart';
 import 'package:flutter_wallet/utilities/inkwell_button.dart';
 import 'package:flutter_wallet/wallet_pages/shared_wallet.dart';
 import 'package:flutter_wallet/widget_helpers/assistant_widget.dart';
+import 'package:flutter_wallet/widget_helpers/custom_bottom_sheet.dart';
 import 'package:flutter_wallet/widget_helpers/dialog_helper.dart';
 import 'package:flutter_wallet/widget_helpers/snackbar_helper.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -175,10 +176,10 @@ class BaseScaffoldState extends State<BaseScaffold> {
 
     final localizationContext = Navigator.of(context).context;
 
-    return (await DialogHelper.buildCustomStatefulDialog<EditAliasResult>(
+    return (await CustomBottomSheet.buildCustomStatefulBottomSheet<
+        EditAliasResult>(
       context: context,
       titleKey: 'edit_sw_info',
-      showCloseButton: false,
       contentBuilder: (setDialogState, updateAssistantMessage) {
         return Column(
           children: [

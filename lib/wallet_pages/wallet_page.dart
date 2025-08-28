@@ -12,7 +12,7 @@ import 'package:flutter_wallet/services/wallet_service.dart';
 import 'package:flutter_wallet/services/wallet_storage_service.dart';
 import 'package:flutter_wallet/wallet_helpers/wallet_buttons_helpers.dart';
 import 'package:flutter_wallet/wallet_helpers/wallet_ui_helpers.dart';
-import 'package:flutter_wallet/widget_helpers/dialog_helper.dart';
+import 'package:flutter_wallet/widget_helpers/custom_bottom_sheet.dart';
 import 'package:flutter_wallet/widget_helpers/snackbar_helper.dart';
 import 'package:hive/hive.dart';
 import 'package:provider/provider.dart';
@@ -203,7 +203,7 @@ class WalletPageState extends State<WalletPage> {
   void _showNetworkDialog() {
     final rootContext = context;
 
-    DialogHelper.buildCustomDialog(
+    CustomBottomSheet.buildCustomBottomSheet(
       context: context,
       titleKey: 'no_connection',
       content: Text(

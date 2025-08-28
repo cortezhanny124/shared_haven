@@ -12,7 +12,7 @@ import 'package:flutter_wallet/widget_helpers/base_scaffold.dart';
 import 'package:flutter_wallet/utilities/custom_button.dart';
 import 'package:flutter_wallet/utilities/custom_text_field_styles.dart';
 import 'package:flutter_wallet/utilities/inkwell_button.dart';
-import 'package:flutter_wallet/widget_helpers/dialog_helper.dart';
+import 'package:flutter_wallet/widget_helpers/custom_bottom_sheet.dart';
 import 'package:flutter_wallet/widget_helpers/snackbar_helper.dart';
 import 'package:flutter_wallet/wallet_pages/shared_wallet.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -183,7 +183,7 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
       //   _status = 'Success';
       // });
 
-      _walletService.printInChunks(_finalDescriptor.toString());
+      // _walletService.printInChunks(_finalDescriptor.toString());
 
       Navigator.push(
         context,
@@ -846,7 +846,7 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
 
     final rootContext = context;
 
-    DialogHelper.buildCustomStatefulDialog(
+    CustomBottomSheet.buildCustomStatefulBottomSheet(
       context: rootContext,
       titleKey: isUpdating ? 'edit_public_key' : 'add_public_key',
       showAssistant: true,
@@ -1022,7 +1022,7 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
 
     final rootContext = context;
 
-    DialogHelper.buildCustomStatefulDialog(
+    CustomBottomSheet.buildCustomStatefulBottomSheet(
       context: rootContext,
       titleKey: isUpdating ? 'edit_timelock' : 'add_timelock',
       showAssistant: true,
@@ -1510,7 +1510,7 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
   void _createDescriptorDialog(BuildContext context) {
     final rootContext = context;
 
-    DialogHelper.buildCustomDialog(
+    CustomBottomSheet.buildCustomBottomSheet(
       context: context,
       titleKey: 'descriptor_created',
       titleParams: {'x': _descriptorName},
@@ -1793,9 +1793,8 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
               // Check if the file already exists
               if (await file.exists()) {
                 final shouldProceed =
-                    (await DialogHelper.buildCustomDialog<bool>(
+                    (await CustomBottomSheet.buildCustomBottomSheet<bool>(
                           context: rootContext,
-                          showCloseButton: false,
                           titleKey: 'file_already_exists',
                           content: Text(
                             AppLocalizations.of(rootContext)!

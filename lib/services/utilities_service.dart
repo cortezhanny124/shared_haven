@@ -8,14 +8,15 @@ class UtilitiesService {
   static void copyToClipboard({
     required BuildContext context,
     required String text,
-    required String messageKey, // Localization key for the SnackBar message
+    String? messageKey, // Localization key for the SnackBar message
   }) {
     Clipboard.setData(ClipboardData(text: text));
-
-    SnackBarHelper.show(
-      context,
-      message: AppLocalizations.of(context)!.translate(messageKey),
-    );
+    if (messageKey != null) {
+      SnackBarHelper.show(
+        context,
+        message: AppLocalizations.of(context)!.translate(messageKey),
+      );
+    }
   }
 
   String getAssistantGreetingForRoute(BuildContext context) {

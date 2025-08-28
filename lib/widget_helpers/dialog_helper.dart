@@ -345,11 +345,4 @@ class DialogHelper {
       },
     );
   }
-
-  /// ✅ **Method to close any open dialog (including loading dialog)**
-  static void closeDialog(BuildContext context) {
-    if (Navigator.of(context).canPop()) {
-      Navigator.of(context, rootNavigator: true).pop();
-    }
-  }
 }

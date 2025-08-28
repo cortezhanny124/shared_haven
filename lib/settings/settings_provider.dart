@@ -50,7 +50,6 @@ class SettingsProvider with ChangeNotifier {
     final networkString = _prefs.getString('network');
 
     // print(networkString);
-
     if (networkString != null) {
       if (networkString.contains('bitcoin')) {
         _network = Network.bitcoin;

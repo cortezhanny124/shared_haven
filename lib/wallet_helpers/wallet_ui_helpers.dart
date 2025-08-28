@@ -11,7 +11,7 @@ import 'package:flutter_wallet/settings/settings_provider.dart';
 import 'package:flutter_wallet/services/wallet_service.dart';
 import 'package:flutter_wallet/utilities/inkwell_button.dart';
 import 'package:flutter_wallet/widget_helpers/base_scaffold.dart';
-import 'package:flutter_wallet/widget_helpers/dialog_helper.dart';
+import 'package:flutter_wallet/widget_helpers/custom_bottom_sheet.dart';
 import 'package:flutter_wallet/widget_helpers/snackbar_helper.dart';
 import 'package:flutter_wallet/wallet_helpers/wallet_security_helpers.dart';
 import 'package:flutter_wallet/wallet_helpers/wallet_transaction_helpers.dart';
@@ -462,7 +462,7 @@ class WalletUiHelpers {
   void _showPubKeyDialog() {
     final rootContext = context;
 
-    DialogHelper.buildCustomDialog(
+    CustomBottomSheet.buildCustomBottomSheet(
       context: rootContext,
       titleKey: 'wallet_data',
       content: Column(
@@ -632,9 +632,8 @@ class WalletUiHelpers {
                 // Check if the file already exists
                 if (await file.exists()) {
                   final shouldProceed =
-                      (await DialogHelper.buildCustomDialog<bool>(
+                      (await CustomBottomSheet.buildCustomBottomSheet<bool>(
                             context: rootContext,
-                            showCloseButton: false,
                             titleKey: 'file_already_exists',
                             content: Text(
                               AppLocalizations.of(rootContext)!

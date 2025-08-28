@@ -28,6 +28,10 @@ class AppColors {
     return Colors.white;
   }
 
+  static Color transaparent() {
+    return Colors.transparent;
+  }
+
   static Color darkPrimary(BuildContext context) {
     if (_isTestnet(context)) return Colors.green[600]!;
     return Colors.deepOrange[700]!;
@@ -96,5 +100,13 @@ class AppColors {
     return Theme.of(context).brightness == Brightness.dark
         ? darkPrimary(context)
         : lightPrimary(context);
+  }
+}
+
+extension ColorOpacityExtension on Color {
+  Color opaque(double opacity) {
+    assert(opacity >= 0 && opacity <= 1, 'Opacity must be between 0 and 1');
+
+    return withAlpha((opacity * 255).toInt());
   }
 }

@@ -3,7 +3,7 @@ import 'package:flutter_wallet/languages/app_localizations.dart';
 import 'package:flutter_wallet/services/utilities_service.dart';
 import 'package:flutter_wallet/settings/settings_provider.dart';
 import 'package:flutter_wallet/widget_helpers/base_scaffold.dart';
-import 'package:flutter_wallet/widget_helpers/dialog_helper.dart';
+import 'package:flutter_wallet/widget_helpers/custom_bottom_sheet.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_wallet/utilities/app_colors.dart';
 
@@ -105,7 +105,7 @@ class WalletTransactionHelpers {
 
     final rootContext = context;
 
-    DialogHelper.buildCustomStatefulDialog(
+    CustomBottomSheet.buildCustomStatefulBottomSheet(
       context: context,
       titleKey: 'transaction_details',
       showAssistant: true,

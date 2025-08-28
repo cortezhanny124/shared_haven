@@ -8,6 +8,7 @@ import 'package:flutter_wallet/utilities/custom_text_field_styles.dart';
 import 'package:flutter_wallet/utilities/inkwell_button.dart';
 import 'package:flutter_wallet/utilities/app_colors.dart';
 import 'package:flutter_wallet/wallet_helpers/wallet_sendtx_helpers.dart';
+import 'package:flutter_wallet/widget_helpers/custom_bottom_sheet.dart';
 import 'package:flutter_wallet/widget_helpers/dialog_helper.dart';
 import 'package:flutter_wallet/widget_helpers/snackbar_helper.dart';
 
@@ -437,8 +438,8 @@ class WalletSpendingPathHelpers {
                           return; // Stop execution since no funds are available
                         }
 
-                        bool recipientEntered = (await DialogHelper
-                                .buildCustomDialog<bool>(
+                        bool recipientEntered = (await CustomBottomSheet
+                                .buildCustomBottomSheet<bool>(
                               context: rootContext,
                               titleKey: 'enter_rec_addr',
                               content: ConstrainedBox(
@@ -726,7 +727,7 @@ class WalletSpendingPathHelpers {
   void showPathsDialog() async {
     final rootContext = context;
 
-    DialogHelper.buildCustomDialog(
+    CustomBottomSheet.buildCustomBottomSheet(
       context: rootContext,
       titleKey: 'spending_paths_available',
       content: Column(

@@ -574,20 +574,6 @@ class WalletService extends ChangeNotifier {
     }
   }
 
-  // String formatTime(int totalSeconds, BuildContext context) {
-  //   if (totalSeconds <= 0) return "0 seconds";
-
-  //   final hours = totalSeconds ~/ 3600;
-  //   final minutes = (totalSeconds % 3600) ~/ 60;
-  //   final seconds = totalSeconds % 60;
-
-  //   return AppLocalizations.of(context)!
-  //       .translate('time_remaining')
-  //       .replaceAll('{x}', hours.toString())
-  //       .replaceAll('{y}', minutes.toString())
-  //       .replaceAll('{z}', seconds.toString());
-  // }
-
   String formatTime(int totalSeconds, BuildContext context) {
     if (totalSeconds <= 0) {
       return AppLocalizations.of(context)!.translate('zero_seconds');
@@ -636,34 +622,6 @@ class WalletService extends ChangeNotifier {
     // Filter out empty parts and join with commas
     return parts.where((p) => p.isNotEmpty).join(', ');
   }
-
-  // Future<List<dynamic>> getUtxos(String address) async {
-  //   final url = '$baseUrl/address/$address/utxo';
-  //   List<dynamic> utxos = [];
-
-  //   print('[DEBUG] Fetching UTXOs for address: $address');
-  //   print('[DEBUG] Constructed URL: $url');
-
-  //   try {
-  //     final response = await http.get(Uri.parse(url));
-  //     print('[DEBUG] HTTP GET response status: ${response.statusCode}');
-
-  //     if (response.statusCode == 200) {
-  //       utxos = json.decode(response.body);
-  //       print('[DEBUG] Decoded UTXOs: $utxos');
-  //     } else {
-  //       print(
-  //         '[ERROR] Failed to fetch UTXOs. HTTP status: ${response.statusCode}',
-  //       );
-  //       print('[ERROR] Response body: ${response.body}');
-  //     }
-
-  //     return utxos;
-  //   } catch (e) {
-  //     print('[EXCEPTION] Error fetching UTXOs: $e');
-  //     return utxos;
-  //   }
-  // }
 
   Future<List<dynamic>> getUtxos() async {
     List<dynamic> finalUtxos = [];
@@ -718,16 +676,15 @@ class WalletService extends ChangeNotifier {
 
     final requiredAmount = double.tryParse(amount) ?? 0.0;
 
-    debugPrint(
-        "[WalletService.checkCondition] → type=$type, timelock=$rawTimelock (norm=$timelock), "
-        "amount='$amount' ($requiredAmount), height=$currentHeight, utxos=${utxos.length}");
+    // print(
+    //     "[WalletService.checkCondition] → type=$type, timelock=$rawTimelock (norm=$timelock), "
+    //     "amount='$amount' ($requiredAmount), height=$currentHeight, utxos=${utxos.length}");
 
     // MULTISIG with no timelock: keep your original short-circuit
     final isMultisigNoTimelock =
         type.contains('MULTISIG') && rawTimelock == null;
     if (isMultisigNoTimelock) {
-      debugPrint(
-          "[WalletService.checkCondition] MULTISIG (no timelock) → TRUE");
+      // print("[WalletService.checkCondition] MULTISIG (no timelock) → TRUE");
       return true;
     }
 
@@ -741,13 +698,13 @@ class WalletService extends ChangeNotifier {
     if (isAbsolute) {
       // CLTV: path is unlocked iff chain height reached/passed absolute height
       final pathUnlocked = (timelock == 0) || (currentHeight >= timelock);
-      debugPrint(
-          "[WalletService.checkCondition] ABSOLUTE (AFTER height=$timelock) → "
-          "currentHeight($currentHeight) >= timelock($timelock)? $pathUnlocked");
+      // print(
+      //     "[WalletService.checkCondition] ABSOLUTE (AFTER height=$timelock) → "
+      //     "currentHeight($currentHeight) >= timelock($timelock)? $pathUnlocked");
 
       if (!pathUnlocked) {
-        debugPrint(
-            "[WalletService.checkCondition] REASON: absolute height not reached.");
+        // print(
+        //     "[WalletService.checkCondition] REASON: absolute height not reached.");
         return false;
       }
 
@@ -756,8 +713,8 @@ class WalletService extends ChangeNotifier {
         final utxoValueRaw = utxos[i]['value'] ?? 0.0;
         final v = double.tryParse(utxoValueRaw.toString()) ?? 0.0;
         totalSpendable += v;
-        debugPrint(
-            "[WalletService.checkCondition]   ABS add UTXO[$i] value=$v → total=$totalSpendable");
+        // print(
+        //     "[WalletService.checkCondition]   ABS add UTXO[$i] value=$v → total=$totalSpendable");
       }
     } else if (isRelative) {
       // CSV: per-UTXO confirmations must reach 'timelock'
@@ -773,19 +730,19 @@ class WalletService extends ChangeNotifier {
         final spendable =
             (timelock == 0) ? true : (hasHeight && confirmations >= timelock);
 
-        debugPrint("[WalletService.checkCondition] RELATIVE UTXO[$i] "
-            "bh=$blockHeight, conf=$confirmations, need=$timelock → spendable=$spendable, value=$v");
+        // print("[WalletService.checkCondition] RELATIVE UTXO[$i] "
+        //     "bh=$blockHeight, conf=$confirmations, need=$timelock → spendable=$spendable, value=$v");
 
         if (spendable) {
           totalSpendable += v;
-          debugPrint(
-              "[WalletService.checkCondition]   CSV add → total=$totalSpendable");
+          // print(
+          //     "[WalletService.checkCondition]   CSV add → total=$totalSpendable");
         }
       }
     } else {
       // Fallback (unknown type): keep old conservative per-UTXO rule
-      debugPrint(
-          "[WalletService.checkCondition] Unknown type → fallback CSV-style per-UTXO check");
+      // print(
+      //     "[WalletService.checkCondition] Unknown type → fallback CSV-style per-UTXO check");
       for (var i = 0; i < utxos.length; i++) {
         final status =
             (utxos[i]['status'] is Map) ? utxos[i]['status'] as Map : const {};
@@ -795,9 +752,9 @@ class WalletService extends ChangeNotifier {
 
         final spendable =
             (timelock == 0) || (blockHeight + timelock <= currentHeight);
-        debugPrint(
-            "[WalletService.checkCondition] FALLBACK UTXO[$i] bh=$blockHeight, "
-            "bh+timelock=${blockHeight + timelock} <= $currentHeight ? $spendable, value=$v");
+        // print(
+        //     "[WalletService.checkCondition] FALLBACK UTXO[$i] bh=$blockHeight, "
+        //     "bh+timelock=${blockHeight + timelock} <= $currentHeight ? $spendable, value=$v");
         if (spendable) {
           totalSpendable += v;
         }
@@ -805,12 +762,12 @@ class WalletService extends ChangeNotifier {
     }
 
     final decision = totalSpendable >= requiredAmount;
-    debugPrint("[WalletService.checkCondition] totalSpendable=$totalSpendable "
-        "vs required=$requiredAmount → DECISION=$decision");
-    if (!decision) {
-      debugPrint(
-          "[WalletService.checkCondition] REASON: insufficient spendable for chosen path.");
-    }
+    // print("[WalletService.checkCondition] totalSpendable=$totalSpendable "
+    //     "vs required=$requiredAmount → DECISION=$decision");
+    // if (!decision) {
+    //   print(
+    //       "[WalletService.checkCondition] REASON: insufficient spendable for chosen path.");
+    // }
     return decision;
   }
 
@@ -1656,33 +1613,29 @@ class WalletService extends ChangeNotifier {
     return signingFingerprints.toSet().toList();
   }
 
-  ScriptHints _scanScriptHexForHints(String? hex) {
-    if (hex == null || hex.isEmpty) {
-      return const ScriptHints(hasCLTV: false, hasCSV: false, hasMS: false);
-    }
+  /// Classify a PSBT input as RELATIVETIMELOCK, ABSOLUTETIMELOCK, MULTISIG, or UNKNOWN.
+  String classifySpendingPath(Map<String, dynamic> psbtInput) {
+    final ws = psbtInput['witness_script'] as String? ?? "";
+    final seq = psbtInput['sequence'] as int?;
+    bool hasCSV = ws.toLowerCase().contains("b2") ||
+        ws.toLowerCase().contains("checksequenceverify");
+    bool hasCLTV = ws.toLowerCase().contains("b1") ||
+        ws.toLowerCase().contains("checklocktimeverify");
+    bool hasMS = ws.toLowerCase().contains("ae") ||
+        ws.toLowerCase().contains("checkmultisig");
 
-    bool has(int opcode) =>
-        hex.toLowerCase().contains(opcode.toRadixString(16).padLeft(2, '0'));
-    // Note: this is a heuristic; a proper script parser is ideal.
-    final hasCLTV = has(0xB1);
-    final hasCSV = has(0xB2);
-    final hasMS = has(0xAE);
-    return ScriptHints(hasCLTV: hasCLTV, hasCSV: hasCSV, hasMS: hasMS);
-  }
+    // Also use sequence hint for relative timelocks
+    final likelyRelative = (seq != null && seq < 0xFFFFFFFE);
 
-  /// Returns: 'ABSOLUTETIMELOCK', 'RELATIVETIMELOCK', or 'MULTISIG'
-  String _classifyPathFromInput(Map<String, dynamic> psbtInput) {
-    final ws = psbtInput['witness_script'] as String?;
-    final hints = _scanScriptHexForHints(ws);
+    if (hasCSV || likelyRelative) return "RELATIVETIMELOCK";
+    if (hasCLTV) return "ABSOLUTETIMELOCK";
+    if (hasMS) return "MULTISIG";
 
-    if (hints.hasCLTV) return 'ABSOLUTETIMELOCK';
-    if (hints.hasCSV) return 'RELATIVETIMELOCK';
-    if (hints.hasMS) return 'MULTISIG';
-    // Fallback (unknown script): assume multisig if partial_sigs exist, else unknown
-    if ((psbtInput['partial_sigs'] as Map?)?.isNotEmpty == true) {
-      return 'MULTISIG';
-    }
-    return 'UNKNOWN';
+    // Fallback: if partial sigs exist, assume multisig
+    final partial = psbtInput['partial_sigs'];
+    if (partial is Map && partial.isNotEmpty) return "MULTISIG";
+
+    return "UNKNOWN";
   }
 
   Map<String, dynamic> extractSpendingPathFromPsbt(
@@ -1692,26 +1645,40 @@ class WalletService extends ChangeNotifier {
     final serialized = psbt.jsonSerialize();
     final psbtDecoded = jsonDecode(serialized) as Map<String, dynamic>;
 
+    // printInChunks("[extractSpendingPathFromPsbt] serialized=$serialized");
+    // print("");
+    // print("[extractSpendingPathFromPsbt] decoded keys=${psbtDecoded.keys}");
+
     final utx = psbtDecoded['unsigned_tx'] as Map?;
     final lockTime = (utx?['lock_time'] as int?) ?? 0;
+    // print("[extractSpendingPathFromPsbt] lock_time=$lockTime");
 
     final psbtInputs =
         (psbtDecoded['inputs'] as List?)?.cast<Map<String, dynamic>>() ??
             const [];
 
-    // Classify by scripts (use the first PSBT input; usually same policy for all inputs)
     if (psbtInputs.isEmpty) {
       throw Exception("No PSBT inputs found.");
     }
-    final pathType = _classifyPathFromInput(psbtInputs.first);
 
-    debugPrint(
-        "[extractSpendingPathFromPsbt] lock_time=$lockTime, pathType=$pathType");
+    // print(
+    //     "[extractSpendingPathFromPsbt] numInputs=${psbtInputs.length}, firstInput=${psbtInputs.first}");
+
+    final pathType = classifySpendingPath(psbtInputs.first);
+    // print("[extractSpendingPathFromPsbt] classified pathType=$pathType");
+
+    // Dump available spendingPaths for clarity
+    for (var i = 0; i < spendingPaths.length; i++) {
+      // print(
+      //     "[extractSpendingPathFromPsbt] spendingPaths[$i] = ${spendingPaths[i]}");
+    }
+
+    Map<String, dynamic> matched;
 
     switch (pathType) {
       case 'ABSOLUTETIMELOCK':
-        // Match by type first; optionally use lock_time to match a specific timelock if present
-        return spendingPaths.firstWhere(
+        // print("[extractSpendingPathFromPsbt] case=ABSOLUTETIMELOCK");
+        matched = spendingPaths.firstWhere(
           (p) =>
               (p['type'] as String).contains('ABSOLUTETIMELOCK') &&
               (p['timelock'] == null || p['timelock'] == lockTime),
@@ -1719,26 +1686,33 @@ class WalletService extends ChangeNotifier {
             (p) => (p['type'] as String).contains('ABSOLUTETIMELOCK'),
           ),
         );
+        break;
 
       case 'RELATIVETIMELOCK':
-        // For CSV, the relative value is pushed in the script; extracting the exact number
-        // requires full scriptnum parsing. If you store `timelock` in spendingPaths, just match by type.
-        return spendingPaths.firstWhere(
+        // print("[extractSpendingPathFromPsbt] case=RELATIVETIMELOCK");
+        matched = spendingPaths.firstWhere(
           (p) => (p['type'] as String).contains('RELATIVETIMELOCK'),
           orElse: () =>
               throw Exception("No matching relative timelock path found."),
         );
+        break;
 
       case 'MULTISIG':
-        return spendingPaths.firstWhere(
+        // print("[extractSpendingPathFromPsbt] case=MULTISIG");
+        matched = spendingPaths.firstWhere(
           (p) => (p['type'] as String).contains('MULTISIG'),
           orElse: () => throw Exception("No matching multisig path found."),
         );
+        break;
 
       default:
+        // print("[extractSpendingPathFromPsbt] case=UNKNOWN");
         throw Exception(
             "Unknown/unsupported script path; cannot match spending path.");
     }
+
+    // print("[extractSpendingPathFromPsbt] matched=$matched");
+    return matched;
   }
 
   List<String> getAliasesFromFingerprint(
@@ -1800,6 +1774,22 @@ class WalletService extends ChangeNotifier {
     return signersAliases;
   }
 
+  bool _isImmediateMultisig(Map<String, dynamic>? p) {
+    if (p == null) return false;
+    final type = (p['type'] as String?) ?? '';
+    final hasTimelock = p['timelock'] != null;
+    final threshold = p['threshold'] is int ? p['threshold'] as int : null;
+    final looksMulti =
+        type.contains('MULTISIG') || (threshold != null && threshold > 1);
+    return looksMulti && !hasTimelock;
+  }
+
+  Map<String, dynamic>? _pathAt(List paths, int i) {
+    if (i < 0 || i >= paths.length) return null;
+    final v = paths[i];
+    return (v is Map<String, dynamic>) ? v : null;
+  }
+
   // Method to create a PSBT for a multisig transaction, this psbt is signed by the first user
   Future<String?> createPartialTx(
     String descriptor,
@@ -1840,7 +1830,12 @@ class WalletService extends ChangeNotifier {
     final String targetFingerprint = match!.group(1)!.split('/')[0];
     // print("Fingerprint: $targetFingerprint");
 
-    descriptor = (chosenPath == 0)
+    // print(spendingPaths);
+
+    // Usage
+    final correctPath = _pathAt(spendingPaths!, chosenPath!);
+
+    descriptor = _isImmediateMultisig(correctPath)
         ? replacePubKeyWithPrivKeyMultiSig(
             descriptor,
             receivingPublicKey.toString(),
@@ -1886,8 +1881,6 @@ class WalletService extends ChangeNotifier {
       // print("Available UTXOs: ${utxos.confirmed}");
 
       if (!isSendAllBalance) {
-        // totalSpending = amount + BigInt.from(feeRate);
-
         totalSpending = amount;
         // print("Total Spending: $totalSpending");
         // print("Confirmed Utxos: ${utxos.spendable}");
@@ -1948,7 +1941,7 @@ class WalletService extends ChangeNotifier {
 
       // print(path);
 
-      if (chosenPath == 0) {
+      if (_isImmediateMultisig(correctPath)) {
         // First Path: Direct MULTISIG
         multiSigPath = {
           for (int i = 0; i < path[0]["ids"].length - 1; i++)
@@ -1958,7 +1951,7 @@ class WalletService extends ChangeNotifier {
         // print("Generated multiSigPath: $multiSigPath");
       } else {
         timeLockPath = {
-          for (int i = 0; i < path[chosenPath!]["ids"].length - 1; i++)
+          for (int i = 0; i < path[chosenPath]["ids"].length - 1; i++)
             path[chosenPath]["ids"][i]: Uint32List.fromList(
               i ==
                       path[chosenPath]["ids"].length -
@@ -1980,8 +1973,8 @@ class WalletService extends ChangeNotifier {
         // print(internalChangeAddress.address.asString());
         // print('AmountSendAll: ${amount.toInt()}');
         try {
-          if (chosenPath == 0) {
-            print('multisig');
+          if (_isImmediateMultisig(correctPath)) {
+            // print('multisig');
             await txBuilder
                 .addRecipient(recipientScript, amount)
                 .policyPath(KeychainKind.internalChain, multiSigPath!)
@@ -1989,8 +1982,8 @@ class WalletService extends ChangeNotifier {
                 .feeRate(feeRate)
                 .finish(wallet);
           } else {
-            print('timelock');
-            print(timeLockPath);
+            // print('timelock');
+            // print(timeLockPath);
             await txBuilder
                 .addRecipient(recipientScript, amount)
                 .policyPath(KeychainKind.internalChain, timeLockPath!)
@@ -2012,13 +2005,13 @@ class WalletService extends ChangeNotifier {
 
           List<dynamic> spendableUtxos = [];
 
-          if (chosenPath == 0) {
+          if (_isImmediateMultisig(correctPath)) {
             spendableUtxos = utxos;
           } else {
             // print(chosenPath);
             // print(spendingPaths);
 
-            final timelock = spendingPaths![chosenPath!]['timelock'];
+            final timelock = spendingPaths[chosenPath]['timelock'];
             // print('Timelock value: $timelock');
 
             int currentHeight = await fetchCurrentBlockHeight();
@@ -2099,14 +2092,14 @@ class WalletService extends ChangeNotifier {
 
       // spendingPaths = extractAllPaths(policy);
 
-      if (chosenPath == 0) {
+      if (_isImmediateMultisig(correctPath)) {
         spendableOutpoints = utxos
             .map((utxo) => OutPoint(txid: utxo['txid'], vout: utxo['vout']))
             .toList();
       } else {
         // print(spendingPaths);
 
-        final timelock = spendingPaths![chosenPath!]['timelock'];
+        final timelock = spendingPaths[chosenPath]['timelock'];
         // print('Timelock value: $timelock');
 
         final type = spendingPaths[chosenPath]['type'].toString().toLowerCase();
@@ -2142,8 +2135,8 @@ class WalletService extends ChangeNotifier {
             .toList();
       }
 
-      if (chosenPath == 0) {
-        print('MultiSig Builder');
+      if (_isImmediateMultisig(correctPath)) {
+        // print('MultiSig Builder');
 
         // for (var spendableOutpoint in spendableOutpoints) {
         //   print('Spendable Outputs: ${spendableOutpoint.txid}');
@@ -2215,7 +2208,7 @@ class WalletService extends ChangeNotifier {
 
         // print('Transaction Built');
       } else {
-        print('TimeLock Builder');
+        // print('TimeLock Builder');
         // for (var spendableOutpoint in spendableOutpoints) {
         //   print('Spendable Outputs: ${spendableOutpoint.txid}');
         // }
@@ -2332,7 +2325,9 @@ class WalletService extends ChangeNotifier {
     final String targetFingerprint = match!.group(1)!.split('/')[0];
     // print("Fingerprint: $targetFingerprint");
 
-    descriptor = (chosenPath == 0)
+    final correctPath = _pathAt(spendingPaths!, chosenPath!);
+
+    descriptor = (_isImmediateMultisig(correctPath))
         ? replacePubKeyWithPrivKeyMultiSig(
             descriptor,
             receivingPublicKey.toString(),
@@ -2440,7 +2435,7 @@ class WalletService extends ChangeNotifier {
 
       // print(path);
 
-      if (chosenPath == 0) {
+      if (_isImmediateMultisig(correctPath)) {
         // First Path: Direct MULTISIG
         multiSigPath = {
           for (int i = 0; i < path[0]["ids"].length - 1; i++)
@@ -2450,7 +2445,7 @@ class WalletService extends ChangeNotifier {
         // print("Generated multiSigPath: $multiSigPath");
       } else {
         timeLockPath = {
-          for (int i = 0; i < path[chosenPath!]["ids"].length - 1; i++)
+          for (int i = 0; i < path[chosenPath]["ids"].length - 1; i++)
             path[chosenPath]["ids"][i]: Uint32List.fromList(
               i ==
                       path[chosenPath]["ids"].length -
@@ -2472,7 +2467,7 @@ class WalletService extends ChangeNotifier {
         // print(internalChangeAddress.address.asString());
         // print('AmountSendAll: ${amount.toInt()}');
         try {
-          if (chosenPath == 0) {
+          if (_isImmediateMultisig(correctPath)) {
             await txBuilder
                 .addRecipient(recipientScript, amount)
                 .policyPath(KeychainKind.internalChain, multiSigPath!)
@@ -2500,7 +2495,7 @@ class WalletService extends ChangeNotifier {
 
           List<dynamic> spendableUtxos = [];
 
-          if (chosenPath == 0) {
+          if (_isImmediateMultisig(correctPath)) {
             spendableUtxos = utxos;
           } else {
             // print(chosenPath);
@@ -2573,19 +2568,19 @@ class WalletService extends ChangeNotifier {
 
       // spendingPaths = extractAllPaths(policy);
 
-      if (chosenPath == 0) {
+      if (_isImmediateMultisig(correctPath)) {
         spendableOutpoints = utxos
             .map((utxo) => OutPoint(txid: utxo['txid'], vout: utxo['vout']))
             .toList();
       } else {
         // print(spendingPaths);
 
-        final timelock = spendingPaths![chosenPath!]['timelock'];
+        final timelock = spendingPaths[chosenPath]['timelock'];
         // print('Timelock value: $timelock');
 
         final type = spendingPaths[chosenPath]['type'].toString().toLowerCase();
 
-        print('Type: $type');
+        // print('Type: $type');
 
         int currentHeight = await fetchCurrentBlockHeight();
         // print('Current block height: $currentHeight');
@@ -2618,7 +2613,7 @@ class WalletService extends ChangeNotifier {
             .toList();
       }
 
-      if (chosenPath == 0) {
+      if (_isImmediateMultisig(correctPath)) {
         // print('MultiSig Builder');
 
         // for (var spendableOutpoint in spendableOutpoints) {
@@ -2750,6 +2745,7 @@ class WalletService extends ChangeNotifier {
     }
   }
 
+  // TODO: Broadcast Backup TX
   // Future<String?> broadcastBackupTx(String psbtString) async {
   //   await blockchainInit();
 
@@ -2776,6 +2772,7 @@ class WalletService extends ChangeNotifier {
     String descriptor,
     String mnemonic,
     int? chosenPath,
+    List<Map<String, dynamic>>? spendingPaths,
   ) async {
     Mnemonic trueMnemonic = await Mnemonic.fromString(mnemonic);
 
@@ -2791,7 +2788,9 @@ class WalletService extends ChangeNotifier {
       trueMnemonic,
     );
 
-    descriptor = (chosenPath == 0)
+    final correctPath = _pathAt(spendingPaths!, chosenPath!);
+
+    descriptor = (_isImmediateMultisig(correctPath))
         ? replacePubKeyWithPrivKeyMultiSig(
             descriptor,
             receivingPublicKey.toString(),
@@ -2820,7 +2819,7 @@ class WalletService extends ChangeNotifier {
     // Convert the psbt String to a PartiallySignedTransaction
     final psbt = await PartiallySignedTransaction.fromString(psbtString);
 
-    printInChunks('Transaction Not Signed: $psbt');
+    // printInChunks('Transaction Not Signed: $psbt');
 
     try {
       final signed = wallet.sign(
@@ -2834,7 +2833,7 @@ class WalletService extends ChangeNotifier {
           allowGrinding: true,
         ),
       );
-      printInChunks('Transaction Signed: $psbt');
+      // printInChunks('Transaction Signed: $psbt');
 
       if (signed) {
         // print('Signing returned true');
@@ -2935,12 +2934,4 @@ class WalletService extends ChangeNotifier {
 // Used to generate a random SharedWallet descriptorName
 extension StringExtension on String {
   String capitalize() => this[0].toUpperCase() + substring(1);
-}
-
-class ScriptHints {
-  final bool hasCLTV; // OP_CHECKLOCKTIMEVERIFY (0xB1)
-  final bool hasCSV; // OP_CHECKSEQUENCEVERIFY (0xB2)
-  final bool hasMS; // OP_CHECKMULTISIG (0xAE)
-  const ScriptHints(
-      {required this.hasCLTV, required this.hasCSV, required this.hasMS});
 }

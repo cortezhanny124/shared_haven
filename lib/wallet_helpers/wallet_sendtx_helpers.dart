@@ -9,6 +9,7 @@ import 'package:flutter_wallet/utilities/inkwell_button.dart';
 import 'package:flutter_wallet/utilities/app_colors.dart';
 import 'package:flutter_wallet/wallet_utility_helpers/spending_path_details_card.dart';
 import 'package:flutter_wallet/wallet_utility_helpers/spending_path_dropdown.dart';
+import 'package:flutter_wallet/widget_helpers/custom_bottom_sheet.dart';
 import 'package:flutter_wallet/widget_helpers/dialog_helper.dart';
 import 'package:flutter_wallet/widget_helpers/fee_selector.dart';
 import 'package:flutter_wallet/widget_helpers/snackbar_helper.dart';
@@ -109,7 +110,7 @@ class WalletSendtxHelpers {
       );
     }
 
-    await DialogHelper.buildCustomStatefulDialog(
+    await CustomBottomSheet.buildCustomStatefulBottomSheet(
       context: rootContext,
       titleKey: isCreating ? 'sending_menu' : 'signing_menu',
       showAssistant: true,
@@ -374,7 +375,7 @@ class WalletSendtxHelpers {
         }
 
         // Step 3: Ask for confirmation before signing
-        userConfirmed = await DialogHelper.buildCustomDialog(
+        userConfirmed = await CustomBottomSheet.buildCustomBottomSheet(
           context: rootContext,
           titleKey: 'confirm_transaction',
           content: const SizedBox(),
@@ -414,6 +415,7 @@ class WalletSendtxHelpers {
           descriptor.toString(),
           mnemonic,
           selectedIndex,
+          spendingPaths,
         );
 
         Navigator.of(rootContext, rootNavigator: true).pop();
@@ -459,6 +461,7 @@ class WalletSendtxHelpers {
         psbt,
         extractedData,
       );
+      print('banana');
 
       selectedIndex = extractedData.indexOf(selectedPath!);
 
@@ -568,7 +571,7 @@ class WalletSendtxHelpers {
     TextEditingController psbt = TextEditingController();
     psbt.text = result;
 
-    return DialogHelper.buildCustomDialog(
+    return CustomBottomSheet.buildCustomBottomSheet(
       context: rootContext,
       titleKey: 'psbt_created',
       content: ConstrainedBox(
@@ -688,7 +691,7 @@ class WalletSendtxHelpers {
     TextEditingController hex = TextEditingController();
     hex.text = result;
 
-    return DialogHelper.buildCustomDialog(
+    return CustomBottomSheet.buildCustomBottomSheet(
       context: rootContext,
       titleKey: 'Hex created',
       content: ConstrainedBox(
