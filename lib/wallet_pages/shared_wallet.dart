@@ -15,7 +15,7 @@ import 'package:flutter_wallet/wallet_helpers/wallet_buttons_helpers.dart';
 import 'package:flutter_wallet/wallet_helpers/wallet_spending_path_helpers.dart';
 import 'package:flutter_wallet/wallet_helpers/wallet_ui_helpers.dart';
 import 'package:flutter_wallet/widget_helpers/custom_bottom_sheet.dart';
-import 'package:flutter_wallet/widget_helpers/snackbar_helper.dart';
+import 'package:flutter_wallet/widget_helpers/notification_helper.dart';
 import 'package:hive/hive.dart';
 import 'package:provider/provider.dart';
 
@@ -129,6 +129,7 @@ class SharedWalletState extends State<SharedWallet> {
   bool isWalletInitialized = false;
   bool showInSatoshis = true; // Toggle display state
   bool _isRefreshing = false;
+  bool _isSyncing = false;
 
   // Wallet and Transaction Data
   String address = '';
@@ -433,26 +434,6 @@ class SharedWalletState extends State<SharedWallet> {
     }
   }
 
-  Future<void> _fetchCurrentBlockHeight() async {
-    try {
-      int currentHeight = await walletService.fetchCurrentBlockHeight();
-      // print('currentHeight: $currentHeight');
-
-      String blockTimestamp =
-          await walletService.fetchBlockTimestamp(currentHeight);
-
-      // print('blockTimestamp: $blockTimestamp');
-
-      setState(() {
-        _currentHeight = currentHeight;
-        _timeStamp = blockTimestamp;
-      });
-    } catch (e) {
-      print('Syncing error: $e'); // Debugging log
-      throw Exception('Syncing error: $e'); // Properly throw an error
-    }
-  }
-
   Future<void> _checkInternetAndSync() async {
     final List<ConnectivityResult> connectivityResult =
         await (Connectivity().checkConnectivity());
@@ -504,66 +485,75 @@ class SharedWalletState extends State<SharedWallet> {
   }
 
   Future<void> _syncWallet() async {
-    setState(() {
-      _lastRefreshed = DateTime.now();
-    });
+    if (_isSyncing) return; // guard against overlap
 
-    _descriptor = widget.descriptor;
+    setState(() => _isSyncing = true);
+    try {
+      // Read-only props/state to locals
+      final descriptor = widget.descriptor;
+      final w = wallet;
 
-    await walletService.syncWallet(wallet);
+      // 1) Do all async work first
+      await walletService.syncWallet(w);
 
-    await _fetchCurrentBlockHeight();
+      final currentHeight = await walletService.fetchCurrentBlockHeight();
+      final blockTimestamp =
+          await walletService.fetchBlockTimestamp(currentHeight);
 
-    setState(() {
-      if (address.isEmpty) {
-        address = wallet
+      // Resolve address locally
+      String nextAddress = address;
+      if (nextAddress.isEmpty) {
+        nextAddress = w
             .getAddress(addressIndex: AddressIndex.peek(index: 0))
             .address
             .asString();
       }
-    });
 
-    Map<String, int> balance = await walletService.getBitcoinBalance(address);
+      final balance = await walletService.getBitcoinBalance(nextAddress);
 
-    setState(() {
-      avBalance = balance['confirmedBalance']!;
-      ledBalance = balance['pendingBalance']!;
-    });
+      List<Map<String, dynamic>> transactions =
+          await walletService.getTransactions(nextAddress);
+      transactions = walletService.sortTransactionsByConfirmations(
+        transactions,
+        currentHeight,
+      );
 
-    // Fetch and set the transactions
-    List<Map<String, dynamic>> transactions =
-        await walletService.getTransactions(address);
+      final walletUtxos = await walletService.getUtxos();
 
-    transactions = walletService.sortTransactionsByConfirmations(
-      transactions,
-      _currentHeight,
-    );
+      bool isAddressUsed =
+          transactions.any((tx) => isAddressinTransaction(tx, address));
+      if (isAddressUsed && !myAddresses.contains(address)) {
+        myAddresses.add(address);
+      }
 
-    setState(() {
-      _transactions = transactions;
-    });
+      // 2) Bail out safely if disposed
+      if (!mounted) return;
 
-    // Fetch all transactions for the wallet
-    final walletUtxos = await walletService.getUtxos();
+      // 3) Single, batched setState
+      setState(() {
+        _descriptor = descriptor;
+        _currentHeight = currentHeight;
+        _timeStamp = blockTimestamp;
+        address = nextAddress;
+        avBalance = balance['confirmedBalance'] ?? 0;
+        ledBalance = balance['pendingBalance'] ?? 0;
+        _transactions = transactions;
+        utxos = walletUtxos;
+        _lastRefreshed = DateTime.now();
+        _isSyncing = false;
+      });
 
-    setState(() {
-      utxos = walletUtxos;
-    });
+      // 4) Persist after UI update (or before, if you prefer atomic success)
+      await walletService.saveLocalData(w, _lastRefreshed!, myAddresses);
+    } catch (e, stackTrace) {
+      debugPrint("Error during _syncWallet: $e");
+      debugPrint(stackTrace.toString());
 
-    bool isAddressUsed =
-        transactions.any((tx) => isAddressinTransaction(tx, address));
-
-    if (isAddressUsed && !myAddresses.contains(address)) {
-      myAddresses.add(address);
+      setState(() {
+        _isSyncing = false;
+      });
+      throw Exception("Sync Error: ${e.toString()}");
     }
-
-    // print('myaddresses: $myAddresses');
-
-    await walletService.saveLocalData(
-      wallet,
-      _lastRefreshed!,
-      myAddresses,
-    );
   }
 
   void _convertCurrency() async {
@@ -647,6 +637,7 @@ class SharedWalletState extends State<SharedWallet> {
       baseScaffoldKey: baseScaffoldKey,
       isRefreshing: _isRefreshing,
       myAddresses: myAddresses,
+      pubKeysAlias: widget.pubKeysAlias,
     );
 
     final spendingHelper = WalletSpendingPathHelpers(
@@ -740,7 +731,7 @@ class SharedWalletState extends State<SharedWallet> {
                   context,
                 );
               } catch (e) {
-                SnackBarHelper.showError(context, message: 'syncing_error');
+                NotificationHelper.showError(context, message: 'syncing_error');
               } finally {
                 // Ensure animation is visible for at least 500ms
                 await Future.delayed(Duration(milliseconds: 500));

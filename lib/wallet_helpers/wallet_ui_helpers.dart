@@ -12,13 +12,15 @@ import 'package:flutter_wallet/services/wallet_service.dart';
 import 'package:flutter_wallet/utilities/inkwell_button.dart';
 import 'package:flutter_wallet/widget_helpers/base_scaffold.dart';
 import 'package:flutter_wallet/widget_helpers/custom_bottom_sheet.dart';
-import 'package:flutter_wallet/widget_helpers/snackbar_helper.dart';
+import 'package:flutter_wallet/widget_helpers/notification_helper.dart';
 import 'package:flutter_wallet/wallet_helpers/wallet_security_helpers.dart';
 import 'package:flutter_wallet/wallet_helpers/wallet_transaction_helpers.dart';
 import 'package:lottie/lottie.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:flutter_wallet/utilities/app_colors.dart';
+import 'package:path_provider/path_provider.dart';
 
 class WalletUiHelpers {
   static bool isPubKeyVisible = false;
@@ -617,8 +619,10 @@ class WalletUiHelpers {
                 'descriptorName': descriptorName,
               });
 
+              // print(pubKeysAlias);
+
               // Request storage permission (required for Android 11 and below)
-              if (await Permission.storage.request().isGranted) {
+              if (await Permission.manageExternalStorage.isGranted) {
                 // Get default Downloads directory
                 final directory = Directory('/storage/emulated/0/Download');
                 if (!await directory.exists()) {
@@ -688,13 +692,13 @@ class WalletUiHelpers {
                 // Write JSON data to the file
                 await file.writeAsString(data);
 
-                SnackBarHelper.show(
+                NotificationHelper.show(
                   rootContext,
                   message:
                       '${AppLocalizations.of(rootContext)!.translate('file_saved')} ${directory.path}/$fileName',
                 );
               } else {
-                SnackBarHelper.showError(
+                NotificationHelper.showError(
                   rootContext,
                   message: AppLocalizations.of(rootContext)!
                       .translate('storage_permission_needed'),
@@ -704,8 +708,57 @@ class WalletUiHelpers {
             style: TextButton.styleFrom(
               foregroundColor: AppColors.cardTitle(context),
             ),
-            child: Text(AppLocalizations.of(rootContext)!
-                .translate('download_descriptor')),
+            child: Text(
+              AppLocalizations.of(rootContext)!
+                  .translate('download_descriptor'),
+            ),
+          ),
+        ),
+        Visibility(
+          visible: !isSingleWallet,
+          child: TextButton(
+            onPressed: () async {
+              try {
+                // Build the same JSON
+                final data = jsonEncode({
+                  'descriptor': descriptor,
+                  'publicKeysWithAlias': pubKeysAlias,
+                  'descriptorName': descriptorName,
+                });
+
+                // Write JSON to a temporary file
+                final tempDir = await getTemporaryDirectory();
+                final fileName = '$descriptorName.json';
+                final filePath = '${tempDir.path}/$fileName';
+                final file = File(filePath);
+                await file.writeAsString(data);
+
+                // Share with new API
+                await SharePlus.instance.share(
+                  ShareParams(
+                    files: [
+                      XFile(filePath,
+                          mimeType: 'application/json', name: fileName)
+                    ],
+                    subject: descriptorName, // optional
+                    text: AppLocalizations.of(rootContext)!.translate(
+                        'share_descriptor_message'), // optional helper text
+                  ),
+                );
+              } catch (e) {
+                NotificationHelper.showError(
+                  rootContext,
+                  message: AppLocalizations.of(rootContext)!
+                      .translate('share_failed'),
+                );
+              }
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.cardTitle(context),
+            ),
+            child: Text(
+              AppLocalizations.of(rootContext)!.translate('share_descriptor'),
+            ),
           ),
         ),
       ],
@@ -760,7 +813,7 @@ class WalletUiHelpers {
     // print('ConnectivityResult: $connectivityResult');
 
     if (connectivityResult.contains(ConnectivityResult.none)) {
-      SnackBarHelper.showError(
+      NotificationHelper.showError(
         context,
         message: AppLocalizations.of(context)!.translate('no_internet'),
       );
@@ -769,7 +822,7 @@ class WalletUiHelpers {
     }
 
     try {
-      SnackBarHelper.show(
+      NotificationHelper.show(
         context,
         message: AppLocalizations.of(context)!.translate('syncing_wallet'),
       );
@@ -805,21 +858,21 @@ class WalletUiHelpers {
 
       if (newBlockDetected || newTransactionDetected) {
         // print('syncing');
-        SnackBarHelper.show(context, message: syncMessage);
+        NotificationHelper.show(context, message: syncMessage);
 
         await syncWallet();
-        SnackBarHelper.show(
+        NotificationHelper.show(
           context,
           message: AppLocalizations.of(context)!.translate('syncing_complete'),
         );
       } else {
-        SnackBarHelper.show(context, message: syncMessage);
+        NotificationHelper.show(context, message: syncMessage);
       }
     } catch (e, stackTrace) {
       print('Sync error: $e');
       print('Stack trace: $stackTrace'); // Helps debug where the error occurs
 
-      SnackBarHelper.showError(
+      NotificationHelper.showError(
         context,
         message:
             "${AppLocalizations.of(context)!.translate('syncing_error')} ${e.toString()}",

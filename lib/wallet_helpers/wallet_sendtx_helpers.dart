@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:bdk_flutter/bdk_flutter.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_wallet/languages/app_localizations.dart';
 import 'package:flutter_wallet/services/utilities_service.dart';
@@ -12,7 +14,7 @@ import 'package:flutter_wallet/wallet_utility_helpers/spending_path_dropdown.dar
 import 'package:flutter_wallet/widget_helpers/custom_bottom_sheet.dart';
 import 'package:flutter_wallet/widget_helpers/dialog_helper.dart';
 import 'package:flutter_wallet/widget_helpers/fee_selector.dart';
-import 'package:flutter_wallet/widget_helpers/snackbar_helper.dart';
+import 'package:flutter_wallet/widget_helpers/notification_helper.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:intl/intl.dart';
@@ -44,6 +46,7 @@ class WalletSendtxHelpers {
 
   bool isFirstTap = true;
   bool showPSBT = false;
+  bool isPsbtTextField = false;
 
   Map<String, dynamic>? selectedPath;
   int? selectedIndex;
@@ -98,6 +101,7 @@ class WalletSendtxHelpers {
       selectedIndex = index ?? 0;
     }
 
+    // print(extractedData);
     // print('SelectedIndex: $selectedIndex');
     // print('SelectedPath: $selectedPath');
 
@@ -123,6 +127,7 @@ class WalletSendtxHelpers {
           extractedData: extractedData,
           customFeeRate: customFeeRate,
           isFromSpendingPath: isFromSpendingPath,
+          address: address,
         );
       },
       actionsBuilder: (setDialogState) {
@@ -165,7 +170,7 @@ class WalletSendtxHelpers {
 
       print(stackTrace);
 
-      SnackBarHelper.showError(rootContext, message: e.toString());
+      NotificationHelper.showError(rootContext, message: e.toString());
     }
   }
 
@@ -227,6 +232,7 @@ class WalletSendtxHelpers {
     required List<Map<String, dynamic>> extractedData,
     required double? customFeeRate,
     required bool isFromSpendingPath,
+    required String address,
   }) {
     final rootContext = context;
 
@@ -236,6 +242,7 @@ class WalletSendtxHelpers {
         if (!isCreating)
           _buildPsbtField(
             setDialogState,
+            address,
           ),
         if (isCreating || showPSBT) _buildRecipientField(),
         if (signersList!.isNotEmpty) _buildSignersList(),
@@ -247,7 +254,9 @@ class WalletSendtxHelpers {
             pubKeysAlias: pubKeysAlias,
             rootContext: rootContext,
           ),
-        if (isCreating && !isSingleWallet && !isFromSpendingPath)
+        if (isPsbtTextField) const SizedBox(height: 16),
+        if ((isCreating && !isSingleWallet && !isFromSpendingPath) ||
+            isPsbtTextField)
           SpendingPathDropdown(
             selectedPath: selectedPath,
             extractedData: extractedData,
@@ -358,13 +367,15 @@ class WalletSendtxHelpers {
 
         Navigator.of(rootContext, rootNavigator: true).pop();
 
-        SnackBarHelper.show(
+        NotificationHelper.show(
           rootContext,
           message: AppLocalizations.of(rootContext)!
               .translate('transaction_created'),
         );
       } else {
         if (isFirstTap) {
+          // print(descriptor);
+
           await _decodePsbt(
             extractedData,
             setDialogState,
@@ -414,7 +425,8 @@ class WalletSendtxHelpers {
           psbtController!.text,
           descriptor.toString(),
           mnemonic,
-          selectedIndex,
+          selectedPath!,
+          // selectedIndex,
           spendingPaths,
         );
 
@@ -422,7 +434,7 @@ class WalletSendtxHelpers {
 
         if (result != null) {
           await showPSBTDialog(result, rootContext);
-          SnackBarHelper.show(
+          NotificationHelper.show(
             rootContext,
             message: AppLocalizations.of(rootContext)!
                 .translate('transaction_signed'),
@@ -430,7 +442,7 @@ class WalletSendtxHelpers {
         } else {
           Navigator.of(rootContext, rootNavigator: true).pop();
 
-          SnackBarHelper.show(
+          NotificationHelper.show(
             rootContext,
             message: AppLocalizations.of(rootContext)!
                 .translate('transaction_broadcast'),
@@ -443,27 +455,30 @@ class WalletSendtxHelpers {
       print(stack);
       print(e);
 
-      SnackBarHelper.showError(rootContext, message: e.toString());
+      NotificationHelper.showError(rootContext, message: e.toString());
     }
   }
 
   Future<void> _decodePsbt(
-    List<Map<String, dynamic>> extractedData,
+    List<Map<String, dynamic>>? extractedData,
     void Function(void Function()) setDialogState,
-    String address,
-  ) async {
+    String address, {
+    Map<String, dynamic>? path,
+    bool flagField = true,
+  }) async {
     try {
       final psbt =
           await PartiallySignedTransaction.fromString(psbtController!.text);
       final tx = psbt.extractTx();
 
-      selectedPath = walletService.extractSpendingPathFromPsbt(
-        psbt,
-        extractedData,
-      );
-      print('banana');
+      // if (extractedData != null) {
+      //   selectedPath = walletService.extractSpendingPathFromPsbt(
+      //     psbt,
+      //     extractedData,
+      //   );
 
-      selectedIndex = extractedData.indexOf(selectedPath!);
+      //   selectedIndex = extractedData.indexOf(selectedPath!);
+      // }
 
       final signers = walletService.extractSignersFromPsbt(psbt);
       final aliases =
@@ -482,14 +497,18 @@ class WalletSendtxHelpers {
       }
 
       setDialogState(() {
+        selectedPath = path;
         signingAmountController!.text = totalSpent.toString();
         signersList = aliases;
         recipientController.text = receiverAddress.toString();
         isFirstTap = false;
         showPSBT = true;
+        if (flagField) {
+          isPsbtTextField = true;
+        }
       });
     } catch (e) {
-      SnackBarHelper.showError(
+      NotificationHelper.showError(
         context,
         message: AppLocalizations.of(context)!.translate('invalid_psbt'),
       );
@@ -568,8 +587,8 @@ class WalletSendtxHelpers {
   ) async {
     final rootContext = context;
 
-    TextEditingController psbt = TextEditingController();
-    psbt.text = result;
+    // TextEditingController psbt = TextEditingController();
+    // psbt.text = result;
 
     return CustomBottomSheet.buildCustomBottomSheet(
       context: rootContext,
@@ -598,19 +617,13 @@ class WalletSendtxHelpers {
             // Copy Button
             InkwellButton(
               onTap: () {
+                final psbtString = jsonDecode(result)['psbt'];
+
                 UtilitiesService.copyToClipboard(
                   context: rootContext,
-                  text: result,
+                  text: psbtString,
                   messageKey: 'psbt_clipboard',
                 );
-
-                // if (Navigator.of(rootContext).canPop()) {
-                //   Navigator.of(rootContext, rootNavigator: true).pop();
-                // }
-                // if (Navigator.of(rootContext).canPop()) {
-                //   Navigator.of(rootContext, rootNavigator: true).pop();
-                // }
-                // Navigator.of(rootContext, rootNavigator: true).pop();
               },
               label: AppLocalizations.of(rootContext)!.translate('copy'),
               backgroundColor: AppColors.text(context),
@@ -622,41 +635,91 @@ class WalletSendtxHelpers {
             // Save Txt File Button
             InkwellButton(
               onTap: () async {
-                if (await Permission.storage.request().isGranted) {
-                  try {
-                    // Get default Downloads directory
-                    final directory = Directory('/storage/emulated/0/Download');
-                    if (!await directory.exists()) {
-                      await directory.create(recursive: true);
+                if (await Permission.manageExternalStorage.isGranted) {
+                  // Get default Downloads directory
+                  final directory = Directory('/storage/emulated/0/Download');
+                  if (!await directory.exists()) {
+                    await directory.create(recursive: true);
+                  }
+
+                  DateTime now = DateTime.now();
+                  String formattedDate =
+                      DateFormat('yyyyMMdd_HHmmss').format(now);
+                  String fileName = 'PSBT_$formattedDate.json';
+                  String filePath = '${directory.path}/$fileName';
+                  File file = File(filePath);
+
+                  // Check if the file already exists
+                  if (await file.exists()) {
+                    final shouldProceed =
+                        (await CustomBottomSheet.buildCustomBottomSheet<bool>(
+                              context: rootContext,
+                              titleKey: 'file_already_exists',
+                              content: Text(
+                                AppLocalizations.of(rootContext)!
+                                    .translate('file_save_prompt'),
+                                style: TextStyle(
+                                  color: AppColors.text(context),
+                                ),
+                              ),
+                              actions: [
+                                InkwellButton(
+                                  onTap: () {
+                                    Navigator.of(context, rootNavigator: true)
+                                        .pop(false);
+                                  },
+                                  label: AppLocalizations.of(rootContext)!
+                                      .translate('no'),
+                                  backgroundColor: Colors.white,
+                                  textColor: Colors.black,
+                                  icon: Icons.cancel_rounded,
+                                  iconColor: Colors.redAccent,
+                                ),
+                                InkwellButton(
+                                  onTap: () {
+                                    Navigator.of(context, rootNavigator: true)
+                                        .pop(true);
+                                  },
+                                  label: AppLocalizations.of(rootContext)!
+                                      .translate('yes'),
+                                  backgroundColor: Colors.white,
+                                  textColor: Colors.black,
+                                  icon: Icons.check_circle,
+                                  iconColor: AppColors.accent(context),
+                                ),
+                              ],
+                            )) ??
+                            false;
+
+                    // If the user chooses not to proceed, exit
+                    if (!shouldProceed) {
+                      return;
                     }
 
-                    DateTime now = DateTime.now();
-                    String formattedDate =
-                        DateFormat('yyyyMMdd_HHmmss').format(now);
-                    String fileName = 'PSBT_$formattedDate.txt';
-                    String filePath = '${directory.path}/$fileName';
-                    File file = File(filePath);
-
-                    await file.writeAsString(result);
-
-                    // Optional: Show a success message to the user
-                    SnackBarHelper.show(
-                      context,
-                      message: AppLocalizations.of(context)!
-                          .translate('file_saved_successfully'),
-                    );
-                  } catch (e) {
-                    // Handle any error
-                    SnackBarHelper.showError(
-                      context,
-                      message: AppLocalizations.of(context)!
-                          .translate('file_save_error'),
-                    );
+                    // Increment the file name index until a unique file name is found
+                    int index = 1;
+                    while (await file.exists()) {
+                      fileName = 'PSBT_$formattedDate($index).json';
+                      filePath = '${directory.path}/$fileName';
+                      file = File(filePath);
+                      index++;
+                    }
                   }
-                }
+                  // Write JSON data to the file
+                  await file.writeAsString(result);
 
-                // Navigator.of(rootContext, rootNavigator: true).pop();
-                // Navigator.of(rootContext, rootNavigator: true).pop();
+                  NotificationHelper.show(
+                    rootContext,
+                    message:
+                        '${AppLocalizations.of(rootContext)!.translate('file_saved')} ${directory.path}/$fileName',
+                  );
+                } else {
+                  NotificationHelper.showError(
+                    rootContext,
+                    message: AppLocalizations.of(rootContext)!
+                        .translate('storage_permission_needed'),
+                  );
+                }
               },
               label: AppLocalizations.of(rootContext)!.translate('save'),
               backgroundColor: AppColors.text(context),
@@ -665,10 +728,99 @@ class WalletSendtxHelpers {
               iconColor: AppColors.gradient(context),
             ),
 
-            // Share Button
+            // // Share Button
             InkwellButton(
-              onTap: () {
-                SharePlus.instance.share(ShareParams(text: result));
+              onTap: () async {
+                if (await Permission.manageExternalStorage.isGranted) {
+                  // Get default Downloads directory
+                  final directory = Directory('/storage/emulated/0/Download');
+                  if (!await directory.exists()) {
+                    await directory.create(recursive: true);
+                  }
+
+                  DateTime now = DateTime.now();
+                  String formattedDate =
+                      DateFormat('yyyyMMdd_HHmmss').format(now);
+                  String fileName = 'PSBT_$formattedDate.json';
+                  String filePath = '${directory.path}/$fileName';
+                  File file = File(filePath);
+
+                  // Check if the file already exists
+                  if (await file.exists()) {
+                    final shouldProceed =
+                        (await CustomBottomSheet.buildCustomBottomSheet<bool>(
+                              context: rootContext,
+                              titleKey: 'file_already_exists',
+                              content: Text(
+                                AppLocalizations.of(rootContext)!
+                                    .translate('file_save_prompt'),
+                                style: TextStyle(
+                                  color: AppColors.text(context),
+                                ),
+                              ),
+                              actions: [
+                                InkwellButton(
+                                  onTap: () {
+                                    Navigator.of(context, rootNavigator: true)
+                                        .pop(false);
+                                  },
+                                  label: AppLocalizations.of(rootContext)!
+                                      .translate('no'),
+                                  backgroundColor: Colors.white,
+                                  textColor: Colors.black,
+                                  icon: Icons.cancel_rounded,
+                                  iconColor: Colors.redAccent,
+                                ),
+                                InkwellButton(
+                                  onTap: () {
+                                    Navigator.of(context, rootNavigator: true)
+                                        .pop(true);
+                                  },
+                                  label: AppLocalizations.of(rootContext)!
+                                      .translate('yes'),
+                                  backgroundColor: Colors.white,
+                                  textColor: Colors.black,
+                                  icon: Icons.check_circle,
+                                  iconColor: AppColors.accent(context),
+                                ),
+                              ],
+                            )) ??
+                            false;
+
+                    // If the user chooses not to proceed, exit
+                    if (!shouldProceed) {
+                      return;
+                    }
+
+                    // Increment the file name index until a unique file name is found
+                    int index = 1;
+                    while (await file.exists()) {
+                      fileName = 'PSBT_$formattedDate($index).json';
+                      filePath = '${directory.path}/$fileName';
+                      file = File(filePath);
+                      index++;
+                    }
+                  }
+
+                  // Write JSON data to the file
+                  await file.writeAsString(result);
+
+                  final psbtString = jsonDecode(result)['psbt'];
+
+                  // 🔥 Now share the file instead of just raw text
+                  SharePlus.instance.share(
+                    ShareParams(
+                      text: psbtString,
+                      files: [XFile(filePath)],
+                    ),
+                  );
+                } else {
+                  NotificationHelper.showError(
+                    rootContext,
+                    message: AppLocalizations.of(rootContext)!
+                        .translate('storage_permission_needed'),
+                  );
+                }
               },
               label: AppLocalizations.of(rootContext)!.translate('share'),
               backgroundColor: AppColors.text(context),
@@ -728,14 +880,6 @@ class WalletSendtxHelpers {
                   text: result,
                   messageKey: 'hex_clipboard',
                 );
-
-                // if (Navigator.of(rootContext).canPop()) {
-                //   Navigator.of(rootContext, rootNavigator: true).pop();
-                // }
-                // if (Navigator.of(rootContext).canPop()) {
-                //   Navigator.of(rootContext, rootNavigator: true).pop();
-                // }
-                // Navigator.of(rootContext, rootNavigator: true).pop();
               },
               label: AppLocalizations.of(rootContext)!.translate('copy'),
               backgroundColor: AppColors.text(context),
@@ -765,23 +909,20 @@ class WalletSendtxHelpers {
                     await file.writeAsString(result);
 
                     // Optional: Show a success message to the user
-                    SnackBarHelper.show(
+                    NotificationHelper.show(
                       context,
                       message: AppLocalizations.of(context)!
                           .translate('file_saved_successfully'),
                     );
                   } catch (e) {
                     // Handle any error
-                    SnackBarHelper.showError(
+                    NotificationHelper.showError(
                       context,
                       message: AppLocalizations.of(context)!
                           .translate('file_save_error'),
                     );
                   }
                 }
-
-                // Navigator.of(rootContext, rootNavigator: true).pop();
-                // Navigator.of(rootContext, rootNavigator: true).pop();
               },
               label: AppLocalizations.of(rootContext)!.translate('save'),
               backgroundColor: AppColors.text(context),
@@ -922,10 +1063,10 @@ class WalletSendtxHelpers {
 
   Widget _buildPsbtField(
     void Function(void Function()) setDialogState,
+    String address,
   ) {
     String? lastValidText = ''; // Store the last valid state
     bool isFull = false;
-
     return Column(
       children: [
         const SizedBox(height: 16),
@@ -950,25 +1091,96 @@ class WalletSendtxHelpers {
             context: context,
             labelText: AppLocalizations.of(context)!.translate('psbt'),
             hintText: AppLocalizations.of(context)!.translate('enter_psbt'),
-            suffixIcon:
-                (psbtController != null && psbtController!.text.isNotEmpty)
-                    ? IconButton(
-                        icon: Icon(
-                          Icons.cancel,
-                          color: AppColors.icon(context),
-                        ),
-                        onPressed: () {
-                          setDialogState(() {
-                            psbtController?.clear();
-                            lastValidText = '';
-                            showPSBT = false;
-                            isFirstTap = true;
-                            signersList?.clear();
-                            isFull = false;
-                          });
-                        },
-                      )
-                    : null,
+            suffixIcon: (psbtController != null &&
+                    psbtController!.text.isNotEmpty)
+                ? IconButton(
+                    icon: Icon(
+                      Icons.cancel,
+                      color: AppColors.icon(context),
+                    ),
+                    onPressed: () {
+                      setDialogState(() {
+                        psbtController?.clear();
+                        lastValidText = '';
+                        showPSBT = false;
+                        isFirstTap = true;
+                        signersList?.clear();
+                        isFull = false;
+                        isPsbtTextField = false;
+                      });
+                    },
+                  )
+                : IconButton(
+                    icon: Icon(
+                      Icons.upload,
+                      color: AppColors.icon(context),
+                    ),
+                    onPressed: () async {
+                      try {
+                        final result = await FilePicker.platform.pickFiles(
+                          type: FileType.custom,
+                          allowedExtensions: ['psbt', 'txt', 'json'],
+                          withData:
+                              true, // we can read from memory; fallback to path if null
+                        );
+
+                        if (result == null || result.files.isEmpty) return;
+
+                        // Prefer in-memory bytes, else read from path
+                        final picked = result.files.first;
+                        String content;
+                        if (picked.bytes != null) {
+                          content = utf8.decode(picked.bytes!);
+                        } else if (picked.path != null) {
+                          content = await File(picked.path!).readAsString();
+                        } else {
+                          throw Exception("Unable to read the selected file.");
+                        }
+
+                        // If it looks like JSON, try to extract the "psbt" field
+                        String psbtText;
+                        Map<String, dynamic> path = {};
+                        final trimmed = content.trim();
+                        if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+                          final decoded = jsonDecode(trimmed);
+                          if (decoded is Map && decoded['psbt'] is String) {
+                            psbtText = decoded['psbt'] as String;
+                            path = decoded['spending_path'];
+
+                            print('aqui');
+                            print(path);
+                          } else {
+                            throw Exception("JSON file missing 'psbt' field.");
+                          }
+                        } else {
+                          // Treat the whole file as a raw PSBT string
+                          psbtText = trimmed;
+                        }
+
+                        // Update UI state and controller text
+                        setDialogState(() {
+                          psbtController!.text = psbtText;
+                          // if you still want to lock after paste:
+                          // isFull = true; lastValidText = psbtText;
+                        });
+
+                        // Kick off your PSBT decode flow
+                        await _decodePsbt(
+                          path: path,
+                          null, // capture from your State or pass in as param
+                          setDialogState,
+                          address, // capture from your State or pass in as param
+                          flagField: false,
+                        );
+                      } catch (e) {
+                        NotificationHelper.showError(
+                          context,
+                          message: AppLocalizations.of(context)!
+                              .translate('invalid_psbt'),
+                        );
+                      }
+                    },
+                  ),
           ),
           style: TextStyle(color: AppColors.text(context)),
         ),

@@ -13,7 +13,7 @@ import 'package:flutter_wallet/utilities/custom_button.dart';
 import 'package:flutter_wallet/utilities/custom_text_field_styles.dart';
 import 'package:flutter_wallet/utilities/inkwell_button.dart';
 import 'package:flutter_wallet/widget_helpers/custom_bottom_sheet.dart';
-import 'package:flutter_wallet/widget_helpers/snackbar_helper.dart';
+import 'package:flutter_wallet/widget_helpers/notification_helper.dart';
 import 'package:flutter_wallet/wallet_pages/shared_wallet.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hive/hive.dart';
@@ -32,7 +32,6 @@ class CreateSharedWallet extends StatefulWidget {
 class CreateSharedWalletState extends State<CreateSharedWallet> {
   late final WalletService _walletService;
 
-  final TextEditingController _thresholdController = TextEditingController();
   List<TextEditingController> additionalPublicKeyControllers = [
     TextEditingController()
   ];
@@ -56,15 +55,12 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
 
   String? initialPubKey;
 
-  // TODO: add animations and loading after creating descriptor or something like that idk
-  // bool _isDescriptorValid = true;
-  // String _status = 'Idle';
-
   bool _isDuplicateDescriptor = false;
   bool _isDescriptorNameMissing = false;
   bool _isThresholdMissing = false;
   bool _isYourPubKeyMissing = false;
   bool _arePublicKeysMissing = false;
+  bool multisigAdded = false;
 
   final GlobalKey<BaseScaffoldState> baseScaffoldKey =
       GlobalKey<BaseScaffoldState>();
@@ -72,14 +68,6 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
   @override
   void initState() {
     super.initState();
-
-    // // Add a listner to the TextEditingController
-    // _descriptorController.addListener(() {
-    //   if (_descriptorController.text.isNotEmpty) {
-    //     _descriptor = _descriptorController.text;
-    //     _validateDescriptor(_descriptor.toString());
-    //   }
-    // });
 
     _walletService =
         WalletService(Provider.of<SettingsProvider>(context, listen: false));
@@ -96,11 +84,12 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
     setState(() {
       // print(_publicKey);
       // print(publicKeysWithAlias);
+      // print(threshold);
       _isYourPubKeyMissing = !publicKeysWithAlias.any((entry) {
         return entry['publicKey'] == initialPubKey;
       });
       _isDescriptorNameMissing = _descriptorNameController.text.isEmpty;
-      _isThresholdMissing = _thresholdController.text.isEmpty;
+      _isThresholdMissing = threshold == null;
       _arePublicKeysMissing = publicKeysWithAlias.isEmpty;
     });
   }
@@ -114,8 +103,6 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
 
       // print('Mnemonic: $savedMnemonic');
 
-      // TODO: "m/84h/1h/0h/0"
-
       final hardenedDerivationPath =
           await DerivationPath.create(path: "m/84h/1h/0h");
       final receivingDerivationPath = await DerivationPath.create(path: "m/0");
@@ -126,9 +113,9 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
         mnemonic,
       );
 
-      print(receivingPublicKey
-          .toString()
-          .substring(0, receivingPublicKey.toString().length - 2));
+      // print(receivingPublicKey
+      //     .toString()
+      //     .substring(0, receivingPublicKey.toString().length - 2));
 
       setState(() {
         if (isGenerating) {
@@ -155,34 +142,17 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
 
       // print(result.toString());
 
-      // setState(() {
-      //   _isDescriptorValid = result.isValid;
-      //   _status = result.isValid
-      //       ? 'Descriptor is valid'
-      //       : result.errorMessage ?? 'Invalid Descriptor';
-      // });
       return result.isValid;
     } catch (e) {
-      // setState(() {
-      //   _isDescriptorValid = false;
-      //   _status = 'Error validating Descriptor: $e';
-      // });
       return false;
     }
   }
 
   void _navigateToSharedWallet() async {
     bool isValid = await _validateDescriptor(_finalDescriptor);
-    print(isValid);
-    // setState(() {
-    //   _status = 'Loading';
-    // });
+    // print(isValid);
 
     if (isValid) {
-      // setState(() {
-      //   _status = 'Success';
-      // });
-
       // _walletService.printInChunks(_finalDescriptor.toString());
 
       Navigator.push(
@@ -197,11 +167,6 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
         ),
       );
     }
-    // else {
-    //   setState(() {
-    //     _status = 'Cannot navigate: Invalid Descriptor';
-    //   });
-    // }
   }
 
   String buildTimelockCondition(List<String> formattedTimelocks) {
@@ -250,8 +215,6 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
 
   @override
   Widget build(BuildContext context) {
-    List<Map<String, String>> selectedPubKeys = [];
-
     return BaseScaffold(
       title: Text(
         AppLocalizations.of(context)!.translate('create_shared_wallet'),
@@ -333,74 +296,52 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
             ),
             const SizedBox(height: 10),
 
-            GestureDetector(
-              onLongPress: () {
-                final BaseScaffoldState? baseScaffoldState =
-                    baseScaffoldKey.currentState;
-
-                if (baseScaffoldState != null) {
-                  baseScaffoldState.updateAssistantMessage(
-                      context, 'assistant_generate_pub_key');
-                }
-              },
-              child: CustomButton(
-                onPressed: _generatePublicKey,
-                backgroundColor: AppColors.background(context),
-                foregroundColor: AppColors.gradient(context),
-                icon: Icons.vpn_key,
-                iconColor: AppColors.text(context),
-                label: AppLocalizations.of(context)!
-                    .translate('generate_public_key'),
-                padding: 16.0,
-                iconSize: 24.0,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                IconButton(
+                  onPressed: _generatePublicKey,
+                  icon: Icon(Icons.autorenew),
+                ),
+                Expanded(
+                  child: Text(
+                    '${AppLocalizations.of(context)!.translate('pub_key')}: $_publicKey',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: AppColors.text(context),
+                      fontWeight: FontWeight.w500,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(
+                    Icons.copy,
+                    color: AppColors.icon(context),
+                  ),
+                  tooltip: AppLocalizations.of(context)!
+                      .translate('copy_to_clipboard'),
+                  onPressed: () {
+                    UtilitiesService.copyToClipboard(
+                      context: context,
+                      text: _publicKey.toString(),
+                      messageKey: 'pub_key_clipboard',
+                    );
+                  },
+                ),
+              ],
             ),
-            if (_publicKey != null) ...[
-              const SizedBox(height: 10),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      '${AppLocalizations.of(context)!.translate('pub_key')}: $_publicKey',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: AppColors.text(context),
-                        fontWeight: FontWeight.w500,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(
-                      Icons.copy,
-                      color: AppColors.icon(context),
-                    ),
-                    tooltip: AppLocalizations.of(context)!
-                        .translate('copy_to_clipboard'),
-                    onPressed: () {
-                      UtilitiesService.copyToClipboard(
-                        context: context,
-                        text: _publicKey.toString(),
-                        messageKey: 'pub_key_clipboard',
-                      );
-                    },
-                  ),
-                ],
-              ),
-              // Text('Generated Public Key: $_publicKey'),
-            ],
 
-            const Divider(height: 40),
+            Divider(height: 40, color: AppColors.text(context)),
 
-            // Section 2: Enter Public Keys for Multisig
+            // Section 2: Enter Public Keys
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Section Title
 
                 Text(
-                  '2. ${AppLocalizations.of(context)!.translate('enter_public_keys_multisig')}',
+                  '2. ${AppLocalizations.of(context)!.translate('enter_pub_keys')}',
                   style: GoogleFonts.poppins(
                     fontWeight: FontWeight.w600,
                     fontSize: 16,
@@ -411,39 +352,9 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                         : AppColors.text(context),
                   ),
                 ),
-
-                const SizedBox(height: 8),
-
-                // Error Message
-                if (_isThresholdMissing ||
-                    _arePublicKeysMissing ||
-                    _isYourPubKeyMissing)
-                  Text(
-                    _generateSectionErrorMessage([
-                      {
-                        'condition': _isThresholdMissing,
-                        'message': AppLocalizations.of(context)!
-                            .translate('threshold_missing')
-                      },
-                      {
-                        'condition': _arePublicKeysMissing,
-                        'message': AppLocalizations.of(context)!
-                            .translate('public_keys_missing')
-                      },
-                      {
-                        'condition': _isYourPubKeyMissing,
-                        'message': AppLocalizations.of(context)!
-                            .translate('your_public_key_missing')
-                      },
-                    ]),
-                    style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.w400,
-                      fontSize: 14,
-                      color: AppColors.error(context),
-                    ),
-                  ),
               ],
             ),
+
             const SizedBox(height: 10),
             Row(
               children: [
@@ -456,192 +367,208 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                   onPressed: _showAddPublicKeyDialog,
                 ),
                 const SizedBox(width: 10),
+                const SizedBox(height: 10),
                 if (publicKeysWithAlias.isNotEmpty)
-                  Row(
-                    children: [
-                      SizedBox(
-                        width: 100, // Set your desired width
-                        child: TextFormField(
-                          onChanged: (value) {
-                            setState(() {
-                              if (int.tryParse(value) != null &&
-                                  int.parse(value) >
-                                      publicKeysWithAliasMultisig.length) {
-                                // If the entered value exceeds the max, reset it to the max
-                                _thresholdController.text =
-                                    publicKeysWithAliasMultisig.length
-                                        .toString();
-                                _thresholdController.selection =
-                                    TextSelection.fromPosition(
-                                  TextPosition(
-                                      offset: _thresholdController.text.length),
-                                );
-                                threshold = _thresholdController.text;
-                              } else {
-                                threshold = _thresholdController.text;
-                              }
-                            });
-                          },
-                          controller: _thresholdController,
-                          keyboardType: TextInputType.number,
-                          decoration: CustomTextFieldStyles.textFieldDecoration(
-                            context: context,
-                            labelText: AppLocalizations.of(context)!
-                                .translate('threshold'),
-                            hintText: AppLocalizations.of(context)!
-                                .translate('threshold'),
-                            borderColor: _isThresholdMissing
-                                ? AppColors.error(context)
-                                : AppColors.background(context),
-                          ),
-                          style: TextStyle(
-                            color: AppColors.text(context),
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () {
-                          final BaseScaffoldState? baseScaffoldState =
-                              baseScaffoldKey.currentState;
+                  Wrap(
+                    spacing: 8.0,
+                    runSpacing: 8.0,
+                    children: publicKeysWithAlias.map((key) {
+                      return Dismissible(
+                        key: ValueKey(
+                            key['publicKey']), // Unique key for each item
+                        direction: DismissDirection
+                            .horizontal, // Allow swipe to the left and righty
+                        onDismissed: (direction) {
+                          setState(() {
+                            // print(key['publicKey']);
 
-                          if (baseScaffoldState != null) {
-                            baseScaffoldState.updateAssistantMessage(
-                                context, 'assistant_threshold');
-                          }
+                            publicKeysWithAlias.remove(key); // Remove the key
+
+                            for (var condition in timelockConditions) {
+                              condition['pubkeys'].removeWhere((pubKeyEntry) {
+                                return pubKeyEntry['publicKey'] ==
+                                    key['publicKey'];
+                              });
+                            }
+
+                            // Remove the entire condition if no pubkeys remain in it
+                            timelockConditions.removeWhere(
+                                (condition) => condition['pubkeys'].isEmpty);
+                          });
+
+                          NotificationHelper.showError(
+                            context,
+                            message:
+                                "${key['alias']} ${AppLocalizations.of(context)!.translate('alias_removed')}",
+                          );
                         },
-                        icon: Icon(
-                          Icons.help,
-                          color: AppColors.icon(context),
+                        background: Container(
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: AppColors.error(context),
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                          child: Icon(
+                            Icons.delete,
+                            color: AppColors.text(context),
+                            size: 24,
+                          ),
                         ),
-                      ),
-                    ],
+                        child: GestureDetector(
+                          onTap: () {
+                            _showAddPublicKeyDialog(key: key, isUpdating: true);
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(8.0),
+                            decoration: BoxDecoration(
+                              color: AppColors.background(context)
+                                  .withAlpha((0.2 * 255).toInt()),
+                              borderRadius: BorderRadius.circular(8.0),
+                              border:
+                                  Border.all(color: AppColors.primary(context)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  key['alias']!,
+                                  style: const TextStyle(fontSize: 14),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
                   ),
               ],
             ),
-            const SizedBox(height: 10),
-            if (publicKeysWithAlias.isNotEmpty)
-              Wrap(
-                spacing: 8.0,
-                runSpacing: 8.0,
-                children: publicKeysWithAlias.map((key) {
-                  selectedPubKeys = publicKeysWithAliasMultisig;
 
-                  bool isSelected = selectedPubKeys.any((selectedKey) =>
-                      selectedKey['publicKey'] == key['publicKey']);
+            Divider(height: 40, color: AppColors.text(context)),
 
-                  return Dismissible(
-                    key: ValueKey(key['publicKey']), // Unique key for each item
-                    direction: DismissDirection
-                        .horizontal, // Allow swipe to the left and righty
-                    onDismissed: (direction) {
-                      setState(() {
-                        // print(key['publicKey']);
+            // Section 3: Enter Multisig condition
+            if (publicKeysWithAlias.isNotEmpty) ...[
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Section Title
 
-                        publicKeysWithAlias.remove(key); // Remove the key
-
-                        for (var condition in timelockConditions) {
-                          condition['pubkeys'].removeWhere((pubKeyEntry) {
-                            return pubKeyEntry['publicKey'] == key['publicKey'];
-                          });
-                        }
-
-                        // Remove the entire condition if no pubkeys remain in it
-                        timelockConditions.removeWhere(
-                            (condition) => condition['pubkeys'].isEmpty);
-                      });
-
-                      SnackBarHelper.showError(
-                        context,
-                        message:
-                            "${key['alias']} ${AppLocalizations.of(context)!.translate('alias_removed')}",
-                      );
-                    },
-                    background: Container(
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: AppColors.error(context),
-                        borderRadius: BorderRadius.circular(8.0),
-                      ),
-                      child: Icon(
-                        Icons.delete,
-                        color: AppColors.text(context),
-                        size: 24,
-                      ),
+                  Text(
+                    '3. ${AppLocalizations.of(context)!.translate('enter_multisig')}',
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                      color: (_isThresholdMissing ||
+                              _arePublicKeysMissing ||
+                              _isYourPubKeyMissing)
+                          ? AppColors.error(context)
+                          : AppColors.text(context),
                     ),
-                    child: GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          if (isSelected) {
-                            selectedPubKeys.removeWhere((selectedKey) =>
-                                selectedKey['publicKey'] == key['publicKey']);
+                  ),
 
-                            // Also remove from the multisig list
-                            publicKeysWithAliasMultisig.removeWhere((item) =>
-                                item['publicKey'] == key['publicKey']);
-                          } else {
-                            if (!selectedPubKeys.any((selectedKey) =>
-                                selectedKey['publicKey'] == key['publicKey'])) {
-                              selectedPubKeys.add({
-                                'publicKey': key['publicKey']!,
-                                'alias': key['alias']!,
-                              });
-                            }
-
-                            if (!publicKeysWithAliasMultisig.any((item) =>
-                                item['publicKey'] == key['publicKey'])) {
-                              publicKeysWithAliasMultisig.add({
-                                'publicKey': key['publicKey']!,
-                                'alias': key['alias']!,
-                              });
-                            }
-                          }
-                        });
-                        // print(isSelected);
-
-                        print('publicKeysWithAlias: $publicKeysWithAlias');
-
-                        print(
-                            'publicKeysWithAliasMultisig: $publicKeysWithAliasMultisig');
-                        print('selectedPubKeys: $selectedPubKeys');
-                      },
-                      onLongPress: () {
-                        _showAddPublicKeyDialog(key: key, isUpdating: true);
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.all(8.0),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? AppColors.background(context)
-                                  .withAlpha((0.8 * 255).toInt())
-                              : AppColors.background(context)
-                                  .withAlpha((0.2 * 255).toInt()),
-                          borderRadius: BorderRadius.circular(8.0),
-                          border: Border.all(color: AppColors.primary(context)),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      if (!multisigAdded)
+                        IconButton(
+                          onPressed: () => _showAddMultisigDialog(false),
+                          icon: Icon(
+                            Icons.add_link,
+                            color: AppColors.icon(context),
+                            size: 40,
+                          ),
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              key['alias']!,
-                              style: const TextStyle(fontSize: 14),
+                      if (multisigAdded)
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () => _showAddMultisigDialog(true),
+                            child: Card(
+                              color: AppColors.background(context),
+                              margin: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
+                              child: Padding(
+                                padding:
+                                    const EdgeInsets.all(6), // smaller padding
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize
+                                      .min, // don't expand vertically
+                                  children: [
+                                    Text(
+                                      "Threshold: $threshold",
+                                      style: TextStyle(
+                                        fontSize: 13, // smaller text
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.text(context),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    ...publicKeysWithAliasMultisig.map(
+                                      (pk) => ListTile(
+                                        dense: true,
+                                        visualDensity: VisualDensity
+                                            .compact, // tighter vertical space
+                                        contentPadding: EdgeInsets
+                                            .zero, // remove side padding
+                                        leading:
+                                            const Icon(Icons.vpn_key, size: 16),
+                                        title: Text(
+                                          pk['alias'] ?? "Unknown",
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: AppColors.text(context),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
-                          ],
+                          ),
                         ),
+                    ],
+                  ),
+
+                  // Error Message
+                  if (_isThresholdMissing ||
+                      _arePublicKeysMissing ||
+                      _isYourPubKeyMissing)
+                    Text(
+                      _generateSectionErrorMessage([
+                        {
+                          'condition': _isThresholdMissing,
+                          'message': AppLocalizations.of(context)!
+                              .translate('threshold_missing')
+                        },
+                        {
+                          'condition': _arePublicKeysMissing,
+                          'message': AppLocalizations.of(context)!
+                              .translate('public_keys_missing')
+                        },
+                        {
+                          'condition': _isYourPubKeyMissing,
+                          'message': AppLocalizations.of(context)!
+                              .translate('your_public_key_missing')
+                        },
+                      ]),
+                      style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.w400,
+                        fontSize: 14,
+                        color: AppColors.error(context),
                       ),
                     ),
-                  );
-                }).toList(),
+                ],
               ),
 
-            const Divider(height: 40),
+              Divider(height: 40, color: AppColors.text(context)),
 
-            // Section 3: Enter Timelock Conditions
-            if (publicKeysWithAlias.isNotEmpty)
+              // Section 4: Enter Timelock Conditions
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '3. ${AppLocalizations.of(context)!.translate('enter_timelock_conditions')}',
+                    '4. ${AppLocalizations.of(context)!.translate('enter_timelock_conditions')}',
                     style: GoogleFonts.poppins(
                         fontWeight: FontWeight.w600,
                         fontSize: 16,
@@ -702,7 +629,7 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                               timelockConditions.remove(condition);
                             });
 
-                            SnackBarHelper.show(
+                            NotificationHelper.show(
                               context,
                               message: AppLocalizations.of(context)!
                                   .translate('timelock_condition_removed')
@@ -776,19 +703,18 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                         );
                       }).toList(),
                     ),
-                  const Divider(height: 40),
+                  Divider(height: 40, color: AppColors.text(context)),
                 ],
               ),
 
-            // Section 4: Create Descriptor
-            if (publicKeysWithAlias.isNotEmpty)
+              // Section 5: Create Descriptor
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
                       Text(
-                        '4. ${AppLocalizations.of(context)!.translate('create_descriptor')}',
+                        '5. ${AppLocalizations.of(context)!.translate('create_descriptor')}',
                         style: GoogleFonts.poppins(
                             fontWeight: FontWeight.w600,
                             fontSize: 16,
@@ -813,7 +739,13 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                   ),
                   const SizedBox(height: 10),
                   CustomButton(
-                    onPressed: () => _createDescriptor(),
+                    onPressed: () {
+                      print(threshold);
+
+                      print(publicKeysWithAliasMultisig);
+
+                      _createDescriptor();
+                    },
                     backgroundColor: AppColors.background(context),
                     foregroundColor: AppColors.text(context),
                     icon: Icons.create,
@@ -823,6 +755,7 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                   ),
                 ],
               ),
+            ],
           ],
         ),
       ),
@@ -953,7 +886,7 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                       });
                       Navigator.of(context, rootNavigator: true).pop();
 
-                      SnackBarHelper.show(
+                      NotificationHelper.show(
                         rootContext,
                         message: AppLocalizations.of(rootContext)!
                             .translate('multisig_updated'),
@@ -968,6 +901,156 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                       Navigator.of(context, rootNavigator: true).pop();
                     }
                   }
+                },
+                label: AppLocalizations.of(rootContext)!
+                    .translate(isUpdating ? 'save' : 'add'),
+                backgroundColor: AppColors.background(context),
+                textColor: AppColors.text(context),
+                icon: isUpdating ? Icons.save : Icons.add_task,
+                iconColor: AppColors.gradient(context),
+              ),
+            ],
+          ),
+        ];
+      },
+    );
+  }
+
+  void _showAddMultisigDialog(bool isUpdating) {
+    final TextEditingController thresholdController = TextEditingController();
+
+    List<Map<String, String>> selectedPubKeys = publicKeysWithAliasMultisig;
+    if (threshold != null) {
+      thresholdController.text = threshold!;
+    }
+
+    print(publicKeysWithAliasMultisig);
+    print(selectedPubKeys);
+    final rootContext = context;
+
+    CustomBottomSheet.buildCustomStatefulBottomSheet(
+      context: rootContext,
+      titleKey: 'add_multisig',
+      showAssistant: true,
+      assistantMessages: [
+        'assistant_add_multisig_tip1',
+        'assistant_add_multisig_tip2',
+        'assistant_add_multisig_tip3',
+      ],
+      contentBuilder: (setDialogState, updateAssistantMessage) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (publicKeysWithAlias.isNotEmpty)
+              Wrap(
+                spacing: 8.0,
+                children: publicKeysWithAlias.map((key) {
+                  bool isSelected = selectedPubKeys.any((selectedKey) =>
+                      selectedKey['publicKey'] == key['publicKey']);
+                  return GestureDetector(
+                    onTap: () {
+                      setDialogState(() {
+                        if (isSelected) {
+                          selectedPubKeys.removeWhere((selectedKey) =>
+                              selectedKey['publicKey'] == key['publicKey']);
+                        } else {
+                          selectedPubKeys.add({
+                            'publicKey': key['publicKey']!,
+                            'alias': key['alias']!
+                          });
+                        }
+                        // print(selectedPubKeys);
+                      });
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(8.0),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? AppColors.background(context)
+                                .withAlpha((0.8 * 255).toInt())
+                            : AppColors.background(context)
+                                .withAlpha((0.2 * 255).toInt()),
+                        borderRadius: BorderRadius.circular(8.0),
+                        border: Border.all(
+                          color: AppColors.primary(context),
+                        ),
+                      ),
+                      child: Text(
+                        key['alias']!,
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            const SizedBox(height: 10),
+            if (selectedPubKeys.isNotEmpty)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextFormField(
+                    controller: thresholdController,
+                    onChanged: (value) {
+                      setDialogState(() {
+                        if (int.tryParse(value) != null &&
+                            int.parse(value) > selectedPubKeys.length) {
+                          // If the entered value exceeds the max, reset it to the max
+                          thresholdController.text =
+                              selectedPubKeys.length.toString();
+                          thresholdController.selection =
+                              TextSelection.fromPosition(
+                            TextPosition(
+                              offset: thresholdController.text.length,
+                            ),
+                          );
+                        } else {
+                          thresholdController.text = value;
+                        }
+                      });
+                    },
+                    decoration: CustomTextFieldStyles.textFieldDecoration(
+                      context: context,
+                      labelText: AppLocalizations.of(rootContext)!
+                          .translate('threshold'),
+                      hintText: AppLocalizations.of(rootContext)!
+                          .translate('threshold'),
+                      borderColor: AppColors.background(context),
+                    ),
+                    style: TextStyle(
+                      color: AppColors.text(context),
+                    ),
+                    keyboardType: TextInputType.number,
+                  ),
+                ],
+              ),
+          ],
+        );
+      },
+      actionsBuilder: (setDialogState) {
+        return [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              InkwellButton(
+                onTap: () {
+                  final converted = selectedPubKeys
+                      .map<Map<String, String>>(
+                        (e) => e.map((k, v) => MapEntry(k, v.toString())),
+                      )
+                      .toList(growable: false); // <-- eager snapshot
+
+                  final toAdd = converted.where(
+                    (m) => !publicKeysWithAliasMultisig
+                        .any((x) => x['pubkey'] == m['pubkey']),
+                  );
+                  publicKeysWithAliasMultisig.addAll(toAdd);
+
+                  setState(() {
+                    threshold = thresholdController.text;
+                    multisigAdded = true;
+                  });
+
+                  Navigator.of(context, rootNavigator: true).pop();
                 },
                 label: AppLocalizations.of(rootContext)!
                     .translate(isUpdating ? 'save' : 'add'),
@@ -1302,7 +1385,7 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                     );
 
                     if (isDuplicateOlder) {
-                      SnackBarHelper.show(
+                      NotificationHelper.show(
                         rootContext,
                         message: AppLocalizations.of(rootContext)!
                             .translate('error_older'),
@@ -1319,7 +1402,7 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
 
                         Navigator.of(context, rootNavigator: true).pop();
 
-                        SnackBarHelper.show(
+                        NotificationHelper.show(
                           rootContext,
                           message: AppLocalizations.of(rootContext)!
                               .translate('timelock_updated'),
@@ -1417,7 +1500,7 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
   }
 
   void _createDescriptor() {
-    print('Starting descriptor creation...');
+    // print('Starting descriptor creation...');
 
     // Validate inputs
     _validateInputs();
@@ -1426,7 +1509,7 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
         _isThresholdMissing ||
         _arePublicKeysMissing ||
         _isYourPubKeyMissing) {
-      print('Validation failed: Missing descriptor fields.');
+      // print('Validation failed: Missing descriptor fields.');
       return;
     }
 
@@ -1436,18 +1519,18 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
         .toList()
       ..sort();
 
-    print('Extracted public keys: $extractedPublicKeys');
+    // print('Extracted public keys: $extractedPublicKeys');
 
     String formattedKeys =
         extractedPublicKeys.toString().replaceAll(RegExp(r'^\[|\]$'), '');
 
     String multi = 'multi($threshold,$formattedKeys)';
-    print('Multi condition: $multi');
+    // print('Multi condition: $multi');
 
     String finalDescriptor;
 
     _handleTimelocks(); // Optional: Add debug log inside that method if needed
-    print('Timelock conditions after handling: $timelockConditions');
+    // print('Timelock conditions after handling: $timelockConditions');
 
     if (timelockConditions.isNotEmpty) {
       timelockConditions.sort((a, b) {
@@ -1456,15 +1539,15 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
         return getTimeLock(a).compareTo(getTimeLock(b));
       });
 
-      print('Sorted timelock conditions: $timelockConditions');
+      // print('Sorted timelock conditions: $timelockConditions');
 
       List<String> formattedTimelocks = timelockConditions.map((condition) {
         String threshold = condition['threshold'];
         String older = condition['older'];
         String after = condition['after'];
 
-        print('olderCondition: $older');
-        print('afterCondition: $after');
+        // print('olderCondition: $older');
+        // print('afterCondition: $after');
 
         String timeCondition = older.isNotEmpty
             ? 'older($older)'
@@ -1483,26 +1566,26 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
             : 'pk(${pubkeys.first})';
 
         String result = 'and_v(v:$timeCondition,$multiCondition)';
-        print('Formatted timelock: $result');
+        // print('Formatted timelock: $result');
 
         return result;
       }).toList();
 
       String timelockCondition = buildTimelockCondition(formattedTimelocks);
-      print('Combined timelock condition: $timelockCondition');
+      // print('Combined timelock condition: $timelockCondition');
 
       finalDescriptor = 'wsh(or_d($multi,$timelockCondition))';
     } else {
       finalDescriptor = 'wsh($multi)';
     }
 
-    print('Final descriptor before cleaning: $finalDescriptor');
+    // print('Final descriptor before cleaning: $finalDescriptor');
 
     setState(() {
       _finalDescriptor = finalDescriptor.replaceAll(' ', '');
     });
 
-    print('Final descriptor stored: $_finalDescriptor');
+    // print('Final descriptor stored: $_finalDescriptor');
 
     _createDescriptorDialog(context);
   }
@@ -1850,13 +1933,13 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
               // Write JSON data to the file
               await file.writeAsString(data);
 
-              SnackBarHelper.show(
+              NotificationHelper.show(
                 rootContext,
                 message:
                     '${AppLocalizations.of(rootContext)!.translate('file_saved')} ${directory.path}/$fileName',
               );
             } else {
-              SnackBarHelper.showError(
+              NotificationHelper.showError(
                 rootContext,
                 message: AppLocalizations.of(rootContext)!
                     .translate('storage_permission_needed'),
@@ -2002,7 +2085,7 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (sheetCtx) {
-        final bg = Theme.of(sheetCtx).dialogBackgroundColor;
+        final bg = AppColors.dialog(sheetCtx);
 
         return StatefulBuilder(
           builder: (ctx, setState) {
@@ -2012,7 +2095,7 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
 
             final textStyle = Theme.of(sheetCtx).textTheme.bodyMedium;
 
-            Widget _col({
+            Widget col({
               required int itemCount,
               required int selected,
               required ValueChanged<int> onSelected,
@@ -2033,7 +2116,14 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                   magnification: 1.08,
                   onSelectedItemChanged: onSelected,
                   children: List.generate(
-                      itemCount, (i) => Center(child: Text(label(i)))),
+                    itemCount,
+                    (i) => Center(
+                      child: Text(
+                        label(i),
+                        style: textStyle,
+                      ),
+                    ),
+                  ),
                 ),
               );
             }
@@ -2061,9 +2151,10 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                   ),
                   boxShadow: const [
                     BoxShadow(
-                        blurRadius: 24,
-                        offset: Offset(0, -6),
-                        color: Colors.black38),
+                      blurRadius: 24,
+                      offset: Offset(0, -6),
+                      color: Colors.black38,
+                    ),
                   ],
                 ),
                 padding: EdgeInsets.only(
@@ -2080,7 +2171,7 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                             .textTheme
                             .bodyMedium
                             ?.color
-                            ?.withOpacity(0.25),
+                            ?.opaque(0.25),
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -2091,7 +2182,7 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         // Years
-                        _col(
+                        col(
                           itemCount: maxYears + 1,
                           selected: years,
                           onSelected: (i) {
@@ -2102,15 +2193,16 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                               final newCount = cap == 0
                                   ? 1
                                   : (years == maxYears ? cap : 365);
-                              if (days >= newCount)
+                              if (days >= newCount) {
                                 days = (newCount - 1).clamp(0, newCount - 1);
+                              }
                             });
                           },
                           label: (i) => '$i y',
                           width: 76,
                         ),
                         // Days (0..364 normally; shortened if in last year bucket)
-                        _col(
+                        col(
                           itemCount: daysCount, // dynamic
                           selected: daysCount == 0 ? 0 : days,
                           onSelected: (i) => setState(() => days = i),
@@ -2118,7 +2210,7 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                           width: 76,
                         ),
                         // Hours
-                        _col(
+                        col(
                           itemCount: 24,
                           selected: hours,
                           onSelected: (i) => setState(() => hours = i),
@@ -2126,7 +2218,7 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                           width: 72,
                         ),
                         // Minutes (stepped)
-                        _col(
+                        col(
                           itemCount: (60 ~/ minuteStep),
                           selected: (minutes ~/ minuteStep)
                               .clamp(0, (60 ~/ minuteStep) - 1),

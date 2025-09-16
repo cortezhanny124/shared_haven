@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_wallet/languages/app_localizations.dart';
-import 'package:flutter_wallet/widget_helpers/snackbar_helper.dart';
+import 'package:flutter_wallet/widget_helpers/notification_helper.dart';
 
 class UtilitiesService {
   /// Copies text to clipboard and shows a SnackBar notification.
@@ -12,7 +12,7 @@ class UtilitiesService {
   }) {
     Clipboard.setData(ClipboardData(text: text));
     if (messageKey != null) {
-      SnackBarHelper.show(
+      NotificationHelper.show(
         context,
         message: AppLocalizations.of(context)!.translate(messageKey),
       );

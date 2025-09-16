@@ -9,7 +9,7 @@ import 'package:flutter_wallet/settings/settings_provider.dart';
 import 'package:flutter_wallet/widget_helpers/base_scaffold.dart';
 import 'package:flutter_wallet/utilities/custom_button.dart';
 import 'package:flutter_wallet/utilities/custom_text_field_styles.dart';
-import 'package:flutter_wallet/widget_helpers/snackbar_helper.dart';
+import 'package:flutter_wallet/widget_helpers/notification_helper.dart';
 import 'package:flutter_wallet/wallet_pages/shared_wallet.dart';
 import 'package:flutter_wallet/services/wallet_service.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -59,7 +59,7 @@ class ImportSharedWalletState extends State<ImportSharedWallet> {
     _walletService =
         WalletService(Provider.of<SettingsProvider>(context, listen: false));
 
-    print(Provider.of<SettingsProvider>(context, listen: false).network);
+    // print(Provider.of<SettingsProvider>(context, listen: false).network);
 
     // Add a listner to the TextEditingController
     _descriptorController.addListener(() {
@@ -167,7 +167,7 @@ class ImportSharedWalletState extends State<ImportSharedWallet> {
         // print('Descriptor: $descriptor');
         // print('Public Keys With Alias: $publicKeysWithAlias');
 
-        SnackBarHelper.show(
+        NotificationHelper.show(
           context,
           message: AppLocalizations.of(context)!.translate('file_uploaded'),
         );
@@ -178,7 +178,7 @@ class ImportSharedWalletState extends State<ImportSharedWallet> {
       }
     } catch (e) {
       // print('Error uploading file: $e');
-      SnackBarHelper.showError(
+      NotificationHelper.showError(
         context,
         message: AppLocalizations.of(context)!.translate('failed_upload'),
       );

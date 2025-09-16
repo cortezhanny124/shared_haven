@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_wallet/utilities/app_colors.dart';
 
 class InkwellButton extends StatelessWidget {
   final VoidCallback? onTap;
@@ -30,7 +31,7 @@ class InkwellButton extends StatelessWidget {
       splashColor: isDisabled ? Colors.transparent : null, // Prevent ripple
       child: Card(
         color: isDisabled
-            ? backgroundColor.withOpacity(0.5) // Dim background
+            ? backgroundColor.opaque(0.5) // Dim background
             : backgroundColor,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(borderRadius),
@@ -45,7 +46,7 @@ class InkwellButton extends StatelessWidget {
                 Icon(
                   icon,
                   color: isDisabled
-                      ? textColor.withOpacity(0.5)
+                      ? textColor.opaque(0.5)
                       : iconColor ?? textColor,
                   size: 24,
                 ),
@@ -54,7 +55,7 @@ class InkwellButton extends StatelessWidget {
                 Text(
                   label!,
                   style: TextStyle(
-                    color: isDisabled ? textColor.withOpacity(0.5) : textColor,
+                    color: isDisabled ? textColor.opaque(0.5) : textColor,
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),

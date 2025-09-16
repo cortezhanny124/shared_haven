@@ -10,7 +10,6 @@ import 'package:flutter_wallet/wallet_pages/shared_wallet.dart';
 import 'package:flutter_wallet/widget_helpers/assistant_widget.dart';
 import 'package:flutter_wallet/widget_helpers/custom_bottom_sheet.dart';
 import 'package:flutter_wallet/widget_helpers/dialog_helper.dart';
-import 'package:flutter_wallet/widget_helpers/snackbar_helper.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -306,96 +305,122 @@ class BaseScaffoldState extends State<BaseScaffold> {
                     ? null
                     : () async {
                         if (hasDuplicateAliases()) {
+                          _log(
+                              '❌ Duplicate aliases detected. Aborting update.');
                           DialogHelper.showErrorDialog(
-                              context: context,
-                              messageKey: 'duplicate_aliases_error');
+                            context: context,
+                            messageKey: 'duplicate_aliases_error',
+                          );
                           return;
                         }
 
-                        // Update all aliases in pubKeysAlias
+                        _log(
+                            '✅ No duplicate aliases. Proceeding to update pubKeysAlias from controllers.');
+
+// Update all aliases in pubKeysAlias
                         for (var entry in pubKeysAlias) {
-                          entry['alias'] =
-                              aliasControllers[entry['publicKey']]!.text;
+                          final pk = entry['publicKey'];
+                          final controller = aliasControllers[pk];
+                          final newAlias = controller?.text ?? '';
+                          _log(
+                              '↪ Updating alias for pubKey=${pk?.toString().substring(0, 12)}... to "$newAlias"');
+                          entry['alias'] = newAlias;
                         }
 
-                        // Extract descriptor name from composite key
+// Extract descriptor name from composite key
+                        _log('🔧 Parsing compositeKey: "$compositeKey"');
                         List<String> keyParts =
                             compositeKey.split('_descriptor_');
                         if (keyParts.length != 2) {
-                          // print("Error: Invalid composite key format");
+                          _log(
+                              '❌ Invalid composite key format. Expected "<prefix>_descriptor_<name>". Got: "$compositeKey"');
                           return;
                         }
 
                         if (updatedDescriptorName.isEmpty) {
-                          // print("Error: Descriptor name cannot be empty");
-                          return;
+                          setState(() {
+                            updatedDescriptorName = descriptorName;
+                          });
+                          _log(
+                              'ℹ️ updatedDescriptorName was empty. Falling back to existing descriptorName="$descriptorName"');
                         }
 
-                        // Create the new composite key
+// Create the new composite key
                         String newCompositeKey =
                             "${keyParts[0]}_descriptor_$updatedDescriptorName";
+                        _log(
+                            '🧩 Computed newCompositeKey="$newCompositeKey" from old compositeKey="$compositeKey"');
 
-                        // Store the old composite key BEFORE modifying it
+// Store the old composite key BEFORE modifying it
                         String oldCompositeKey = compositeKey;
+                        _log('📌 oldCompositeKey="$oldCompositeKey"');
 
-                        // Retrieve existing data from the old key
+// Retrieve existing data from the old key
                         var rawValue = box.get(oldCompositeKey);
                         if (rawValue != null) {
+                          _log(
+                              '📦 Retrieved raw value for oldCompositeKey (length=${rawValue.toString().length}). Attempting JSON decode...');
                           try {
                             // Parse JSON
-                            Map<String, dynamic> parsedValue =
-                                jsonDecode(rawValue);
+                            final parsedValue =
+                                jsonDecode(rawValue) as Map<String, dynamic>;
+                            _log(
+                                '✅ JSON decode successful. Keys: ${parsedValue.keys.toList()}');
 
                             // Update pubKeysAlias
                             parsedValue['pubKeysAlias'] = pubKeysAlias;
+                            _log(
+                                '📝 Updated "pubKeysAlias" with ${pubKeysAlias.length} entries.');
 
-                            // print('OldKey: $compositeKey');
-                            // print('NewKey: $newCompositeKey');
-
-                            // Store data with the new key
+                            _log(
+                                '🔐 Writing updated value under newCompositeKey="$newCompositeKey"...');
                             box.put(newCompositeKey, jsonEncode(parsedValue));
 
                             // Confirm it's saved
                             var savedData = box.get(newCompositeKey);
                             if (savedData != null) {
-                              // print("Successfully saved to new key: $newCompositeKey");
+                              _log(
+                                  '✅ Successfully saved to new key: $newCompositeKey (length=${savedData.toString().length})');
+                            } else {
+                              _log(
+                                  '❌ Save verification failed: data not found under new key.');
                             }
-                            // else {
-                            //   print(
-                            //       "Error: Data did not save correctly to new key.");
-                            // }
 
                             // Check if old key exists before deleting
                             if (box.containsKey(oldCompositeKey)) {
-                              // print("Deleting old key: $oldCompositeKey");
+                              _log('🧹 Deleting old key: $oldCompositeKey');
                               box.delete(oldCompositeKey);
+                            } else {
+                              _log('ℹ️ Old key not found, skipping deletion.');
                             }
-                            // else {
-                            //   print("Old key not found, skipping deletion.");
-                            // }
 
                             // Force Hive to commit changes
+                            _log(
+                                '🗜️ Calling box.compact() and box.flush() to persist changes...');
                             await box.compact();
                             await box.flush();
+                            _log('✅ Box compact/flush completed.');
 
                             // Close the dialog
-                            Navigator.of(context, rootNavigator: true).pop(
+                            _log(
+                                '🚪 Closing dialog with success. updatedDescriptorName="$updatedDescriptorName"');
+                            Navigator.of(localizationContext,
+                                    rootNavigator: true)
+                                .pop(
                               EditAliasResult(
                                 success: true,
                                 descriptorName: updatedDescriptorName,
                               ),
                             );
 
-                            // print('updatedDescriptorName: $updatedDescriptorName');
-
-                            SnackBarHelper.show(context,
-                                message: 'sw_info_updated');
-                          } catch (e) {
-                            print("Error updating Hive box: $e");
+                            // _log('updatedDescriptorName: $updatedDescriptorName');
+                          } catch (e, st) {
+                            _log('💥 Error updating Hive box: $e');
+                            _log('🧵 Stacktrace: $st');
                           }
                         } else {
-                          print(
-                              "Error: Original composite key not found in Hive.");
+                          _log(
+                              '❌ Original composite key not found in Hive: "$oldCompositeKey"');
                         }
                       },
                 label:
@@ -720,6 +745,8 @@ class BaseScaffoldState extends State<BaseScaffold> {
               .map((item) => Map<String, String>.from(item))
               .toList();
 
+          final rootContext = context;
+
           sharedWalletCards.add(
             FutureBuilder<DescriptorPublicKey?>(
               future: walletService.getpubkey(pubKeyFutures, mnemonic),
@@ -796,7 +823,7 @@ class BaseScaffoldState extends State<BaseScaffold> {
                         // print('descriptorNameAfterChanging: $descriptorName');
                         if (result.success) {
                           Navigator.push(
-                            context,
+                            rootContext,
                             MaterialPageRoute(
                               builder: (context) => SharedWallet(
                                 descriptor: descriptor,
@@ -835,6 +862,11 @@ class BaseScaffoldState extends State<BaseScaffold> {
         return Column(children: sharedWalletCards);
       },
     );
+  }
+
+  void _log(String msg) {
+    // Using debugPrint avoids truncation of long lines in Flutter logs.
+    debugPrint('[EditAliases ${DateTime.now().toIso8601String()}] $msg');
   }
 
   Widget _buildCreateSharedWalletTile(BuildContext context) {

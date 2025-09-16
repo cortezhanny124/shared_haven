@@ -13,7 +13,7 @@ import 'package:flutter_wallet/services/wallet_storage_service.dart';
 import 'package:flutter_wallet/wallet_helpers/wallet_buttons_helpers.dart';
 import 'package:flutter_wallet/wallet_helpers/wallet_ui_helpers.dart';
 import 'package:flutter_wallet/widget_helpers/custom_bottom_sheet.dart';
-import 'package:flutter_wallet/widget_helpers/snackbar_helper.dart';
+import 'package:flutter_wallet/widget_helpers/notification_helper.dart';
 import 'package:hive/hive.dart';
 import 'package:provider/provider.dart';
 
@@ -46,6 +46,7 @@ class WalletPageState extends State<WalletPage> {
   bool isInitialized = false;
   bool isWalletInitialized = false;
   bool _isRefreshing = false;
+  bool _isSyncing = false;
 
   // Wallet and Transaction Data
   String address = '';
@@ -240,75 +241,74 @@ class WalletPageState extends State<WalletPage> {
   }
 
   Future<void> _syncWallet() async {
-    setState(() {
-      _lastRefreshed = DateTime.now();
-    });
+    // print(_isSyncing);
+    // Prevent overlapping syncs (tap-spam, lifecycle, etc.)
+    if (_isSyncing) return;
 
-    await walletService.syncWallet(wallet);
+    // Optional: if you want a spinner immediately, you can setState here.
+    _isSyncing = true;
 
-    await _fetchCurrentBlockHeight();
+    try {
+      final w = wallet; // local alias, avoids race on 'wallet'
+      final refreshedAt = DateTime.now();
 
-    setState(() {
-      if (address.isEmpty) {
-        address = wallet
+      // 1) Do all side-effects and I/O first (no setState here)
+      await walletService.syncWallet(w);
+
+      final currentHeight = await walletService.fetchCurrentBlockHeight();
+      final blockTimestamp =
+          await walletService.fetchBlockTimestamp(currentHeight);
+
+      // Resolve address locally
+      String nextAddress = address;
+      if (nextAddress.isEmpty) {
+        nextAddress = w
             .getAddress(addressIndex: AddressIndex.peek(index: 0))
             .address
             .asString();
       }
-    });
 
-    Map<String, int> balance = await walletService.getBitcoinBalance(address);
+      // Query balance/txs for that address
+      final balance = await walletService.getBitcoinBalance(nextAddress);
 
-    setState(() {
-      avBalance = balance['confirmedBalance']!;
-      ledBalance = balance['pendingBalance']!;
-    });
+      List<Map<String, dynamic>> transactions =
+          await walletService.getTransactions(nextAddress);
 
-    // Fetch and set the transactions
-    List<Map<String, dynamic>> transactions =
-        await walletService.getTransactions(address);
+      transactions = walletService.sortTransactionsByConfirmations(
+        transactions,
+        currentHeight,
+      );
+      bool isAddressUsed =
+          transactions.any((tx) => isAddressinTransaction(tx, address));
+      if (isAddressUsed && !myAddresses.contains(address)) {
+        myAddresses.add(address);
+      }
 
-    transactions = walletService.sortTransactionsByConfirmations(
-      transactions,
-      _currentHeight,
-    );
+      // 2) Bail out if the widget got disposed mid-await
+      if (!mounted) return;
 
-    setState(() {
-      _transactions = transactions;
-    });
-
-    bool isAddressUsed =
-        transactions.any((tx) => isAddressinTransaction(tx, address));
-
-    if (isAddressUsed && !myAddresses.contains(address)) {
-      myAddresses.add(address);
-    }
-    // print('myaddresses: $myAddresses');
-
-    await walletService.saveLocalData(
-      wallet,
-      _lastRefreshed!,
-      myAddresses,
-    );
-  }
-
-  Future<void> _fetchCurrentBlockHeight() async {
-    try {
-      int currentHeight = await walletService.fetchCurrentBlockHeight();
-      // print('currentHeight: $currentHeight');
-
-      String blockTimestamp =
-          await walletService.fetchBlockTimestamp(currentHeight);
-
-      // print('blockTimestamp: $blockTimestamp');
-
+      // 3) Single, batched UI update
       setState(() {
         _currentHeight = currentHeight;
         _timeStamp = blockTimestamp;
+        address = nextAddress;
+        avBalance = balance['confirmedBalance'] ?? 0;
+        ledBalance = balance['pendingBalance'] ?? 0;
+        _transactions = transactions;
+        _lastRefreshed = refreshedAt;
+        _isSyncing = false;
       });
-    } catch (e) {
-      print('Syncing error: $e'); // Debugging log
-      throw Exception('Syncing error: $e'); // Properly throw an error
+
+      // 4) Persist after state update (you can move this before setState if you prefer)
+      await walletService.saveLocalData(w, refreshedAt, myAddresses);
+    } catch (e, stackTrace) {
+      debugPrint("Error during _syncWallet: $e");
+      debugPrint(stackTrace.toString());
+      setState(() {
+        _isSyncing = false;
+      });
+
+      throw Exception("Sync Error: ${e.toString()}");
     }
   }
 
@@ -422,7 +422,7 @@ class WalletPageState extends State<WalletPage> {
                   context,
                 );
               } catch (e) {
-                SnackBarHelper.showError(context, message: 'syncing_error');
+                NotificationHelper.showError(context, message: 'syncing_error');
               } finally {
                 // Ensure animation is visible for at least 500ms
                 await Future.delayed(Duration(milliseconds: 500));

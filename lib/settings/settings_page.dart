@@ -3,7 +3,7 @@ import 'package:flutter_wallet/languages/app_localizations.dart';
 import 'package:flutter_wallet/settings/settings_provider.dart';
 import 'package:flutter_wallet/widget_helpers/base_scaffold.dart';
 import 'package:flutter_wallet/utilities/custom_button.dart';
-import 'package:flutter_wallet/widget_helpers/snackbar_helper.dart';
+import 'package:flutter_wallet/widget_helpers/notification_helper.dart';
 import 'package:lottie/lottie.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_wallet/utilities/app_colors.dart';
@@ -207,7 +207,7 @@ class SettingsPageState extends State<SettingsPage> {
                     onPressed: () {
                       settingsProvider.resetSettings();
 
-                      SnackBarHelper.show(
+                      NotificationHelper.show(
                         context,
                         message: AppLocalizations.of(context)!
                             .translate('reset_settings_scaffold'),

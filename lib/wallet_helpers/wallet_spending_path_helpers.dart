@@ -10,7 +10,7 @@ import 'package:flutter_wallet/utilities/app_colors.dart';
 import 'package:flutter_wallet/wallet_helpers/wallet_sendtx_helpers.dart';
 import 'package:flutter_wallet/widget_helpers/custom_bottom_sheet.dart';
 import 'package:flutter_wallet/widget_helpers/dialog_helper.dart';
-import 'package:flutter_wallet/widget_helpers/snackbar_helper.dart';
+import 'package:flutter_wallet/widget_helpers/notification_helper.dart';
 
 class WalletSpendingPathHelpers {
   final List<Map<String, String>> pubKeysAlias;
@@ -84,7 +84,9 @@ class WalletSpendingPathHelpers {
           onNewAddressGenerated: onNewAddressGenerated,
           syncWallet: syncWallet,
         ) {
-    _startAutoScroll(); // Start scrolling when the class is initialized
+    if (mySpendingPaths.length > 1) {
+      _startAutoScroll(); // Start scrolling when the class is initialized
+    }
   }
 
   /// Start auto-scrolling back and forth until the user interacts
@@ -270,7 +272,7 @@ class WalletSpendingPathHelpers {
 
       final totalSeconds = remainingBlocks * avgBlockTime;
       timeRemaining = walletService.formatTime(totalSeconds, context);
-      print('TimeRemaining: $timeRemaining');
+      // print('TimeRemaining: $timeRemaining');
 
       if (i == 0) {
         waitingTransactions.add(
@@ -432,7 +434,7 @@ class WalletSpendingPathHelpers {
 
                         if (totalSpendable == 0) {
                           // Show SnackBar if totalSpendable is 0
-                          SnackBarHelper.showError(context,
+                          NotificationHelper.showError(context,
                               message: AppLocalizations.of(rootContext)!
                                   .translate('error_insufficient_funds'));
                           return; // Stop execution since no funds are available
