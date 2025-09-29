@@ -18,7 +18,6 @@ import 'package:flutter_wallet/hive/wallet_data.dart';
 import 'package:flutter_wallet/wallet_pages/wallet_page.dart';
 import 'package:hive_flutter/adapters.dart';
 import 'package:overlay_support/overlay_support.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 
 void main() async {
@@ -53,8 +52,6 @@ void main() async {
     'settingsBox',
     encryptionCipher: HiveAesCipher(Uint8List.fromList(encryptionKey)),
   );
-
-  Permission.manageExternalStorage.request();
 
   runApp(
     MultiProvider(

@@ -1,22 +1,20 @@
 import 'dart:convert';
 import 'dart:io';
-
 import 'package:bdk_flutter/bdk_flutter.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_file_dialog/flutter_file_dialog.dart';
 import 'package:flutter_wallet/languages/app_localizations.dart';
 import 'package:flutter_wallet/services/utilities_service.dart';
 import 'package:flutter_wallet/settings/settings_provider.dart';
 import 'package:flutter_wallet/services/wallet_service.dart';
-import 'package:flutter_wallet/utilities/inkwell_button.dart';
 import 'package:flutter_wallet/widget_helpers/base_scaffold.dart';
 import 'package:flutter_wallet/widget_helpers/custom_bottom_sheet.dart';
 import 'package:flutter_wallet/widget_helpers/notification_helper.dart';
 import 'package:flutter_wallet/wallet_helpers/wallet_security_helpers.dart';
 import 'package:flutter_wallet/wallet_helpers/wallet_transaction_helpers.dart';
 import 'package:lottie/lottie.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:flutter_wallet/utilities/app_colors.dart';
@@ -612,98 +610,43 @@ class WalletUiHelpers {
           visible: !isSingleWallet,
           child: TextButton(
             onPressed: () async {
-              // Serialize data to JSON
-              final data = jsonEncode({
+              final payload = {
                 'descriptor': descriptor,
                 'publicKeysWithAlias': pubKeysAlias,
                 'descriptorName': descriptorName,
-              });
+              };
 
-              // print(pubKeysAlias);
+              // 1) Serialize to a temp file
+              final tmpDir = await getTemporaryDirectory();
+              final tmpPath = '${tmpDir.path}/$descriptorName.json';
+              final tmpFile = File(tmpPath);
+              await tmpFile.writeAsString(jsonEncode(payload), flush: true);
 
-              // Request storage permission (required for Android 11 and below)
-              if (await Permission.manageExternalStorage.isGranted) {
-                // Get default Downloads directory
-                final directory = Directory('/storage/emulated/0/Download');
-                if (!await directory.exists()) {
-                  await directory.create(recursive: true);
-                }
+              // 2) Let Android/iOS show the native "Save as…" dialog (no storage perms needed)
+              final params = SaveFileDialogParams(
+                sourceFilePath: tmpFile.path,
+                fileName: '$descriptorName.json',
+                mimeTypesFilter: ['application/json'],
+              );
 
-                String fileName = '$descriptorName.json';
-                String filePath = '${directory.path}/$fileName';
-                File file = File(filePath);
+              final savedPath =
+                  await FlutterFileDialog.saveFile(params: params);
 
-                // Check if the file already exists
-                if (await file.exists()) {
-                  final shouldProceed =
-                      (await CustomBottomSheet.buildCustomBottomSheet<bool>(
-                            context: rootContext,
-                            titleKey: 'file_already_exists',
-                            content: Text(
-                              AppLocalizations.of(rootContext)!
-                                  .translate('file_save_prompt'),
-                              style: TextStyle(
-                                color: AppColors.text(context),
-                              ),
-                            ),
-                            actions: [
-                              InkwellButton(
-                                onTap: () {
-                                  Navigator.of(context, rootNavigator: true)
-                                      .pop(false);
-                                },
-                                label: AppLocalizations.of(rootContext)!
-                                    .translate('no'),
-                                backgroundColor: Colors.white,
-                                textColor: Colors.black,
-                                icon: Icons.cancel_rounded,
-                                iconColor: Colors.redAccent,
-                              ),
-                              InkwellButton(
-                                onTap: () {
-                                  Navigator.of(context, rootNavigator: true)
-                                      .pop(true);
-                                },
-                                label: AppLocalizations.of(rootContext)!
-                                    .translate('yes'),
-                                backgroundColor: Colors.white,
-                                textColor: Colors.black,
-                                icon: Icons.check_circle,
-                                iconColor: AppColors.accent(context),
-                              ),
-                            ],
-                          )) ??
-                          false;
-
-                  // If the user chooses not to proceed, exit
-                  if (!shouldProceed) {
-                    return;
-                  }
-
-                  // Increment the file name index until a unique file name is found
-                  int index = 1;
-                  while (await file.exists()) {
-                    fileName = '$descriptorName($index).json';
-                    filePath = '${directory.path}/$fileName';
-                    file = File(filePath);
-                    index++;
-                  }
-                }
-                // Write JSON data to the file
-                await file.writeAsString(data);
-
+              if (savedPath == null) {
+                // User canceled
                 NotificationHelper.show(
                   rootContext,
-                  message:
-                      '${AppLocalizations.of(rootContext)!.translate('file_saved')} ${directory.path}/$fileName',
-                );
-              } else {
-                NotificationHelper.showError(
-                  rootContext,
                   message: AppLocalizations.of(rootContext)!
-                      .translate('storage_permission_needed'),
+                      .translate('operation_canceled'),
                 );
+                return;
               }
+
+              NotificationHelper.show(
+                rootContext,
+                message:
+                    '${AppLocalizations.of(rootContext)!.translate('file_saved')} $savedPath',
+              );
             },
             style: TextButton.styleFrom(
               foregroundColor: AppColors.cardTitle(context),

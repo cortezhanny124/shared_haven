@@ -61,6 +61,8 @@ dependencies:
   intl: ^0.20.2
   convert: ^3.1.2
   overlay_support: ^2.1.0
+  path_provider: ^2.1.5
+  flutter_file_dialog: ^3.0.2
 
 dev_dependencies:
   flutter_test:

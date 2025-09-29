@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:bdk_flutter/bdk_flutter.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_file_dialog/flutter_file_dialog.dart';
 import 'package:flutter_wallet/languages/app_localizations.dart';
 import 'package:flutter_wallet/services/utilities_service.dart';
 import 'package:flutter_wallet/services/wallet_service.dart';
@@ -15,6 +16,7 @@ import 'package:flutter_wallet/widget_helpers/custom_bottom_sheet.dart';
 import 'package:flutter_wallet/widget_helpers/dialog_helper.dart';
 import 'package:flutter_wallet/widget_helpers/fee_selector.dart';
 import 'package:flutter_wallet/widget_helpers/notification_helper.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:intl/intl.dart';
@@ -635,89 +637,49 @@ class WalletSendtxHelpers {
             // Save Txt File Button
             InkwellButton(
               onTap: () async {
-                if (await Permission.manageExternalStorage.isGranted) {
-                  // Get default Downloads directory
-                  final directory = Directory('/storage/emulated/0/Download');
-                  if (!await directory.exists()) {
-                    await directory.create(recursive: true);
+                try {
+                  // Build a timestamped filename
+                  final now = DateTime.now();
+                  final formatted = DateFormat('yyyyMMdd_HHmmss').format(now);
+                  final fileName = 'PSBT_$formatted.txt';
+
+                  // 1) Write the content to a temporary file
+                  final tmpDir = await getTemporaryDirectory();
+                  final tmpPath = '${tmpDir.path}/$fileName';
+                  final tmpFile = File(tmpPath);
+                  await tmpFile.writeAsString(result, flush: true);
+
+                  // 2) Launch the system "Save as…" dialog (no permission needed)
+                  final params = SaveFileDialogParams(
+                    sourceFilePath: tmpFile.path,
+                    fileName: fileName,
+                    // Helpful filter; users can still pick any location
+                    mimeTypesFilter: ['text/plain', 'application/octet-stream'],
+                  );
+
+                  final savedPath =
+                      await FlutterFileDialog.saveFile(params: params);
+
+                  if (savedPath == null) {
+                    // User canceled
+                    NotificationHelper.show(
+                      context,
+                      message: AppLocalizations.of(context)!
+                          .translate('operation_canceled'),
+                    );
+                    return;
                   }
-
-                  DateTime now = DateTime.now();
-                  String formattedDate =
-                      DateFormat('yyyyMMdd_HHmmss').format(now);
-                  String fileName = 'PSBT_$formattedDate.json';
-                  String filePath = '${directory.path}/$fileName';
-                  File file = File(filePath);
-
-                  // Check if the file already exists
-                  if (await file.exists()) {
-                    final shouldProceed =
-                        (await CustomBottomSheet.buildCustomBottomSheet<bool>(
-                              context: rootContext,
-                              titleKey: 'file_already_exists',
-                              content: Text(
-                                AppLocalizations.of(rootContext)!
-                                    .translate('file_save_prompt'),
-                                style: TextStyle(
-                                  color: AppColors.text(context),
-                                ),
-                              ),
-                              actions: [
-                                InkwellButton(
-                                  onTap: () {
-                                    Navigator.of(context, rootNavigator: true)
-                                        .pop(false);
-                                  },
-                                  label: AppLocalizations.of(rootContext)!
-                                      .translate('no'),
-                                  backgroundColor: Colors.white,
-                                  textColor: Colors.black,
-                                  icon: Icons.cancel_rounded,
-                                  iconColor: Colors.redAccent,
-                                ),
-                                InkwellButton(
-                                  onTap: () {
-                                    Navigator.of(context, rootNavigator: true)
-                                        .pop(true);
-                                  },
-                                  label: AppLocalizations.of(rootContext)!
-                                      .translate('yes'),
-                                  backgroundColor: Colors.white,
-                                  textColor: Colors.black,
-                                  icon: Icons.check_circle,
-                                  iconColor: AppColors.accent(context),
-                                ),
-                              ],
-                            )) ??
-                            false;
-
-                    // If the user chooses not to proceed, exit
-                    if (!shouldProceed) {
-                      return;
-                    }
-
-                    // Increment the file name index until a unique file name is found
-                    int index = 1;
-                    while (await file.exists()) {
-                      fileName = 'PSBT_$formattedDate($index).json';
-                      filePath = '${directory.path}/$fileName';
-                      file = File(filePath);
-                      index++;
-                    }
-                  }
-                  // Write JSON data to the file
-                  await file.writeAsString(result);
 
                   NotificationHelper.show(
-                    rootContext,
+                    context,
                     message:
-                        '${AppLocalizations.of(rootContext)!.translate('file_saved')} ${directory.path}/$fileName',
+                        '${AppLocalizations.of(context)!.translate('file_saved')} $savedPath',
                   );
-                } else {
+                } catch (e) {
                   NotificationHelper.showError(
-                    rootContext,
-                    message: AppLocalizations.of(rootContext)!
-                        .translate('storage_permission_needed'),
+                    context,
+                    message: AppLocalizations.of(context)!
+                        .translate('file_save_error'),
                   );
                 }
               },
@@ -891,37 +853,50 @@ class WalletSendtxHelpers {
             // Save Txt File Button
             InkwellButton(
               onTap: () async {
-                if (await Permission.storage.request().isGranted) {
-                  try {
-                    // Get default Downloads directory
-                    final directory = Directory('/storage/emulated/0/Download');
-                    if (!await directory.exists()) {
-                      await directory.create(recursive: true);
-                    }
+                try {
+                  // Build a timestamped filename
+                  final now = DateTime.now();
+                  final formatted = DateFormat('yyyyMMdd_HHmmss').format(now);
+                  final fileName = 'PSBT_$formatted.txt';
 
-                    DateTime now = DateTime.now();
-                    String formattedDate =
-                        DateFormat('yyyyMMdd_HHmmss').format(now);
-                    String fileName = 'PSBT_$formattedDate.txt';
-                    String filePath = '${directory.path}/$fileName';
-                    File file = File(filePath);
+                  // 1) Write the content to a temporary file
+                  final tmpDir = await getTemporaryDirectory();
+                  final tmpPath = '${tmpDir.path}/$fileName';
+                  final tmpFile = File(tmpPath);
+                  await tmpFile.writeAsString(result, flush: true);
 
-                    await file.writeAsString(result);
+                  // 2) Launch the system "Save as…" dialog (no permission needed)
+                  final params = SaveFileDialogParams(
+                    sourceFilePath: tmpFile.path,
+                    fileName: fileName,
+                    // Helpful filter; users can still pick any location
+                    mimeTypesFilter: ['text/plain', 'application/octet-stream'],
+                  );
 
-                    // Optional: Show a success message to the user
+                  final savedPath =
+                      await FlutterFileDialog.saveFile(params: params);
+
+                  if (savedPath == null) {
+                    // User canceled
                     NotificationHelper.show(
                       context,
                       message: AppLocalizations.of(context)!
-                          .translate('file_saved_successfully'),
+                          .translate('operation_canceled'),
                     );
-                  } catch (e) {
-                    // Handle any error
-                    NotificationHelper.showError(
-                      context,
-                      message: AppLocalizations.of(context)!
-                          .translate('file_save_error'),
-                    );
+                    return;
                   }
+
+                  NotificationHelper.show(
+                    context,
+                    message:
+                        '${AppLocalizations.of(context)!.translate('file_saved')} $savedPath',
+                  );
+                } catch (e) {
+                  NotificationHelper.showError(
+                    context,
+                    message: AppLocalizations.of(context)!
+                        .translate('file_save_error'),
+                  );
                 }
               },
               label: AppLocalizations.of(rootContext)!.translate('save'),
