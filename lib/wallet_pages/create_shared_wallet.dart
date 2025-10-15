@@ -73,7 +73,7 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
     _walletService =
         WalletService(Provider.of<SettingsProvider>(context, listen: false));
 
-    _generatePublicKey(isGenerating: false);
+    _generatePublicKey();
   }
 
   @override
@@ -95,7 +95,7 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
     });
   }
 
-  Future<void> _generatePublicKey({bool isGenerating = true}) async {
+  Future<void> _generatePublicKey() async {
     setState(() => isLoading = true);
     try {
       final walletBox = Hive.box('walletBox');
@@ -119,9 +119,7 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
       //     .substring(0, receivingPublicKey.toString().length - 2));
 
       setState(() {
-        if (isGenerating) {
-          _publicKey = receivingPublicKey.toString();
-        }
+        _publicKey = receivingPublicKey.toString();
         initialPubKey = receivingPublicKey.toString();
         _mnemonic = savedMnemonic;
       });
@@ -300,10 +298,6 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                IconButton(
-                  onPressed: _generatePublicKey,
-                  icon: Icon(Icons.autorenew),
-                ),
                 Expanded(
                   child: Text(
                     '${AppLocalizations.of(context)!.translate('pub_key')}: $_publicKey',
@@ -1953,7 +1947,9 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
       final settingsProvider =
           Provider.of<SettingsProvider>(context, listen: false);
       final wallServ = WalletService(settingsProvider);
-      final url = '${wallServ.baseUrl}/blocks/tip/height';
+      final url = '${await wallServ.baseUrl}blocks/tip/height';
+
+      print(url);
 
       final resp = await http.get(Uri.parse(url));
       final int currHeight = json.decode(resp.body);

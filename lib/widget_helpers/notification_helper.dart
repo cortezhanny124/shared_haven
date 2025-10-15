@@ -8,7 +8,7 @@ class NotificationHelper {
     required String message,
     Color? color,
     Color? textColor,
-    Duration duration = const Duration(seconds: 2),
+    Duration duration = const Duration(seconds: 5),
   }) {
     showSimpleNotification(
       Text(
@@ -26,7 +26,7 @@ class NotificationHelper {
     required String message,
     Color? color,
     Color? textColor,
-    Duration duration = const Duration(seconds: 3),
+    Duration duration = const Duration(seconds: 6),
   }) {
     showSimpleNotification(
         Text(

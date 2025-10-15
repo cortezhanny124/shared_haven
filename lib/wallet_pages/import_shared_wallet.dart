@@ -69,7 +69,7 @@ class ImportSharedWalletState extends State<ImportSharedWallet> {
       }
     });
 
-    _generatePublicKey(isGenerating: false);
+    _generatePublicKey();
   }
 
   @override
@@ -79,7 +79,7 @@ class ImportSharedWalletState extends State<ImportSharedWallet> {
     super.dispose();
   }
 
-  Future<void> _generatePublicKey({bool isGenerating = true}) async {
+  Future<void> _generatePublicKey() async {
     var walletBox = Hive.box('walletBox');
 
     String savedMnemonic = walletBox.get('walletMnemonic');
@@ -108,9 +108,7 @@ class ImportSharedWalletState extends State<ImportSharedWallet> {
     _mnemonic = savedMnemonic;
 
     setState(() {
-      if (isGenerating) {
-        publicKey = receivingPublicKey.toString();
-      }
+      publicKey = receivingPublicKey.toString();
       initialPubKey = receivingPublicKey.toString();
       changeKey = changePublicKey.toString();
     });
@@ -418,30 +416,6 @@ class ImportSharedWalletState extends State<ImportSharedWallet> {
                       ],
                     ),
                   ),
-
-                const SizedBox(height: 16),
-
-                // Generate Public Key Button
-                GestureDetector(
-                  onLongPress: () {
-                    final BaseScaffoldState? baseScaffoldState =
-                        baseScaffoldKey.currentState;
-
-                    if (baseScaffoldState != null) {
-                      baseScaffoldState.updateAssistantMessage(
-                          context, 'assistant_generate_pub_key');
-                    }
-                  },
-                  child: CustomButton(
-                    onPressed: _generatePublicKey,
-                    backgroundColor: AppColors.background(context),
-                    foregroundColor: AppColors.text(context),
-                    icon: Icons.generating_tokens,
-                    iconColor: AppColors.gradient(context),
-                    label: AppLocalizations.of(context)!
-                        .translate('generate_public_key'),
-                  ),
-                ),
 
                 const SizedBox(height: 16),
 

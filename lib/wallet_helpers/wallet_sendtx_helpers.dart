@@ -17,7 +17,6 @@ import 'package:flutter_wallet/widget_helpers/dialog_helper.dart';
 import 'package:flutter_wallet/widget_helpers/fee_selector.dart';
 import 'package:flutter_wallet/widget_helpers/notification_helper.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:intl/intl.dart';
 
@@ -276,7 +275,7 @@ class WalletSendtxHelpers {
             rootContext: rootContext,
             setDialogState: setDialogState,
           ),
-        if (isCreating && !isFromSpendingPath)
+        if (isCreating)
           useAvailableBalanceButton(
             onTap: () => _handleAvailableBalanceTap(),
             updateAssistantMessage: updateAssistantMessage,
@@ -690,97 +689,40 @@ class WalletSendtxHelpers {
               iconColor: AppColors.gradient(context),
             ),
 
-            // // Share Button
+            // Share Button
             InkwellButton(
               onTap: () async {
-                if (await Permission.manageExternalStorage.isGranted) {
-                  // Get default Downloads directory
-                  final directory = Directory('/storage/emulated/0/Download');
-                  if (!await directory.exists()) {
-                    await directory.create(recursive: true);
-                  }
+                try {
+                  // Build a timestamped filename
+                  final now = DateTime.now();
+                  final formatted = DateFormat('yyyyMMdd_HHmmss').format(now);
+                  final fileName = 'PSBT_$formatted.txt';
 
-                  DateTime now = DateTime.now();
-                  String formattedDate =
-                      DateFormat('yyyyMMdd_HHmmss').format(now);
-                  String fileName = 'PSBT_$formattedDate.json';
-                  String filePath = '${directory.path}/$fileName';
-                  File file = File(filePath);
-
-                  // Check if the file already exists
-                  if (await file.exists()) {
-                    final shouldProceed =
-                        (await CustomBottomSheet.buildCustomBottomSheet<bool>(
-                              context: rootContext,
-                              titleKey: 'file_already_exists',
-                              content: Text(
-                                AppLocalizations.of(rootContext)!
-                                    .translate('file_save_prompt'),
-                                style: TextStyle(
-                                  color: AppColors.text(context),
-                                ),
-                              ),
-                              actions: [
-                                InkwellButton(
-                                  onTap: () {
-                                    Navigator.of(context, rootNavigator: true)
-                                        .pop(false);
-                                  },
-                                  label: AppLocalizations.of(rootContext)!
-                                      .translate('no'),
-                                  backgroundColor: Colors.white,
-                                  textColor: Colors.black,
-                                  icon: Icons.cancel_rounded,
-                                  iconColor: Colors.redAccent,
-                                ),
-                                InkwellButton(
-                                  onTap: () {
-                                    Navigator.of(context, rootNavigator: true)
-                                        .pop(true);
-                                  },
-                                  label: AppLocalizations.of(rootContext)!
-                                      .translate('yes'),
-                                  backgroundColor: Colors.white,
-                                  textColor: Colors.black,
-                                  icon: Icons.check_circle,
-                                  iconColor: AppColors.accent(context),
-                                ),
-                              ],
-                            )) ??
-                            false;
-
-                    // If the user chooses not to proceed, exit
-                    if (!shouldProceed) {
-                      return;
-                    }
-
-                    // Increment the file name index until a unique file name is found
-                    int index = 1;
-                    while (await file.exists()) {
-                      fileName = 'PSBT_$formattedDate($index).json';
-                      filePath = '${directory.path}/$fileName';
-                      file = File(filePath);
-                      index++;
-                    }
-                  }
-
-                  // Write JSON data to the file
-                  await file.writeAsString(result);
+                  // Write the content to a temporary file
+                  final tmpDir = await getTemporaryDirectory();
+                  final tmpPath = '${tmpDir.path}/$fileName';
+                  final tmpFile = File(tmpPath);
+                  await tmpFile.writeAsString(result, flush: true);
 
                   final psbtString = jsonDecode(result)['psbt'];
 
-                  // 🔥 Now share the file instead of just raw text
-                  SharePlus.instance.share(
+                  // Share text + file
+                  await SharePlus.instance.share(
                     ShareParams(
                       text: psbtString,
-                      files: [XFile(filePath)],
+                      files: [XFile(tmpFile.path)],
                     ),
                   );
-                } else {
+                  NotificationHelper.show(
+                    context,
+                    message: AppLocalizations.of(context)!
+                        .translate('shared_success'),
+                  );
+                } catch (e) {
                   NotificationHelper.showError(
-                    rootContext,
-                    message: AppLocalizations.of(rootContext)!
-                        .translate('storage_permission_needed'),
+                    context,
+                    message:
+                        AppLocalizations.of(context)!.translate('share_error'),
                   );
                 }
               },
@@ -1122,8 +1064,7 @@ class WalletSendtxHelpers {
                             psbtText = decoded['psbt'] as String;
                             path = decoded['spending_path'];
 
-                            print('aqui');
-                            print(path);
+                            // print(path);
                           } else {
                             throw Exception("JSON file missing 'psbt' field.");
                           }
