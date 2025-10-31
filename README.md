@@ -2,7 +2,6 @@
 
 # Shared Haven  
 
-<<<<<<< HEAD
 [![Flutter](https://img.shields.io/badge/Flutter-2.10-blue.svg)](https://flutter.dev)  
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)  
 
@@ -18,35 +17,11 @@ It lets groups pool funds, share balances, and manage contributions—all in one
 
 ---
 
-=======
-
-# Shared Haven  
-
-[![Flutter](https://img.shields.io/badge/Flutter-2.10-blue.svg)](https://flutter.dev)  
-[![License: GPL-3.0](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)  
-
-**Shared Haven** is a Flutter (mobile/web) wallet / shared-fund / pooling app (work in progress).  
-It lets groups pool funds, share balances, and manage contributions—all in one secure place.
-
----
-
-## 📚 Index
-
-- [👩‍💻 Developer Information](#-developer-information)
-- [🧭 User Guide](#-user-guide)
-
----
-
->>>>>>> 00853ef78887aa1bf939a9f88a99604716c68e62
 ## 👩‍💻 Developer Information
 
 ### 🚀 Features
 
-<<<<<<< HEAD
 - Multi-platform (iOS, Android) support via Flutter  
-=======
-- Multi-platform (iOS, Android, Web) support via Flutter  
->>>>>>> 00853ef78887aa1bf939a9f88a99604716c68e62
 - Account / wallet management  
 - Shared group balances and pooled funds  
 - Transaction tracking and reconciliation  
@@ -75,11 +50,7 @@ The project follows **Clean Architecture** principles with a clear separation be
 - Flutter SDK (stable channel, v2.10 or higher)  
 - Dart SDK  
 - Android Studio or VSCode  
-<<<<<<< HEAD
 - A connected device, emulator
-=======
-- A connected device, emulator, or web browser  
->>>>>>> 00853ef78887aa1bf939a9f88a99604716c68e62
 
 #### Setup Steps
 
@@ -184,8 +155,4 @@ Whether you’re managing a small group fund or experimenting with timelocked mu
 ---
 
 **License:** [GNU GPLv3](LICENSE)  
-<<<<<<< HEAD
 **Repository:** [GitHub – cortezhanny124/shared_haven](https://github.com/cortezhanny124/shared_haven)
-=======
-**Repository:** [GitHub – cortezhanny124/shared_haven](https://github.com/cortezhanny124/shared_haven)
->>>>>>> 00853ef78887aa1bf939a9f88a99604716c68e62
