@@ -29,6 +29,6 @@ buildscript {
 
     dependencies {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.20"
-        classpath 'com.android.tools.build:gradle:8.3.0'  // Upgrade Gradle Plugin
+        classpath 'com.android.tools.build:gradle:8.6.1'  // Upgrade Gradle Plugin
     }
 }

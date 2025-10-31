@@ -460,4 +460,33 @@ const Map<String, String> localizedStringsFr = {
       'Dans cette section, vous pouvez **créer un nouveau portefeuille partagé**.',
   'assistant_import_shared':
       'Dans cette section, vous pouvez **importer un portefeuille partagé existant**.',
+
+  'initial_instructions_title': 'Bienvenue sur SharedHaven',
+  'initial_instructions':
+      'Vous voulez en savoir plus sur nous ? Visitez {x} !\nRepérez les icônes “?” dans toute l’application — touchez-les à tout moment pour obtenir de l’aide grâce à notre assistant intégré.',
+  'got_it': 'Compris !',
+  'mainnet_switch': 'Passer au réseau principal ?',
+  'mainnet_switch_text':
+      'Vous êtes sur le point de passer au réseau principal de Bitcoin.\n\nLes transactions ici sont réelles et irréversibles.\nÊtes-vous sûr de vouloir continuer ?',
+  'continue': 'Continuer',
+  'paste': 'Coller',
+  'clear': 'Effacer',
+  'enter_pub_keys': 'Saisir les clés publiques',
+  'enter_multisig': 'Saisir la politique multisig',
+  'add_multisig': 'Ajouter une configuration multisig',
+  'assistant_default_tip1':
+      'Besoin d’aide ? Touchez l’icône “?” à tout moment pour obtenir de l’assistance via notre guide intégré.',
+  'assistant_default_tip2':
+      'Vous pouvez toujours revenir ici pour revoir ou modifier la configuration de votre portefeuille.',
+  'assistant_enter_pub_keys':
+      'Chaque participant doit fournir sa clé publique. Assurez-vous que toutes les clés sont correctes avant de continuer !',
+  'assistant_enter_multisig':
+      'Définissez le nombre de signatures requises pour dépenser les fonds de ce portefeuille — par exemple, 2 sur 3 signifie deux signatures sur un total de trois.',
+  'assistant_enter_timelock':
+      'Définissez un verrou temporel facultatif si vous souhaitez que vos fonds ne soient dépensables qu’après un certain délai ou une certaine hauteur de bloc.',
+  'share_descriptor': 'Partager le descripteur',
+
+  "next": "Suivant",
+  "scroll_to_continue": "Faites défiler pour continuer",
+  "legal_disclaimer_title": "Avertissement légal",
 };

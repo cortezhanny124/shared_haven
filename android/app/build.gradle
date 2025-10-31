@@ -1,15 +1,15 @@
 plugins {
     id "com.android.application"
-    id "kotlin-android"
+    // id "kotlin-android"
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id "dev.flutter.flutter-gradle-plugin"
-    id "org.jetbrains.kotlin.android" version "1.9.20"
+    id "org.jetbrains.kotlin.android" // version "1.9.20"
 }
 
 android {
-    namespace = "com.example.flutter_wallet"
+    namespace = "com.bitcoin.sharedhaven.testnet"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -22,11 +22,11 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.flutter_wallet"
+        applicationId = "com.bitcoin.sharedhaven.testnet"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         // minSdk = flutter.minSdkVersion
-        minSdkVersion 26
+        minSdk = 26
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -36,37 +36,59 @@ android {
         }
     }
 
-    flavorDimensions "network"
-    productFlavors {
-        bitcoin_mainnet {
-            dimension "network"
-            applicationId "com.bitcoin.sharedhaven.mainnet" // Unique ID for mainnet
-            versionNameSuffix "-mainnet"
-        }
+    // flavorDimensions "network"
+    // productFlavors {
+    //     bitcoin_mainnet {
+    //         dimension "network"
+    //         applicationId "com.bitcoin.sharedhaven.mainnet" // Unique ID for mainnet
+    //         versionNameSuffix "-mainnet"
+    //     }
 
-        bitcoin_testnet {
-            dimension "network"
-            applicationId "com.bitcoin.sharedhaven.testnet" // Unique ID for testnet
-            versionNameSuffix "-testnet"
-        }
+    //     bitcoin_testnet {
+    //         dimension "network"
+    //         applicationId "com.bitcoin.sharedhaven.testnet" // Unique ID for testnet
+    //         versionNameSuffix "-testnet"
+    //     }
+    // }
+
+     // 🔐 Load keystore (fail loudly if missing)
+    def keystorePropsFile = rootProject.file("key.properties")
+    def keystoreProps = new Properties()
+    if (!keystorePropsFile.exists()) {
+        throw new GradleException("Missing android/key.properties for release signing")
     }
+    keystoreProps.load(new FileInputStream(keystorePropsFile))
 
-   applicationVariants.all { variant ->
-        variant.outputs.all { output ->
-            if (variant.buildType.name == "release") {
-                output.outputFileName = "SharedHaven-release.apk"
-            } else if (variant.buildType.name == "debug") {
-                output.outputFileName = "SharedHaven-debug.apk"
-            }
+    signingConfigs {
+        release {
+            storeFile file(keystoreProps['storeFile'])
+            storePassword keystoreProps['storePassword']
+            keyAlias keystoreProps['keyAlias']
+            keyPassword keystoreProps['keyPassword']
         }
     }
 
     buildTypes {
         release {
             minifyEnabled true
-            shrinkResources false // Temporarily disable shrinking for debugging
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            signingConfig = signingConfigs.debug
+            shrinkResources false  // you can re-enable later
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'),
+                          'proguard-rules.pro'
+            signingConfig signingConfigs.release   // ✅ no equals, standard Groovy DSL
+        }
+        debug {
+            // uses debug keystore implicitly
+        }
+    }
+
+    // 📦 Rename ONLY APKs (avoid touching bundle outputs)
+    applicationVariants.all { variant ->
+        variant.outputs.each { output ->
+            def name = output?.outputFileName
+            if (name != null && name.endsWith(".apk")) {
+                output.outputFileName =
+                    "SharedHaven-${variant.flavorName ?: 'noflavor'}-${variant.buildType.name}.apk"
+            }
         }
     }
 }

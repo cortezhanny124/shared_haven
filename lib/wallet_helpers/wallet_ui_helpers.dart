@@ -429,7 +429,8 @@ class WalletUiHelpers {
             isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : transactions.isEmpty
-                    ? const Text('No transactions available')
+                    ? Text(AppLocalizations.of(context)!
+                        .translate('no_transactions_available'))
                     : SizedBox(
                         height: 310, // Define the height of the scrollable area
                         child: ListView.builder(

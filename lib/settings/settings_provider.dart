@@ -1,6 +1,5 @@
 import 'package:bdk_flutter/bdk_flutter.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_wallet/services/wallet_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // Light & Dark Theme Definitions
@@ -56,10 +55,12 @@ class SettingsProvider with ChangeNotifier {
       } else {
         _network = Network.testnet;
       }
-    } else if (isTest) {
+    }
+    // else if (isTest) {
+    //   _network = Network.testnet;
+    // }
+    else {
       _network = Network.testnet;
-    } else {
-      _network = Network.bitcoin;
     }
 
     notifyListeners(); // Ensure UI updates after loading

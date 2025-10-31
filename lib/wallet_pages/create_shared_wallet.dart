@@ -335,17 +335,36 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
               children: [
                 // Section Title
 
-                Text(
-                  '2. ${AppLocalizations.of(context)!.translate('enter_pub_keys')}',
-                  style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                    color: (_isThresholdMissing ||
-                            _arePublicKeysMissing ||
-                            _isYourPubKeyMissing)
-                        ? AppColors.error(context)
-                        : AppColors.text(context),
-                  ),
+                Row(
+                  children: [
+                    Text(
+                      '2. ${AppLocalizations.of(context)!.translate('enter_pub_keys')}',
+                      style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                        color: (_isThresholdMissing ||
+                                _arePublicKeysMissing ||
+                                _isYourPubKeyMissing)
+                            ? AppColors.error(context)
+                            : AppColors.text(context),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () {
+                        final BaseScaffoldState? baseScaffoldState =
+                            baseScaffoldKey.currentState;
+
+                        if (baseScaffoldState != null) {
+                          baseScaffoldState.updateAssistantMessage(
+                              context, 'assistant_enter_pub_keys');
+                        }
+                      },
+                      icon: Icon(
+                        Icons.help,
+                        color: AppColors.icon(context),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -447,18 +466,36 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Section Title
+                  Row(
+                    children: [
+                      Text(
+                        '3. ${AppLocalizations.of(context)!.translate('enter_multisig')}',
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                          color: (_isThresholdMissing ||
+                                  _arePublicKeysMissing ||
+                                  _isYourPubKeyMissing)
+                              ? AppColors.error(context)
+                              : AppColors.text(context),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () {
+                          final BaseScaffoldState? baseScaffoldState =
+                              baseScaffoldKey.currentState;
 
-                  Text(
-                    '3. ${AppLocalizations.of(context)!.translate('enter_multisig')}',
-                    style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16,
-                      color: (_isThresholdMissing ||
-                              _arePublicKeysMissing ||
-                              _isYourPubKeyMissing)
-                          ? AppColors.error(context)
-                          : AppColors.text(context),
-                    ),
+                          if (baseScaffoldState != null) {
+                            baseScaffoldState.updateAssistantMessage(
+                                context, 'assistant_enter_multisig');
+                          }
+                        },
+                        icon: Icon(
+                          Icons.help,
+                          color: AppColors.icon(context),
+                        ),
+                      ),
+                    ],
                   ),
 
                   Row(
@@ -562,12 +599,31 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    '4. ${AppLocalizations.of(context)!.translate('enter_timelock_conditions')}',
-                    style: GoogleFonts.poppins(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 16,
-                        color: AppColors.text(context)),
+                  Row(
+                    children: [
+                      Text(
+                        '4. ${AppLocalizations.of(context)!.translate('enter_timelock_conditions')}',
+                        style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                            color: AppColors.text(context)),
+                      ),
+                      IconButton(
+                        onPressed: () {
+                          final BaseScaffoldState? baseScaffoldState =
+                              baseScaffoldKey.currentState;
+
+                          if (baseScaffoldState != null) {
+                            baseScaffoldState.updateAssistantMessage(
+                                context, 'assistant_enter_timelock');
+                          }
+                        },
+                        icon: Icon(
+                          Icons.help,
+                          color: AppColors.icon(context),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 10),
                   IconButton(

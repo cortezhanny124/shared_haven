@@ -457,4 +457,33 @@ const Map<String, String> localizedStringsEs = {
       'En esta sección de la aplicación, podrás **crear una nueva billetera compartida**.',
   'assistant_import_shared':
       'En esta sección de la aplicación, podrás **importar una billetera compartida existente**.',
+
+  'initial_instructions_title': 'Bienvenido a SharedHaven',
+  'initial_instructions':
+      '¿Quieres saber más sobre nosotros? Visita {x}.\nFíjate en los íconos “?” en toda la aplicación — tócalos en cualquier momento para recibir ayuda de nuestro asistente integrado.',
+  'got_it': '¡Entendido!',
+  'mainnet_switch': '¿Cambiar a la red principal?',
+  'mainnet_switch_text':
+      'Estás a punto de cambiar a la red principal de Bitcoin.\n\nLas transacciones aquí son reales e irreversibles.\n¿Seguro que quieres continuar?',
+  'continue': 'Continuar',
+  'paste': 'Pegar',
+  'clear': 'Borrar',
+  'enter_pub_keys': 'Introduce las claves públicas',
+  'enter_multisig': 'Introduce la política multisig',
+  'add_multisig': 'Agregar configuración multisig',
+  'assistant_default_tip1':
+      '¿Necesitas ayuda? Toca el ícono “?” en cualquier momento para obtener asistencia de nuestra guía integrada.',
+  'assistant_default_tip2':
+      'Siempre puedes volver aquí para revisar la configuración de tu monedero o modificarla.',
+  'assistant_enter_pub_keys':
+      'Cada participante debe proporcionar su clave pública. ¡Asegúrate de que todas sean correctas antes de continuar!',
+  'assistant_enter_multisig':
+      'Define cuántas firmas se requieren para gastar desde este monedero — por ejemplo, 2 de 3 significa dos firmas de un total de tres.',
+  'assistant_enter_timelock':
+      'Configura un bloqueo de tiempo opcional si deseas que tus fondos se puedan gastar solo después de un tiempo o altura de bloque específicos.',
+  'share_descriptor': 'Compartir descriptor',
+
+  "next": "Siguiente",
+  "scroll_to_continue": "Desplázate para continuar",
+  "legal_disclaimer_title": "Aviso legal",
 };

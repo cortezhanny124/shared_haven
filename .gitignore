@@ -2,6 +2,7 @@
 # Bash scripts (optional)
 build_mainnet_apk.sh
 build_testnet_apk.sh
+build_apk.sh
 
 # ─────────────────────────────────────────────
 # Miscellaneous
