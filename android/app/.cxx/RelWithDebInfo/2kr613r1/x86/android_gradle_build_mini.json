@@ -1,0 +1,20 @@
+{
+  "buildFiles": [
+    "/home/ciprian/flutter/packages/flutter_tools/gradle/src/main/groovy/CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "/home/ciprian/android-sdk/cmake/3.22.1/bin/ninja",
+      "-C",
+      "/home/ciprian/Desktop/flutterProjects/flutter_wallet/android/app/.cxx/RelWithDebInfo/2kr613r1/x86",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "/home/ciprian/android-sdk/cmake/3.22.1/bin/ninja",
+    "-C",
+    "/home/ciprian/Desktop/flutterProjects/flutter_wallet/android/app/.cxx/RelWithDebInfo/2kr613r1/x86",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {}
+}

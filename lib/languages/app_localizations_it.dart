@@ -452,4 +452,33 @@ const Map<String, String> localizedStringsIt = {
       'In questa sezione dell\'app, puoi creare un nuovo **portafoglio condiviso**.',
   'assistant_import_shared':
       'In questa sezione dell\'app, puoi **importare un portafoglio condiviso esistente**.',
+
+  'initial_instructions_title': 'Benvenuto in SharedHaven',
+  'initial_instructions':
+      'Vuoi saperne di più su di noi? Visita {x}!\nAll’interno dell’app troverai delle icone “?” — toccale in qualsiasi momento per ricevere assistenza dal nostro assistente integrato.',
+  'got_it': 'Ho capito!',
+  'mainnet_switch': 'Passare alla rete principale?',
+  'mainnet_switch_text':
+      'Stai per passare alla rete principale di Bitcoin.\n\nLe transazioni qui sono reali e irreversibili.\nSei sicuro di voler continuare?',
+  'continue': 'Continua',
+  'paste': 'Incolla',
+  'clear': 'Pulisci',
+  'enter_pub_keys': 'Inserisci le chiavi pubbliche',
+  'enter_multisig': 'Inserisci la policy multisig',
+  'add_multisig': 'Aggiungi configurazione multisig',
+  'assistant_default_tip1':
+      'Hai bisogno di aiuto? Tocca l’icona “?” in qualsiasi momento per ricevere assistenza dalla guida integrata.',
+  'assistant_default_tip2':
+      'Puoi sempre tornare qui per rivedere la configurazione del tuo wallet o modificarla.',
+  'assistant_enter_pub_keys':
+      'Ogni partecipante deve fornire la propria chiave pubblica. Assicurati che tutte siano corrette prima di continuare!',
+  'assistant_enter_multisig':
+      'Definisci quante firme sono necessarie per spendere i fondi di questo wallet — ad esempio, 2 su 3 significa due firme su un totale di tre.',
+  'assistant_enter_timelock':
+      'Imposta un timelock opzionale se desideri che i tuoi fondi siano spendibili solo dopo un certo tempo o un determinato blocco.',
+  'share_descriptor': 'Condividi descriptor',
+
+  "next": "Avanti",
+  "scroll_to_continue": "Scorri per continuare",
+  "legal_disclaimer_title": "Disclaimer legale",
 };

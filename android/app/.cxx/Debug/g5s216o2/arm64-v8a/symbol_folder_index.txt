@@ -1,0 +1,1 @@
+/home/ciprian/Desktop/flutterProjects/flutter_wallet/build/app/intermediates/cxx/Debug/g5s216o2/obj/arm64-v8a

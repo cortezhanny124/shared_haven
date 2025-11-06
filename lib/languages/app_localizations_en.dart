@@ -82,7 +82,7 @@ const Map<String, String> localizedStringsEn = {
   'confirmed': 'Confirmed',
   'mempool': 'Visit the Mempool',
 
-// Errors & Warnings
+  // Errors & Warnings
   'error_wallet_creation': 'Error creating wallet with the descriptor provided',
   'error_loading_data': 'Error loading wallet data',
   'error_network': 'Network error. Please check your connection.',
@@ -365,7 +365,7 @@ const Map<String, String> localizedStringsEn = {
   'assistant_shared_wallet':
       'Welcome to your **shared wallet**! 🚀 Think of it as a **Bitcoin wallet with superpowers**—offering multisig transactions, spending rules, and team-based security.',
   'assistant_shared_spending_path_box':
-      'These are your available **spending paths**—rules that determine how funds can be spent. Meet the conditions, and you can access the indicated amount. 💡',
+      'These are your available **spending paths**—rules that determine how funds can be spent. Meet the conditions, and you can access the indicated amount. 💡 Tap on each icon to discover each functionality.',
   'assistant_shared_available_balance':
       'In a shared wallet, this button calculates the **spendable balance based on the selected spending path**. **Enter a recipient first** to get an accurate amount! ⚡',
   'assistant_shared_path_selected':
@@ -456,4 +456,57 @@ const Map<String, String> localizedStringsEn = {
       'In this section of the app, you will be able to create a new shared wallet.',
   'assistant_import_shared':
       'In this section of the app, you will be able to import an existing shared wallet.',
+
+  'initial_instructions_title': 'Welcome to SharedHaven',
+  'initial_instructions':
+      'Want to know more about us? Visit {x}!\nLook out for “?” icons across the app — tap them anytime for guidance from our built-in assistant.',
+  'got_it': 'Got it!',
+  'mainnet_switch': 'Switch to mainnet?',
+  'mainnet_switch_text':
+      'You are about to switch to the Bitcoin Mainnet.\n\nTransactions here are real and irreversible.\nAre you sure you want to continue?',
+  'continue': 'Continue',
+  'paste': 'Paste',
+  'clear': 'Clear',
+  'enter_pub_keys': 'Enter Public Keys',
+  'enter_multisig': 'Enter Multisig Policy',
+  'add_multisig': 'Add Multisig Configuration',
+  'assistant_default_tip1':
+      'Need help? Tap the ? icon anytime to get assistance from our built-in guide.',
+  'assistant_default_tip2':
+      'You can always come back here to review your wallet setup and change configurations.',
+  'assistant_enter_pub_keys':
+      'Each participant must provide their public key. Make sure all keys are correct before proceeding!',
+  'assistant_enter_multisig':
+      'Define how many signatures are required to spend from this wallet — for example, 2-of-3 means two signatures out of three total.',
+  'assistant_enter_timelock':
+      'Set an optional timelock if you want your funds to become spendable only after a specific time or block height.',
+  'share_descriptor': 'Share Descriptor',
+
+  'next': 'Next',
+  'scroll_to_continue': 'Scroll to Continue',
+  'legal_disclaimer_title': 'Legal Disclaimer',
+  'legal_disclaimer': '''
+1. Risks related to the use of SharedHaven Wallet
+SharedHaven will not be responsible for any losses, damages or claims arising from events falling within the scope of the following five categories:
+
+Mistakes made by the user of any cryptocurrency-related software or service, e.g., forgotten passwords, payments sent to wrong coin addresses, and accidental deletion of wallets.
+Software problems of the wallet and/or any cryptocurrency-related software or service, e.g., corrupted wallet file, incorrectly constructed transactions, unsafe cryptographic libraries, malware affecting the wallet and/or any cryptocurrency-related software or service.
+Technical failures in the hardware of the user of any cryptocurrency-related software or service, e.g., data loss due to a faulty or damaged storage device.
+Security problems experienced by the user of any cryptocurrency-related software or service, e.g., unauthorized access to users' wallets and/or accounts.
+Actions or inactions of third parties and/or events experienced by third parties, e.g., bankruptcy of service providers, information security attacks on service providers, and fraud conducted by third parties.
+
+2. Compliance with tax obligations
+The users of the wallet are solely responsible to determinate what, if any, taxes apply to their crypto-currency transactions. The owners of, or contributors to, the wallet are NOT responsible for determining the taxes that apply to crypto-currency transactions.
+
+3. No warranties
+The wallet is provided on an "as is" basis without any warranties of any kind regarding the wallet and/or any content, data, materials and/or services provided on the wallet.
+
+4. Limitation of liability
+Unless otherwise required by law, in no event shall the owners of, or contributors to, the wallet be liable for any damages of any kind, including, but not limited to, loss of use, loss of profits, or loss of data arising out of or in any way connected with the use of the wallet. In no way are the owners of, or contributors to, the wallet responsible for the actions, decisions, or other behavior taken or not taken by you in reliance upon the wallet.
+
+5. Arbitration
+The user of the wallet agrees to arbitrate any dispute arising from or in connection with the wallet or this disclaimer, except for disputes related to copyrights, logos, trademarks, trade names, trade secrets or patents.
+
+6. Last amendment
+This disclaimer was amended for the last time on October 1st, 2025 ''',
 };

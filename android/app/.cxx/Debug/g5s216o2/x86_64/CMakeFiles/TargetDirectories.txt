@@ -1,0 +1,2 @@
+/home/ciprian/Desktop/flutterProjects/flutter_wallet/android/app/.cxx/Debug/g5s216o2/x86_64/CMakeFiles/edit_cache.dir
+/home/ciprian/Desktop/flutterProjects/flutter_wallet/android/app/.cxx/Debug/g5s216o2/x86_64/CMakeFiles/rebuild_cache.dir

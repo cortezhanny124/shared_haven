@@ -77,7 +77,7 @@ import 'package:collection/collection.dart';
 
 const int avgBlockTime = 600;
 
-const bool isTest = true;
+// const bool isTest = true;
 
 class WalletService extends ChangeNotifier {
   final WalletStorageService _walletStorageService = WalletStorageService();
@@ -412,8 +412,8 @@ class WalletService extends ChangeNotifier {
         throw ('Error: $e');
       }
     } catch (e) {
-      print("Mempool API failed, falling back to default");
-      throw ('Error: $e');
+      print("Mempool API failed, falling back to default: $e");
+      throw ('Mempool API failed, falling back to default');
     }
   }
 
