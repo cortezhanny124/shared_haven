@@ -4,50 +4,70 @@ class CustomButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final Color backgroundColor;
   final Color foregroundColor;
-  final IconData icon;
-  final Color iconColor;
+  final IconData? icon;
+  final Color? iconColor;
   final String label;
   final double padding;
   final double iconSize;
-  final bool
-      verticalLayout; // 🔥 new: determines if icon/text are stacked vertically
-  final double spacing; // optional: space between icon and text
+  final bool verticalLayout;
+  final double spacing;
 
   const CustomButton({
     super.key,
     required this.onPressed,
     required this.backgroundColor,
     required this.foregroundColor,
-    required this.icon,
-    required this.iconColor,
+    this.icon,
+    this.iconColor,
     this.label = '',
     this.padding = 16.0,
     this.iconSize = 24.0,
-    this.verticalLayout = false, // default = row layout
+    this.verticalLayout = false,
     this.spacing = 6.0,
   });
 
   @override
   Widget build(BuildContext context) {
     final bool hasLabel = label.isNotEmpty;
+    final bool hasIcon = icon != null;
 
-    final Widget iconWidget = Icon(
-      icon,
-      size: iconSize,
-      color: iconColor,
-    );
+    final Widget? iconWidget = hasIcon
+        ? Icon(
+            icon,
+            size: iconSize,
+            color: iconColor ?? foregroundColor,
+          )
+        : null;
 
     final Widget textWidget = hasLabel
         ? Text(
             label,
+            textAlign: TextAlign.center,
           )
         : const SizedBox.shrink();
+
+    List<Widget> children = [];
+
+    if (hasIcon) {
+      children.add(iconWidget!);
+    }
+
+    if (hasIcon && hasLabel) {
+      // Only add spacing if both exist
+      children.add(verticalLayout
+          ? SizedBox(height: spacing)
+          : SizedBox(width: spacing));
+    }
+
+    if (hasLabel) {
+      children.add(textWidget);
+    }
 
     return ElevatedButton(
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
-        foregroundColor: foregroundColor, // text color
-        backgroundColor: backgroundColor, // button background
+        foregroundColor: foregroundColor,
+        backgroundColor: backgroundColor,
         padding: EdgeInsets.symmetric(vertical: padding, horizontal: padding),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
@@ -57,20 +77,12 @@ class CustomButton extends StatelessWidget {
           ? Column(
               mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                iconWidget,
-                if (hasLabel) SizedBox(height: spacing),
-                textWidget,
-              ],
+              children: children,
             )
           : Row(
               mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                iconWidget,
-                if (hasLabel) SizedBox(width: spacing),
-                textWidget,
-              ],
+              children: children,
             ),
     );
   }

@@ -452,8 +452,7 @@ class BaseScaffoldState extends State<BaseScaffold> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                 decoration: BoxDecoration(
-                  color: AppColors.container(context)
-                      .withAlpha((0.8 * 255).toInt()),
+                  color: AppColors.container(context).opaque(0.8),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: AppColors.error(context),
@@ -658,7 +657,7 @@ class BaseScaffoldState extends State<BaseScaffold> {
             child: Text(
               AppLocalizations.of(context)!.translate('welcoming_description'),
               style: TextStyle(
-                color: AppColors.text(context).withAlpha((0.8 * 255).toInt()),
+                color: AppColors.text(context).opaque(0.8),
                 fontSize: 14,
               ),
             ),

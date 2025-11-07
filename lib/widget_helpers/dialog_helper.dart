@@ -260,38 +260,60 @@ class DialogHelper {
   }
 
   /// ✅ **Updated method to show and control a loading dialog**
-  static Future<void> showLoadingDialog(BuildContext context,
-      {String? messageKey}) async {
+  static Future<void> showLoadingDialog(
+    BuildContext context, {
+    String? messageKey,
+  }) async {
     final rootContext = context;
 
     showDialog(
       context: rootContext,
-      barrierDismissible: false, // Prevent closing
+      barrierDismissible: false,
       builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: AppColors.dialog(context),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20.0),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text(
-                AppLocalizations.of(rootContext)!
-                    .translate(messageKey ?? 'processing'),
-                style: TextStyle(
-                  color: AppColors.text(context),
-                ),
+        return StatefulBuilder(
+          builder: (context, setState) {
+            final controller = AnimationController(
+              duration: const Duration(seconds: 1),
+              vsync: Navigator.of(context),
+            )..repeat();
+
+            return AlertDialog(
+              backgroundColor: AppColors.dialog(context),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20.0),
               ),
-            ],
-          ),
+              content: AnimatedBuilder(
+                animation: controller,
+                builder: (context, child) {
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Transform.rotate(
+                        angle: controller.value * 6.28319, // 2π
+                        child: Icon(
+                          Icons.currency_bitcoin,
+                          size: 42,
+                          color: AppColors.icon(context),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        AppLocalizations.of(rootContext)!
+                            .translate(messageKey ?? 'processing'),
+                        style: TextStyle(
+                          color: AppColors.text(context),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            );
+          },
         );
       },
     );
-
-    return; // Can be awaited to ensure the function completes
   }
 
   /// Shows an error dialog with a custom message.

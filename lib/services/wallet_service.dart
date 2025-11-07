@@ -400,21 +400,87 @@ class WalletService extends ChangeNotifier {
   }
 
   Future<double> getFeeRate() async {
-    try {
-      final response = await http.get(
-        Uri.parse("${await baseUrl}/v1/fees/recommended"),
-      );
+    final String base = await baseUrl;
 
-      if (response.statusCode == 200) {
-        final fees = jsonDecode(response.body);
-        return fees['halfHourFee'].toDouble(); // Use mempool.space's fee
-      } else {
-        throw ('Error: $e');
-      }
-    } catch (e) {
-      print("Mempool API failed, falling back to default: $e");
-      throw ('Mempool API failed, falling back to default');
+    Uri join(String path) {
+      final b = base.endsWith('/') ? base.substring(0, base.length - 1) : base;
+      return Uri.parse('$b$path');
     }
+
+    final candidates = <Uri>[
+      // Attempt 1: mempool.space-compatible
+      join('/v1/fees/recommended'),
+      // Attempt 2: Blockstream-compatible
+      join('/fee-estimates'),
+    ];
+
+    for (final uri in candidates) {
+      try {
+        final response = await http.get(uri);
+        // print('[getFeeRate] GET $uri -> ${response.statusCode}');
+
+        // print(response.body);
+
+        if (response.statusCode != 200) continue;
+
+        final dynamic json = jsonDecode(response.body);
+
+        // Case A — mempool.space shape: { fastestFee, halfHourFee, hourFee }
+        if (json is Map && json.containsKey('halfHourFee')) {
+          final halfHour = (json['halfHourFee'] as num?)?.toDouble();
+          if (halfHour != null) return halfHour;
+        }
+
+        // Case B — Blockstream shape: { "1": 87.8, "2": ..., "3": ..., "6": ..., ... }
+        if (json is Map<String, dynamic>) {
+          double? parseKey(String k) {
+            final v = json[k];
+            if (v is num) return v.toDouble();
+            if (v is String) return double.tryParse(v);
+            return null;
+          }
+
+          // Prefer 3 blocks (~30 minutes)
+          double? f3 = parseKey('3');
+
+          if (f3 == null) {
+            // If "3" is missing, pick the closest available target (>= then <=)
+            final keys = <int>[];
+            for (final k in json.keys) {
+              final n = int.tryParse(k);
+              if (n != null) keys.add(n);
+            }
+            if (keys.isNotEmpty) {
+              keys.sort();
+              double? valFor(int t) => parseKey('$t');
+
+              // nearest >= 3
+              final ge = keys.firstWhere((k) => k >= 3, orElse: () => -1);
+              if (ge != -1) f3 = valFor(ge);
+
+              // nearest <= 3 if still null
+              if (f3 == null) {
+                for (int i = keys.length - 1; i >= 0; i--) {
+                  if (keys[i] <= 3) {
+                    f3 = valFor(keys[i]);
+                    if (f3 != null) break;
+                  }
+                }
+              }
+            }
+          }
+
+          if (f3 != null) return f3;
+        }
+      } catch (e) {
+        // print('[getFeeRate] Error for $uri: $e');
+        // try next candidate
+        continue;
+      }
+    }
+
+    // If we get here, both endpoints failed or didn’t return usable data.
+    throw ('Unable to fetch fee rate from mempool or blockstream endpoints.');
   }
 
   Future<Map<String, double>?> fetchRecommendedFees() async {

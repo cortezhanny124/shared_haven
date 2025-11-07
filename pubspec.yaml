@@ -108,6 +108,7 @@ flutter:
     - assets/animations/bitcoin_splash.json
     - assets/animations/assistant_mainnet.json
     - assets/animations/assistant_testnet.json
+    - assets/icon/shared_haven_icon.png
     # To add assets to your application, add an assets section, like this:
     # assets:
     #   - images/a_dot_burr.jpeg

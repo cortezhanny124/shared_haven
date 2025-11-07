@@ -169,7 +169,11 @@ class WalletPageState extends State<WalletPage> {
         .address
         .asString();
 
+    // print(walletId);
+
     _walletData = await _walletStorageService.loadWalletData(walletId);
+
+    // print('address: ${_walletData!.address}');
 
     if (_walletData != null) {
       // If offline data is available, use it to update the UI

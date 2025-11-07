@@ -530,106 +530,120 @@ class WalletSpendingPathHelpers {
                         onTap: () async {
                           final rootContext = context;
 
-                          final singleWallet = await walletService
-                              .createOrRestoreWallet(mnemonic);
+                          try {
+                            final singleWallet = await walletService
+                                .createOrRestoreWallet(mnemonic);
 
-                          final recipient = singleWallet
-                              .getAddress(
-                                  addressIndex:
-                                      const AddressIndex.peek(index: 0))
-                              .address
-                              .asString();
+                            final recipient = singleWallet
+                                .getAddress(
+                                    addressIndex:
+                                        const AddressIndex.peek(index: 0))
+                                .address
+                                .asString();
 
-                          int backupSpendable = 0;
+                            int backupSpendable = 0;
 
-                          for (var utxo in utxos) {
-                            final status = utxo['status'];
-                            final confirmed =
-                                status != null && status['confirmed'] == true;
+                            for (var utxo in utxos) {
+                              final status = utxo['status'];
+                              final confirmed =
+                                  status != null && status['confirmed'] == true;
 
-                            if (confirmed) {
-                              backupSpendable +=
-                                  int.parse(utxo['value'].toString());
+                              if (confirmed) {
+                                backupSpendable +=
+                                    int.parse(utxo['value'].toString());
 
-                              continue;
+                                continue;
+                              }
                             }
-                          }
 
-                          final shouldContinue = await showDialog<bool>(
-                            context: rootContext,
-                            builder: (ctx) => AlertDialog(
-                              backgroundColor: AppColors.dialog(context),
-                              title: const Text("Confirm Backup Transaction"),
-                              content: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    "You are about to create and sign a backup transaction with the following details:",
+                            final shouldContinue = await showDialog<bool>(
+                              context: rootContext,
+                              builder: (ctx) => AlertDialog(
+                                backgroundColor: AppColors.dialog(context),
+                                title: const Text("Confirm Backup Transaction"),
+                                content: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      "You are about to create and sign a backup transaction with the following details:",
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Text(
+                                      "Destination Address:\n$recipient",
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Text(
+                                      "This transaction will be signed using the 1-of-N timelock path (older/after).\n\n"
+                                      "You can broadcast this transaction later using Bitcoin Core, or other blockchain explorers.",
+                                    ),
+                                  ],
+                                ),
+                                actions: [
+                                  TextButton(
+                                    child: const Text("Cancel"),
+                                    onPressed: () =>
+                                        Navigator.of(ctx).pop(false),
                                   ),
-                                  const SizedBox(height: 12),
-                                  Text(
-                                    "Destination Address:\n$recipient",
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.bold),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  Text(
-                                    "This transaction will be signed using the 1-of-N timelock path (older/after).\n\n"
-                                    "You can broadcast this transaction later using Bitcoin Core, or other blockchain explorers.",
+                                  ElevatedButton(
+                                    child: const Text("Continue"),
+                                    onPressed: () =>
+                                        Navigator.of(ctx).pop(true),
                                   ),
                                 ],
                               ),
-                              actions: [
-                                TextButton(
-                                  child: const Text("Cancel"),
-                                  onPressed: () => Navigator.of(ctx).pop(false),
-                                ),
-                                ElevatedButton(
-                                  child: const Text("Continue"),
-                                  onPressed: () => Navigator.of(ctx).pop(true),
-                                ),
-                              ],
-                            ),
-                          );
+                            );
 
-                          // Bail out if user cancels
-                          if (shouldContinue != true) return;
+                            // Bail out if user cancels
+                            if (shouldContinue != true) return;
 
-                          // print(recipient);
-                          // print('totalSpendable: $totalSpendable');
+                            // print(recipient);
+                            // print('totalSpendable: $totalSpendable');
 
-                          final result = await walletService.createBackupTx(
-                            descriptor.toString(),
-                            mnemonic,
-                            recipient,
-                            BigInt.from(backupSpendable),
-                            index,
-                            avBalance,
-                            spendingPaths: mySpendingPaths,
-                            isSendAllBalance: true,
-                          );
+                            DialogHelper.showLoadingDialog(rootContext);
 
-                          // print('Rezuldado');
-                          // print(result);
+                            final result = await walletService.createBackupTx(
+                              descriptor.toString(),
+                              mnemonic,
+                              recipient,
+                              BigInt.from(backupSpendable),
+                              index,
+                              avBalance,
+                              spendingPaths: mySpendingPaths,
+                              isSendAllBalance: true,
+                            );
 
-                          final finalResult =
-                              await walletService.createBackupTx(
-                            descriptor.toString(),
-                            mnemonic,
-                            recipient,
-                            BigInt.from(int.parse(result.toString())),
-                            index,
-                            avBalance,
-                            spendingPaths: mySpendingPaths,
-                          );
+                            // print('Rezuldado');
+                            // print(result);
 
-                          // print('RezuldadoFinal');
+                            final finalResult =
+                                await walletService.createBackupTx(
+                              descriptor.toString(),
+                              mnemonic,
+                              recipient,
+                              BigInt.from(int.parse(result.toString())),
+                              index,
+                              avBalance,
+                              spendingPaths: mySpendingPaths,
+                            );
 
-                          sendTxHelper.showHEXDialog(
-                            finalResult.toString(),
-                            rootContext,
-                          );
+                            // print('RezuldadoFinal');
+
+                            Navigator.of(rootContext, rootNavigator: true)
+                                .pop();
+
+                            sendTxHelper.showHEXDialog(
+                              finalResult.toString(),
+                              rootContext,
+                            );
+                          } catch (e) {
+                            NotificationHelper.showError(
+                              context,
+                              message: 'Error: $e',
+                            );
+                          }
 
                           // print(finalResult);
                         },
@@ -648,8 +662,7 @@ class WalletSpendingPathHelpers {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color:
-                        AppColors.text(context).withAlpha((0.1 * 255).toInt()),
+                    color: AppColors.text(context).opaque(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(

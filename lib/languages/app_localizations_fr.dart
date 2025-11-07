@@ -489,4 +489,18 @@ const Map<String, String> localizedStringsFr = {
   "next": "Suivant",
   "scroll_to_continue": "Faites défiler pour continuer",
   "legal_disclaimer_title": "Avertissement légal",
+
+  "assistant_goto_import_wallet": "Appuie ici et importons ton portefeuille !",
+  "assistant_goto_create_wallet":
+      "Prêt à créer un nouveau portefeuille ? Je peux t’aider.",
+  "goto_import_wallet": "Aller à l’importation du portefeuille",
+  "one_or_more_answers_are_wrong":
+      "Une ou plusieurs réponses sont incorrectes. Réessaie.",
+  "pick_the_right_word": "Sélectionne le mot correct",
+  "verify_mnemonic": "Vérifie ta phrase de récupération",
+  "create_single_wallet": "Créer un nouveau portefeuille personnel",
+  "import_single_wallet": "Importer ton portefeuille personnel",
+  "goto_create_wallet": "Aller à la création du portefeuille",
+  "select_word": "Choisis le mot correct",
+  "import_personal_wallet": "Importer un portefeuille personnel",
 };

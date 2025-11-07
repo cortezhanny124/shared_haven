@@ -477,4 +477,18 @@ const Map<String, String> localizedStringsRu = {
   "next": "Далее",
   "scroll_to_continue": "Прокрутите, чтобы продолжить",
   "legal_disclaimer_title": "Юридическая оговорка",
+
+  "assistant_goto_import_wallet":
+      "Нажми здесь — давай импортируем твой кошелёк!",
+  "assistant_goto_create_wallet": "Готов создать новый кошелёк? Я помогу.",
+  "goto_import_wallet": "Перейти к импорту кошелька",
+  "one_or_more_answers_are_wrong":
+      "Один или несколько ответов неверны. Попробуй снова.",
+  "pick_the_right_word": "Выбери правильное слово",
+  "verify_mnemonic": "Подтверди свою фразу восстановления",
+  "create_single_wallet": "Создать новый личный кошелёк",
+  "import_single_wallet": "Импортировать личный кошелёк",
+  "goto_create_wallet": "Перейти к созданию кошелька",
+  "select_word": "Выбери правильное слово",
+  "import_personal_wallet": "Импорт личного кошелька",
 };

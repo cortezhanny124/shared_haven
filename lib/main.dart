@@ -3,16 +3,18 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter_wallet/disclaimer_page.dart';
 import 'package:flutter_wallet/languages/app_localizations.dart';
 import 'package:flutter_wallet/settings/settings_provider.dart';
 import 'package:flutter_wallet/services/wallet_service.dart';
 import 'package:flutter_wallet/loading_screens/splash_screen.dart';
-import 'package:flutter_wallet/wallet_pages/ca_wallet_page.dart';
 import 'package:flutter_wallet/wallet_pages/create_shared_wallet.dart';
+import 'package:flutter_wallet/wallet_pages/create_wallet_page.dart';
 import 'package:flutter_wallet/wallet_pages/import_shared_wallet.dart';
 import 'package:flutter_wallet/security_pages/pin_setup_page.dart';
 import 'package:flutter_wallet/security_pages/pin_verification_page.dart';
 import 'package:flutter_wallet/settings/settings_page.dart';
+import 'package:flutter_wallet/wallet_pages/import_wallet_page.dart';
 import 'package:flutter_wallet/wallet_pages/sh_w_creation_menu.dart';
 import 'package:flutter_wallet/hive/wallet_data.dart';
 import 'package:flutter_wallet/wallet_pages/wallet_page.dart';
@@ -163,18 +165,18 @@ class MyApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      initialRoute:
-          // '/example_nfc',
-          _determineInitialRoute(),
+      initialRoute: _determineInitialRoute(),
       routes: {
         '/wallet_page': (context) => const WalletPage(),
-        '/ca_wallet_page': (context) => const CAWalletPage(),
         '/pin_setup_page': (context) => const PinSetupPage(),
         '/pin_verification_page': (context) => const PinVerificationPage(),
         '/shared_wallet': (context) => const ShWCreationMenu(),
         '/create_shared_wallet': (context) => const CreateSharedWallet(),
         '/import_shared': (context) => const ImportSharedWallet(),
         '/settings': (context) => const SettingsPage(),
+        '/disclaimer': (context) => const DisclaimerPage(),
+        '/import_wallet': (context) => const ImportWalletPage(),
+        '/create_wallet': (context) => const CreateWalletPage(),
       },
     );
   }
@@ -184,13 +186,13 @@ class MyApp extends StatelessWidget {
 
     if (!walletBox.containsKey('userPin')) {
       // If the user hasn't set a PIN yet
-      return '/pin_setup_page';
+      return '/disclaimer';
     } else if (walletBox.containsKey('walletMnemonic')) {
       // If the wallet mnemonic exists, navigate to PIN verification
       return '/pin_verification_page';
     } else {
       // If no wallet mnemonic, navigate to wallet creation
-      return '/ca_wallet_page';
+      return '/create_wallet';
     }
   }
 }

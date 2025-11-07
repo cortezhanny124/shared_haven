@@ -23,12 +23,12 @@ class CustomTextFieldStyles {
       floatingLabelStyle: TextStyle(
         fontSize: 14.0,
         fontWeight: FontWeight.bold,
-        color: AppColors.primary(context),
+        color: AppColors.text(context),
       ),
       hintText: hintText,
       hintStyle: TextStyle(
         fontSize: 14.0,
-        color: Colors.grey.withAlpha((0.8 * 255).toInt()),
+        color: Colors.grey.opaque(0.8),
       ),
       filled: true,
       fillColor: AppColors.gradient(context),

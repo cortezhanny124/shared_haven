@@ -486,4 +486,18 @@ const Map<String, String> localizedStringsEs = {
   "next": "Siguiente",
   "scroll_to_continue": "Desplázate para continuar",
   "legal_disclaimer_title": "Aviso legal",
+
+  "assistant_goto_import_wallet": "¡Toca aquí y importemos tu cartera!",
+  "assistant_goto_create_wallet":
+      "¿Listo para crear una nueva cartera? Te guiaré.",
+  "goto_import_wallet": "Ir a importar cartera",
+  "one_or_more_answers_are_wrong":
+      "Una o más respuestas son incorrectas. Inténtalo de nuevo.",
+  "pick_the_right_word": "Selecciona la palabra correcta",
+  "verify_mnemonic": "Verifica tu frase de recuperación",
+  "create_single_wallet": "Crear nueva cartera personal",
+  "import_single_wallet": "Importar tu cartera personal",
+  "goto_create_wallet": "Ir a crear cartera",
+  "select_word": "Elige la palabra correcta",
+  "import_personal_wallet": "Importar cartera personal",
 };
