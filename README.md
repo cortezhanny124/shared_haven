@@ -1,12 +1,3 @@
-<<<<<<< HEAD
-This file is part of Shared Haven. Copyright (C) 2025 [Cortez Hanny]
-
-Shared Haven is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-
-Shared Haven is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
-=======
 This file is part of Shared Haven.
 Copyright (C) 2025 [Cortez Hanny]
 
@@ -23,8 +14,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
->>>>>>> 2781d11e64c32729610df01e60a4de164d5467e6
-
 # Shared Haven  
 
 [![Flutter](https://img.shields.io/badge/Flutter-2.10-blue.svg)](https://flutter.dev)  
@@ -32,10 +21,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 **Shared Haven** is a Flutter mobile wallet / shared-fund / pooling app (work in progress).  
 It lets groups pool funds, share balances, and manage contributions—all in one secure place.
-
-[<img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png"
-     alt="Get it on F-Droid"
-     height="80">](https://f-droid.org/packages/com.bitcoin.sharedhaven.testnet/)
 
 ---
 
