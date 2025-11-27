@@ -1,0 +1,107 @@
+SharedHaven Privacy Policy
+
+Last update: 27 November, 2025
+
+Introduction
+
+This Privacy Policy explains how SharedHaven (“we,” “our,” or “the App”) collects, uses, and protects your personal information when you use our services. Please read this document carefully to understand how and why your data may be processed.
+
+This policy applies to all versions of the SharedHaven mobile and desktop applications, as well as any associated services or APIs operated directly by the SharedHaven development team.
+
+SharedHaven is an open-source, non-custodial Bitcoin wallet. We do not have access to your private keys, funds, or personal transaction data. All sensitive operations take place locally on your device.
+
+If there is any discrepancy between translated versions of this policy, the English version shall prevail.
+
+1. Definitions
+
+Personal Data: Information that identifies or can identify you as an individual.
+
+Processing: Any action performed on personal data, such as collection, storage, or deletion.
+
+Data Controller: The person or entity that determines how and why personal data is processed.
+
+Data Processor: A third party acting on behalf of the Data Controller.
+
+2. Consent
+
+We process your information only with your explicit consent or as required by law. By installing or using SharedHaven, you consent to the practices described in this Privacy Policy.
+
+If you disagree with any part of this policy, please discontinue use of the application.
+
+3. Legal Bases for Processing
+
+We may process personal data under one or more of the following legal bases:
+
+Consent: When you choose to share information voluntarily.
+
+Performance of a Contract: When data is needed for providing you the requested service (for example, maintaining network connectivity).
+
+Legal Obligation: When required by applicable law.
+
+Legitimate Interest: When processing helps us improve or protect the security and functionality of the App.
+
+4. Information We Collect
+
+SharedHaven is designed to minimize data collection. The application does not require personal identification or account creation.
+
+a) Data processed locally
+
+Wallet data: All wallet information (keys, addresses, transactions) is stored encrypted on your device. SharedHaven developers cannot access this data.
+
+Transaction metadata: Transaction history, notes, and other optional details are stored only on your device.
+
+b) Network information
+
+When connecting to a Bitcoin node or API endpoint, limited technical data may be transmitted (e.g., your IP address, wallet gap-limit addresses, or node requests) to retrieve blockchain information.
+
+You can configure SharedHaven to connect to your own Bitcoin node or Electrum server, in which case no data passes through SharedHaven’s infrastructure.
+
+c) Analytics and crash reports
+
+If you enable optional diagnostics, anonymized crash logs or performance data may be collected through open-source analytics providers. These logs never contain seed phrases, private keys, or identifying information.
+
+5. Data Protection, Storage, and Retention
+
+Data Protection: We apply industry-standard encryption (AES-256, HTTPS/TLS) and other safeguards to protect transmitted data.
+
+Retention: SharedHaven’s infrastructure retains no personal logs. Diagnostic data (if enabled) is automatically deleted within 30 days.
+
+Local Storage: All sensitive wallet data is stored locally, encrypted, and never uploaded to external servers.
+
+International Transfers: If any anonymized data is transmitted to third-party analytics services, it is protected by standard contractual clauses or equivalent mechanisms under GDPR.
+
+6. Your Rights
+
+Depending on your jurisdiction, you may have the following rights:
+
+Access and Correction: Request access to personal data we may hold about you (if any).
+
+Erasure: Request deletion of optional analytics data or diagnostic reports.
+
+Withdraw Consent: You can disable analytics or crash reporting at any time from the settings menu.
+
+Complaint: You may lodge a complaint with your national data protection authority if you believe your rights have been violated.
+
+To exercise these rights, contact us at privacy@sharedhaven.app
+
+.
+
+7. Children’s Privacy
+
+SharedHaven is intended for users aged 16 and older. We do not knowingly collect personal data from children. If you believe a minor has used our services without consent, please contact us for prompt deletion.
+
+8. Cookies and Tracking Technologies
+
+The SharedHaven mobile does not use cookies.
+
+9. Open-Source Transparency
+
+SharedHaven’s source code is publicly available for independent review. You can verify exactly what data is processed by inspecting the codebase at:
+🔗 https://github.com/cortezhanny124/shared_haven
+
+We encourage independent audits and community contributions to maintain transparency and privacy integrity.
+
+10. Updates to This Policy
+
+We may update this Privacy Policy periodically to reflect new features or legal requirements. The “Last Updated” date at the top indicates the latest version.
+Any material changes will be announced on our official repository.
