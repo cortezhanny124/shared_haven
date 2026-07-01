@@ -25,13 +25,7 @@ class SettingsPageState extends State<SettingsPage> {
   Widget build(BuildContext context) {
     final settingsProvider = Provider.of<SettingsProvider>(context);
 
-    final languages = [
-      'en',
-      'es',
-      'it',
-      'fr',
-      'ru',
-    ];
+    final languages = ['en', 'es', 'it', 'fr', 'ru'];
 
     final currencies = [
       'ARS',
@@ -66,7 +60,10 @@ class SettingsPageState extends State<SettingsPage> {
     ];
 
     return BaseScaffold(
-      title: Text(AppLocalizations.of(context)!.translate('settings')),
+      title: Text(
+        textScaler: TextScaler.linear(ScaleSize.textScaleFactor(context)),
+        AppLocalizations.of(context)!.translate('settings'),
+      ),
       showDrawer: false,
       body: Stack(
         children: [
@@ -90,10 +87,12 @@ class SettingsPageState extends State<SettingsPage> {
                   const SizedBox(height: 20),
                   // Description
                   Text(
+                    textScaler: TextScaler.linear(
+                      ScaleSize.textScaleFactor(context),
+                    ),
                     AppLocalizations.of(context)!.translate('settings_message'),
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 16,
                       color: AppColors.text(context),
                       fontWeight: FontWeight.w500,
                     ),
@@ -103,20 +102,27 @@ class SettingsPageState extends State<SettingsPage> {
 
                   // Currency Selection
                   Text(
+                    textScaler: TextScaler.linear(
+                      ScaleSize.textScaleFactor(context),
+                    ),
                     AppLocalizations.of(context)!.translate('currency'),
                     style: TextStyle(
-                      fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: AppColors.cardTitle(context),
                     ),
                   ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
-                    value: settingsProvider.currency,
+                    initialValue: settingsProvider.currency,
                     items: currencies.map((currency) {
                       return DropdownMenuItem(
                         value: currency,
-                        child: Text(currency),
+                        child: Text(
+                          textScaler: TextScaler.linear(
+                            ScaleSize.textScaleFactor(context),
+                          ),
+                          currency,
+                        ),
                       );
                     }).toList(),
                     onChanged: (value) {
@@ -126,13 +132,15 @@ class SettingsPageState extends State<SettingsPage> {
                     },
                     decoration: InputDecoration(
                       enabledBorder: OutlineInputBorder(
-                        borderSide:
-                            BorderSide(color: AppColors.background(context)),
+                        borderSide: BorderSide(
+                          color: AppColors.background(context),
+                        ),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderSide:
-                            BorderSide(color: AppColors.primary(context)),
+                        borderSide: BorderSide(
+                          color: AppColors.primary(context),
+                        ),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       border: OutlineInputBorder(
@@ -153,9 +161,11 @@ class SettingsPageState extends State<SettingsPage> {
 
                   // Language Selection
                   Text(
+                    textScaler: TextScaler.linear(
+                      ScaleSize.textScaleFactor(context),
+                    ),
                     AppLocalizations.of(context)!.translate('language'),
                     style: TextStyle(
-                      fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: AppColors.cardTitle(context),
                     ),
@@ -163,11 +173,16 @@ class SettingsPageState extends State<SettingsPage> {
 
                   const SizedBox(height: 20),
                   DropdownButtonFormField<String>(
-                    value: settingsProvider.languageCode,
+                    initialValue: settingsProvider.languageCode,
                     items: languages.map((language) {
                       return DropdownMenuItem(
                         value: language,
-                        child: Text(language),
+                        child: Text(
+                          textScaler: TextScaler.linear(
+                            ScaleSize.textScaleFactor(context),
+                          ),
+                          language,
+                        ),
                       );
                     }).toList(),
                     onChanged: (value) {
@@ -177,13 +192,15 @@ class SettingsPageState extends State<SettingsPage> {
                     },
                     decoration: InputDecoration(
                       enabledBorder: OutlineInputBorder(
-                        borderSide:
-                            BorderSide(color: AppColors.background(context)),
+                        borderSide: BorderSide(
+                          color: AppColors.background(context),
+                        ),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderSide:
-                            BorderSide(color: AppColors.primary(context)),
+                        borderSide: BorderSide(
+                          color: AppColors.primary(context),
+                        ),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       border: OutlineInputBorder(
@@ -209,16 +226,18 @@ class SettingsPageState extends State<SettingsPage> {
 
                       NotificationHelper.show(
                         context,
-                        message: AppLocalizations.of(context)!
-                            .translate('reset_settings_scaffold'),
+                        message: AppLocalizations.of(
+                          context,
+                        )!.translate('reset_settings_scaffold'),
                       );
                     },
                     backgroundColor: AppColors.background(context),
                     foregroundColor: AppColors.text(context),
                     icon: Icons.restart_alt,
                     iconColor: AppColors.gradient(context),
-                    label: AppLocalizations.of(context)!
-                        .translate('reset_settings'),
+                    label: AppLocalizations.of(
+                      context,
+                    )!.translate('reset_settings'),
                     padding: 10.0,
                     iconSize: 28.0,
                   ),

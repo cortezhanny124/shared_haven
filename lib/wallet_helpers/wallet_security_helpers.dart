@@ -38,12 +38,13 @@ class WalletSecurityHelpers {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                AppLocalizations.of(rootContext)!
-                    .translate('enter_6_digits_pin'),
-                style: TextStyle(
-                  fontSize: 16,
-                  color: AppColors.text(context),
+                textScaler: TextScaler.linear(
+                  ScaleSize.textScaleFactor(context),
                 ),
+                AppLocalizations.of(
+                  rootContext,
+                )!.translate('enter_6_digits_pin'),
+                style: TextStyle(color: AppColors.text(context)),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
@@ -53,10 +54,12 @@ class WalletSecurityHelpers {
                 obscureText: true,
                 decoration: CustomTextFieldStyles.textFieldDecoration(
                   context: rootContext,
-                  labelText:
-                      AppLocalizations.of(rootContext)!.translate('enter_pin'),
-                  hintText:
-                      AppLocalizations.of(rootContext)!.translate('enter_pin'),
+                  labelText: AppLocalizations.of(
+                    rootContext,
+                  )!.translate('enter_pin'),
+                  hintText: AppLocalizations.of(
+                    rootContext,
+                  )!.translate('enter_pin'),
                 ),
                 style: TextStyle(color: AppColors.text(context)),
               ),
@@ -83,8 +86,9 @@ class WalletSecurityHelpers {
                 } catch (e) {
                   NotificationHelper.showError(
                     rootContext,
-                    message: AppLocalizations.of(rootContext)!
-                        .translate('pin_incorrect'),
+                    message: AppLocalizations.of(
+                      rootContext,
+                    )!.translate('pin_incorrect'),
                   );
                 }
               },
@@ -133,12 +137,10 @@ class WalletSecurityHelpers {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Text(
+            textScaler: TextScaler.linear(ScaleSize.textScaleFactor(context)),
             AppLocalizations.of(rootContext)!.translate('saved_mnemonic'),
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 16,
-              color: AppColors.cardTitle(context),
-            ),
+            style: TextStyle(color: AppColors.cardTitle(context)),
           ),
           const SizedBox(height: 16),
           Container(
@@ -146,18 +148,14 @@ class WalletSecurityHelpers {
             decoration: BoxDecoration(
               color: AppColors.container(context),
               borderRadius: BorderRadius.circular(8.0), // Rounded edges
-              border: Border.all(
-                color: AppColors.background(context),
-              ),
+              border: Border.all(color: AppColors.background(context)),
             ),
             child: Container(
               padding: const EdgeInsets.all(12.0),
               decoration: BoxDecoration(
                 color: AppColors.container(context),
                 borderRadius: BorderRadius.circular(8.0), // Rounded edges
-                border: Border.all(
-                  color: AppColors.background(context),
-                ),
+                border: Border.all(color: AppColors.background(context)),
               ),
               child: SizedBox(
                 width: double.infinity, // Ensure the Row gets a width
@@ -173,12 +171,12 @@ class WalletSecurityHelpers {
                         //   );
                         // },
                         child: Text(
+                          textScaler: TextScaler.linear(
+                            ScaleSize.textScaleFactor(context),
+                          ),
                           savedMnemonic,
                           textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: AppColors.text(context),
-                          ),
+                          style: TextStyle(color: AppColors.text(context)),
                         ),
                       ),
                     ),

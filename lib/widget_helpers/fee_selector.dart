@@ -93,9 +93,8 @@ class _FeeSelectorState extends State<FeeSelector> {
           }
         });
       }
-    } catch (e, st) {
+    } catch (e) {
       // Log the failure and switch to custom only because the API failed
-      debugPrint('Failed to load fees: $e\n$st');
 
       if (mounted) {
         setState(() {
@@ -104,8 +103,10 @@ class _FeeSelectorState extends State<FeeSelector> {
           showFallbackCustomFee = true; // show custom UI due to failure
         });
 
-        NotificationHelper.showError(context,
-            message: 'Unable to load network fees. Please enter a custom fee.');
+        NotificationHelper.showError(
+          context,
+          message: 'Unable to load network fees. Please enter a custom fee.',
+        );
       }
     }
   }
@@ -136,27 +137,42 @@ class _FeeSelectorState extends State<FeeSelector> {
     }
 
     if (recommendedFees == null && !showFallbackCustomFee) {
-      return const Text("Failed to fetch fee recommendations.");
+      return Text(
+        textScaler: TextScaler.linear(ScaleSize.textScaleFactor(context)),
+        "Failed to fetch fee recommendations.",
+      );
     }
 
     final dropdownItems = [
       if (recommendedFees != null) ...[
         DropdownMenuItem(
           value: 'fastestFee',
-          child: Text('⚡ ${recommendedFees!['fastestFee']} sat/vB'),
+          child: Text(
+            textScaler: TextScaler.linear(ScaleSize.textScaleFactor(context)),
+            '⚡ ${recommendedFees!['fastestFee']} sat/vB',
+          ),
         ),
         DropdownMenuItem(
           value: 'halfHourFee',
-          child: Text('🚗 ${recommendedFees!['halfHourFee']} sat/vB'),
+          child: Text(
+            textScaler: TextScaler.linear(ScaleSize.textScaleFactor(context)),
+            '🚗 ${recommendedFees!['halfHourFee']} sat/vB',
+          ),
         ),
         DropdownMenuItem(
           value: 'hourFee',
-          child: Text('🐢 ${recommendedFees!['hourFee']} sat/vB'),
+          child: Text(
+            textScaler: TextScaler.linear(ScaleSize.textScaleFactor(context)),
+            '🐢 ${recommendedFees!['hourFee']} sat/vB',
+          ),
         ),
       ],
-      const DropdownMenuItem(
+      DropdownMenuItem(
         value: 'custom',
-        child: Text('✏️ Custom'),
+        child: Text(
+          textScaler: TextScaler.linear(ScaleSize.textScaleFactor(context)),
+          '✏️ Custom',
+        ),
       ),
     ];
 
@@ -164,10 +180,10 @@ class _FeeSelectorState extends State<FeeSelector> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
+          textScaler: TextScaler.linear(ScaleSize.textScaleFactor(context)),
           AppLocalizations.of(rootContext)!.translate('select_custom_fee'),
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            fontSize: 14,
             color: AppColors.cardTitle(context),
           ),
         ),
@@ -195,10 +211,11 @@ class _FeeSelectorState extends State<FeeSelector> {
                   context: context,
                   labelText:
                       "${AppLocalizations.of(rootContext)!.translate('amount')} (sats/vb)",
-                  hintText: AppLocalizations.of(rootContext)!
-                      .translate('enter_amount_sats'),
+                  hintText: AppLocalizations.of(
+                    rootContext,
+                  )!.translate('enter_amount_sats'),
                 ),
-                style: TextStyle(fontSize: 13, color: AppColors.text(context)),
+                style: TextStyle(color: AppColors.text(context)),
                 keyboardType: TextInputType.number,
               ),
             ),

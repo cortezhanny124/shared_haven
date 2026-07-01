@@ -12,12 +12,14 @@ class NotificationHelper {
   }) {
     showSimpleNotification(
       Text(
+        textScaler: TextScaler.linear(ScaleSize.textScaleFactor(context)),
         message,
         style: TextStyle(color: textColor ?? AppColors.text(context)),
       ),
       background: color ?? AppColors.gradient(context),
       autoDismiss: true,
       duration: duration,
+      slideDismissDirection: DismissDirection.up,
     );
   }
 
@@ -29,13 +31,16 @@ class NotificationHelper {
     Duration duration = const Duration(seconds: 6),
   }) {
     showSimpleNotification(
-        Text(
-          message,
-          style: TextStyle(color: textColor ?? AppColors.text(context)),
-        ),
-        background: color ?? AppColors.error(context),
-        autoDismiss: true,
-        duration: duration,
-        leading: Icon(Icons.error, color: AppColors.text(context)));
+      Text(
+        textScaler: TextScaler.linear(ScaleSize.textScaleFactor(context)),
+        message,
+        style: TextStyle(color: textColor ?? AppColors.text(context)),
+      ),
+      background: color ?? AppColors.error(context),
+      autoDismiss: true,
+      duration: duration,
+      leading: Icon(Icons.error, color: AppColors.text(context)),
+      slideDismissDirection: DismissDirection.up,
+    );
   }
 }

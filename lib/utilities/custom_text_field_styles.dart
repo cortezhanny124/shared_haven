@@ -16,27 +16,20 @@ class CustomTextFieldStyles {
       labelText: labelText,
       floatingLabelBehavior: FloatingLabelBehavior.auto, // Auto-floating label
       labelStyle: TextStyle(
-        fontSize: 16.0,
         fontWeight: FontWeight.bold,
         color: AppColors.primary(context),
       ),
       floatingLabelStyle: TextStyle(
-        fontSize: 14.0,
         fontWeight: FontWeight.bold,
         color: AppColors.text(context),
       ),
       hintText: hintText,
-      hintStyle: TextStyle(
-        fontSize: 14.0,
-        color: Colors.grey.opaque(0.8),
-      ),
+      hintStyle: TextStyle(color: Colors.grey.opaque(0.8)),
       filled: true,
       fillColor: AppColors.gradient(context),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12.0),
-        borderSide: BorderSide(
-          color: defaultBorderColor,
-        ),
+        borderSide: BorderSide(color: defaultBorderColor),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12.0),
@@ -53,10 +46,7 @@ class CustomTextFieldStyles {
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12.0),
-        borderSide: const BorderSide(
-          color: Colors.red,
-          width: 2.0,
-        ),
+        borderSide: const BorderSide(color: Colors.red, width: 2.0),
       ),
       contentPadding: const EdgeInsets.symmetric(
         vertical: 18.0,

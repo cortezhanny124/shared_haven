@@ -53,10 +53,12 @@ class InkwellButton extends StatelessWidget {
               if (icon != null && label != null) const SizedBox(width: 8),
               if (label != null)
                 Text(
+                  textScaler: TextScaler.linear(
+                    ScaleSize.textScaleFactor(context),
+                  ),
                   label!,
                   style: TextStyle(
                     color: isDisabled ? textColor.opaque(0.5) : textColor,
-                    fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
                 ),

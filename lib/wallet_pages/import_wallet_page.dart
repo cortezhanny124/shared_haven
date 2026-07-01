@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:bdk_flutter/bdk_flutter.dart';
+import 'package:bdk_dart/bdk.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -58,8 +58,9 @@ class ImportWalletPageState extends State<ImportWalletPage> {
   void initState() {
     super.initState();
 
-    _walletService =
-        WalletService(Provider.of<SettingsProvider>(context, listen: false));
+    _walletService = WalletService(
+      Provider.of<SettingsProvider>(context, listen: false),
+    );
 
     // --- NEW: build 12 controllers/focus nodes ---
     _wordCtrls = List.generate(_wordCount, (_) => TextEditingController());
@@ -120,8 +121,9 @@ class ImportWalletPageState extends State<ImportWalletPage> {
     _squelchMasterListener = true;
     try {
       _mnemonicController.text = joined;
-      _mnemonicController.selection =
-          TextSelection.collapsed(offset: joined.length);
+      _mnemonicController.selection = TextSelection.collapsed(
+        offset: joined.length,
+      );
     } finally {
       scheduleMicrotask(() => _squelchMasterListener = false);
     }
@@ -132,8 +134,11 @@ class ImportWalletPageState extends State<ImportWalletPage> {
 
   // Master controller -> boxes (used at init and when master changes externally)
   void _syncFromMaster(String full) {
-    final words =
-        full.trim().split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
+    final words = full
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((w) => w.isNotEmpty)
+        .toList();
 
     for (int i = 0; i < _wordCount; i++) {
       final newVal = (i < words.length) ? words[i] : '';
@@ -162,8 +167,10 @@ class ImportWalletPageState extends State<ImportWalletPage> {
     final paste = data?.text?.trim() ?? '';
     if (paste.isEmpty) return;
 
-    final words =
-        paste.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
+    final words = paste
+        .split(RegExp(r'\s+'))
+        .where((w) => w.isNotEmpty)
+        .toList();
     for (int i = 0; i < _wordCount; i++) {
       _wordCtrls[i].text = (i < words.length) ? words[i] : '';
     }
@@ -242,11 +249,7 @@ class ImportWalletPageState extends State<ImportWalletPage> {
 
     if (!mounted) return;
 
-    Navigator.pushReplacementNamed(
-      context,
-      '/wallet_page',
-      arguments: _wallet,
-    );
+    Navigator.pushReplacementNamed(context, '/wallet_page', arguments: _wallet);
   }
 
   String _getAnimationPath() {
@@ -267,8 +270,6 @@ class ImportWalletPageState extends State<ImportWalletPage> {
     _debounceTimer = Timer(const Duration(milliseconds: 500), () async {
       final isValid =
           value.trim().isNotEmpty && await _walletService.checkMnemonic(value);
-
-      // print('Value: $value');
 
       if (_isMnemonicEntered != isValid) {
         if (mounted) {
@@ -308,14 +309,15 @@ class ImportWalletPageState extends State<ImportWalletPage> {
           _getAnimationPath(),
           height: 80,
           width: 80,
-          repeat:
-              !_status.contains('successfully'), // Loop only for non-success
+          repeat: !_status.contains(
+            'successfully',
+          ), // Loop only for non-success
         ),
         // Status Text
         Text(
+          textScaler: TextScaler.linear(ScaleSize.textScaleFactor(context)),
           statusText,
           style: TextStyle(
-            fontSize: 16,
             fontWeight: FontWeight.bold,
             color: AppColors.text(context),
           ),
@@ -331,7 +333,9 @@ class ImportWalletPageState extends State<ImportWalletPage> {
 
     return BaseScaffold(
       title: Text(
-          AppLocalizations.of(context)!.translate('import_personal_wallet')),
+        textScaler: TextScaler.linear(ScaleSize.textScaleFactor(context)),
+        AppLocalizations.of(context)!.translate('import_personal_wallet'),
+      ),
       key: baseScaffoldKey,
       showDrawer: false,
       body: SingleChildScrollView(
@@ -363,18 +367,22 @@ class ImportWalletPageState extends State<ImportWalletPage> {
                               final baseScaffoldState =
                                   baseScaffoldKey.currentState;
                               baseScaffoldState?.updateAssistantMessage(
-                                  context, 'assistant_create_wallet');
+                                context,
+                                'assistant_create_wallet',
+                              );
                             },
                             child: CustomButton(
-                              onPressed:
-                                  _isMnemonicEntered ? _createWallet : null,
+                              onPressed: _isMnemonicEntered
+                                  ? _createWallet
+                                  : null,
                               backgroundColor: AppColors.background(context),
                               foregroundColor: AppColors.text(context),
                               icon: Icons.wallet,
                               iconColor: AppColors.gradient(context),
                               verticalLayout: true,
-                              label: AppLocalizations.of(context)!
-                                  .translate('import_single_wallet'),
+                              label: AppLocalizations.of(
+                                context,
+                              )!.translate('import_single_wallet'),
                               padding: 16.0,
                               iconSize: 28.0,
                             ),
@@ -390,7 +398,9 @@ class ImportWalletPageState extends State<ImportWalletPage> {
                               final baseScaffoldState =
                                   baseScaffoldKey.currentState;
                               baseScaffoldState?.updateAssistantMessage(
-                                  context, 'assistant_goto_create_wallet');
+                                context,
+                                'assistant_goto_create_wallet',
+                              );
                             },
                             child: CustomButton(
                               onPressed: () {
@@ -404,8 +414,9 @@ class ImportWalletPageState extends State<ImportWalletPage> {
                               backgroundColor: AppColors.background(context),
                               foregroundColor: AppColors.gradient(context),
                               verticalLayout: true,
-                              label: AppLocalizations.of(context)!
-                                  .translate('goto_create_wallet'),
+                              label: AppLocalizations.of(
+                                context,
+                              )!.translate('goto_create_wallet'),
                               padding: 16.0,
                               iconSize: 28.0,
                             ),
@@ -448,10 +459,7 @@ class ImportWalletPageState extends State<ImportWalletPage> {
                   labelText: '${i + 1}', // shows index label
                   borderColor: AppColors.primary(context),
                 ),
-                style: TextStyle(
-                  color: AppColors.text(context),
-                  fontSize: 14,
-                ),
+                style: TextStyle(color: AppColors.text(context)),
                 onChanged: (v) => _onWordChanged(i, v),
                 onSubmitted: (_) => _focusNext(i),
                 inputFormatters: [
@@ -465,8 +473,9 @@ class ImportWalletPageState extends State<ImportWalletPage> {
         AnimatedBuilder(
           animation: Listenable.merge(_wordCtrls),
           builder: (context, _) {
-            final filled =
-                _wordCtrls.where((c) => c.text.trim().isNotEmpty).length;
+            final filled = _wordCtrls
+                .where((c) => c.text.trim().isNotEmpty)
+                .length;
             final allFilled = filled == _wordCount;
 
             return Column(
@@ -496,8 +505,10 @@ class ImportWalletPageState extends State<ImportWalletPage> {
                 const SizedBox(height: 8),
                 AnimatedContainer(
                   duration: const Duration(milliseconds: 250),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: allFilled
                         ? AppColors.primary(context).opaque(0.15)
@@ -522,6 +533,9 @@ class ImportWalletPageState extends State<ImportWalletPage> {
                       ),
                       const SizedBox(width: 6),
                       Text(
+                        textScaler: TextScaler.linear(
+                          ScaleSize.textScaleFactor(context),
+                        ),
                         '$filled / $_wordCount words',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,

@@ -86,7 +86,7 @@ const Map<String, String> localizedStringsEs = {
   'confirmed': 'Confirmado',
   'mempool': 'Visitar el Mempool',
 
-// Errores y Advertencias
+  // Errores y Advertencias
   'error_invalid_address': 'Formato de dirección inválido',
   'error_wallet_creation':
       'Error al crear la billetera con el descriptor proporcionado',
@@ -141,7 +141,7 @@ const Map<String, String> localizedStringsEs = {
   'psbt_not_finalized':
       'Este PSBT aún no está finalizado, ¡compártelo con los otros usuarios!',
 
-// File (Archivo)
+  // File (Archivo)
   'storage_permission_needed':
       'Se requiere permiso de almacenamiento para guardar el archivo',
   'file_already_exists': 'El archivo ya existe',
@@ -151,7 +151,7 @@ const Map<String, String> localizedStringsEs = {
   'file_uploaded': 'Archivo subido con éxito',
   'failed_upload': 'Error al subir el archivo',
 
-// Scaffold Messenger (Mensajes emergentes)
+  // Scaffold Messenger (Mensajes emergentes)
   'copy_to_clipboard': 'Copiar al portapapeles',
   'mnemonic_clipboard': 'Frase mnemotécnica copiada al portapapeles',
   'pub_key_clipboard': 'Clave pública copiada al portapapeles',
@@ -168,7 +168,7 @@ const Map<String, String> localizedStringsEs = {
   'alias_updated': 'Alias actualizado con éxito',
   'sw_info_updated': 'Detalles de la cartera compartida actualizados con éxito',
 
-// Private Data (Datos privados)
+  // Private Data (Datos privados)
   'private_data': 'Datos privados',
   'saved_mnemonic': 'Aquí está tu frase mnemotécnica guardada',
   'saved_descriptor': 'Aquí está tu descriptor guardado',
@@ -176,7 +176,7 @@ const Map<String, String> localizedStringsEs = {
   'download_descriptor': 'Descargar descriptor',
   'wallet_data': 'Datos Cartera',
 
-// Buttons (Botones)
+  // Buttons (Botones)
   'close': 'Cerrar',
   'save': 'Guardar',
   'cancel': 'Cancelar',
@@ -192,7 +192,7 @@ const Map<String, String> localizedStringsEs = {
   'decode': 'Decodifica',
   'retry': 'Reintentar 🔄',
 
-// Spending Summary (Resumen de gastos)
+  // Spending Summary (Resumen de gastos)
   'spending_summary': 'Resumen de gastos',
   'type': 'Tipo',
   'threshold': 'Umbral',
@@ -204,11 +204,11 @@ const Map<String, String> localizedStringsEs = {
   'abs_timelock': 'Bloqueo temporal absoluto',
   'rel_timelock': 'Bloqueo temporal relativo',
 
-// Spending Paths (Rutas de gasto)
-  'immediately_spend': 'Tú ({x}) puedes gastar inmediatamente',
+  // Spending Paths (Rutas de gasto)
+  'immediately_spend': 'Tú ({x}) puedes gastar inmediatamente con',
   'cannot_spend': 'Tú ({x}) no puedes gastar sats en este momento',
   'threshold_required':
-      '\n\nSe requiere un umbral de {x} de {y}. \nDebes coordinarte con estas claves',
+      '\nSe requiere un umbral de {x} de {y}. \nDebes coordinarte con estas claves',
   'spend_alone':
       '\nPuedes gastar solo. \nEstas otras claves también pueden gastar independientemente: ',
   'spend_together': '\nDebes gastar junto con: ',
@@ -251,7 +251,7 @@ const Map<String, String> localizedStringsEs = {
       'Toca aquí para escanear un código QR con el descriptor que deseas importar!',
   'scan_qr': 'Escanear QR',
 
-// Crear Billetera Compartida
+  // Crear Billetera Compartida
   'create_shared_wallet': 'Crear Billetera Compartida',
   'descriptor_name': 'Nombre del Descriptor',
   'enter_descriptor_name': 'Ingrese el Nombre del Descriptor',
@@ -319,13 +319,13 @@ const Map<String, String> localizedStringsEs = {
   'assistant_welcome':
       '¡Hola! Soy Hoshi 🤖 y estoy aquí para ayudarte en SharedHaven. Toca el icono de ayuda en la esquina superior derecha y mantén presionado cualquier elemento para obtener información.',
 
-// Configuración y verificación del PIN
+  // Configuración y verificación del PIN
   'assistant_pin_setup_page':
       'Configura un PIN de 6 dígitos para cifrar los datos de tu billetera. **No lo olvides**—es la clave para proteger tus fondos. 🔐',
   'assistant_pin_verification_page':
       'Introduce tu PIN para verificar el acceso a tu billetera. ¡Tu seguridad es lo primero!',
 
-// Creación de billetera y gestión de la mnemónica
+  // Creación de billetera y gestión de la mnemónica
   'assistant_ca_wallet_page':
       'Aquí puedes **generar una nueva frase mnemónica de 12 palabras** o **importar una billetera existente** con tu propia mnemónica. ¡Guárdala en un lugar seguro! 🛡️',
   'assistant_create_wallet':
@@ -333,7 +333,7 @@ const Map<String, String> localizedStringsEs = {
   'assistant_generate_mnemonic':
       'Toca aquí para **generar una nueva frase mnemónica de 12 palabras**. **Escríbela y guárdala en un lugar seguro**. Sin ella, no podrás recuperar tu billetera. 📝🔑',
 
-// Página de la billetera personal
+  // Página de la billetera personal
   'assistant_wallet_page':
       'Esta es tu **billetera personal**. Aquí puedes ver tu saldo, enviar transacciones y administrar tus fondos. 💰',
   'assistant_personal_info_box':
@@ -343,13 +343,13 @@ const Map<String, String> localizedStringsEs = {
   'assistant_personal_available_balance':
       'Este botón calcula el **saldo máximo disponible** que puedes gastar. **Ingresa primero un destinatario** para calcular la tarifa con precisión. 🏦',
 
-// Claves privadas y públicas
+  // Claves privadas y públicas
   'assistant_private_data':
       'Tu información privada está **protegida por tu PIN**. Ingresa tu PIN aquí para acceder a datos cifrados de tu billetera. 🔐',
   'assistant_pub_key_data':
       'Toca aquí para ver tu **clave pública**. La necesitarás para configurar una billetera compartida.',
 
-// Botones de transacción
+  // Botones de transacción
   'assistant_send_button':
       'Crea una nueva **transacción de Bitcoin** y envía fondos. 💸',
   'assistant_sign_button':
@@ -359,7 +359,7 @@ const Map<String, String> localizedStringsEs = {
   'assistant_receive_button':
       'Muestra y comparte tu **código QR de dirección de Bitcoin** para recibir pagos.',
 
-// Billetera compartida
+  // Billetera compartida
   'assistant_shared_wallet':
       '¡Bienvenido a tu **billetera compartida**! 🚀 Es una billetera mejorada con **multifirma y reglas de gasto personalizadas**.',
   'assistant_shared_spending_path_box':
@@ -371,25 +371,25 @@ const Map<String, String> localizedStringsEs = {
   'assistant_shared_path_dropdown':
       '¿Prefieres elegirlo manualmente? **Selecciona un camino de gasto de la lista**. 🔽',
 
-// Envío de transacciones en billeteras compartidas
+  // Envío de transacciones en billeteras compartidas
   'assistant_send_sw_dialog1':
       'Introduce primero el **monto**, y cualquier **ruta de gasto no disponible se desactivará automáticamente**. **Sin confusión, solo claridad.** 🎯',
   'assistant_send_dialog2':
       '⚠️ **¡Siempre verifica las direcciones del destinatario!** Si envías fondos a la dirección equivocada, significa **pérdida permanente**—las transacciones de Bitcoin no se pueden deshacer. 🔍',
 
-// PSBT (Transacciones Parcialmente Firmadas de Bitcoin)
+  // PSBT (Transacciones Parcialmente Firmadas de Bitcoin)
   'assistant_psbt_dialog1':
       'Antes de firmar una **PSBT**, revisa todos los detalles de la transacción. ✅ El botón **Decodificar** solo muestra información extra, **no firma nada**.',
   'assistant_psbt_dialog2':
       'Este es el desglose de tu **PSBT**. **Solo firma transacciones en las que confíes** y evita firmar PSBTs de remitentes desconocidos. 🔐',
 
-// Detalles de transacciones
+  // Detalles de transacciones
   'assistant_transactions_dialog1':
       '¿Quieres más detalles? **Consulta el Explorador de Mempool** para ver información en tiempo real sobre tu transacción. 🌐',
   'assistant_transactions_dialog2':
       'Esta es la **tarifa de transacción**—una pequeña cantidad pagada a los mineros para incluir tu transacción en el blockchain. 🏗️',
 
-// Claves públicas e importaciones
+  // Claves públicas e importaciones
   'assistant_generate_pub_key':
       'Genera tu **clave pública**, que puedes compartir para configurar una billetera compartida. 🔑',
   'assistant_select_file':
@@ -397,7 +397,7 @@ const Map<String, String> localizedStringsEs = {
   'assistant_import_sw_button':
       'Después de verificar el **descriptor y la clave pública**, toca aquí para **importar la billetera**.',
 
-// Importación de una billetera compartida
+  // Importación de una billetera compartida
   'assistant_import_shared_tip1':
       '¿Vas a ingresar un descriptor manualmente? No te preocupes—**se generarán nombres y alias aleatorios automáticamente**. ¡Podrás cambiarlos más tarde!',
   'assistant_import_shared_tip2':
@@ -405,21 +405,21 @@ const Map<String, String> localizedStringsEs = {
   'assistant_import_shared_tip3':
       'Revisa los **errores encima del campo del descriptor**—te darán **pistas sobre qué está mal** en tu entrada. ⚠️',
 
-// Creación de una billetera compartida
+  // Creación de una billetera compartida
   'assistant_create_shared_tip1':
       '¿Quieres eliminar un alias o una condición? **Desliza hacia la izquierda o la derecha** para eliminarlo. 🔄',
 
-// Umbral y reglas multisig
+  // Umbral y reglas multisig
   'assistant_threshold':
       'El **umbral** es la cantidad de firmas necesarias entre los usuarios de la billetera compartida. **Ejemplo:** Una billetera 2-de-3 necesita **2 aprobaciones** antes de gastar los fondos. **No puede ser mayor que el número total de usuarios.** 🔐',
 
-// Agregar claves públicas a una billetera compartida
+  // Agregar claves públicas a una billetera compartida
   'assistant_add_pub_key_tip1':
       'Los alias ayudan a identificar qué **clave pública** pertenece a cada usuario—haciendo que la gestión de firmas sea más sencilla. 🏷️',
   'assistant_add_pub_key_tip2':
       'Si lo necesitas, puedes **cambiar los alias más tarde**.',
 
-// Timelock (Condiciones de gasto basadas en el tiempo)
+  // Timelock (Condiciones de gasto basadas en el tiempo)
   'assistant_add_timelock_tip1':
       'El valor **"Older"** representa el número de **bloques** que deben pasar antes de que los fondos puedan gastarse. **Cada bloque toma aproximadamente 10 minutos.** ⏳',
   'assistant_add_timelock_tip2':
@@ -427,11 +427,11 @@ const Map<String, String> localizedStringsEs = {
   'assistant_add_timelock_tip3':
       'También puedes agregar un **umbral dentro de una condición timelock**, lo que significa que **varios usuarios deben aprobar la transacción después de un tiempo determinado**.',
 
-// Creación de un Descriptor
+  // Creación de un Descriptor
   'assistant_create_descriptor':
       'Toca el botón de abajo para **generar un resumen de la configuración de tu Billetera Compartida**. 📝✅',
 
-// Configuración y verificación del PIN (Consejos adicionales)
+  // Configuración y verificación del PIN (Consejos adicionales)
   'assistant_pin_setup_page_tip1':
       'Configura tu **PIN** para comenzar tu viaje con **SharedHaven**. 🔐',
   'assistant_pin_setup_page_tip2':
@@ -439,7 +439,7 @@ const Map<String, String> localizedStringsEs = {
   'assistant_pin_verify_page_tip1':
       'Verifica tu **PIN** para continuar. Esto garantiza que solo tú tengas acceso a tu billetera. ✅',
 
-// Consejos generales en la página de la billetera
+  // Consejos generales en la página de la billetera
   'assistant_wallet_page_tip1':
       'Mantén presionados los botones o toca los **íconos "?"** para obtener información y consejos adicionales. 💡',
   'assistant_wallet_page_tip2':
@@ -447,7 +447,7 @@ const Map<String, String> localizedStringsEs = {
   'assistant_wallet_page_tip3':
       'Actualiza tu billetera periódicamente para estar **al día con las últimas transacciones**. 🔄',
 
-// Consejos generales y configuración predeterminada
+  // Consejos generales y configuración predeterminada
   'assistant_shared_page':
       'Administra o crea **billeteras compartidas** con facilidad.',
   'assistant_settings': 'Personaliza tu experiencia en **Configuración**. 🎛️',

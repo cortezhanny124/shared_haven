@@ -85,7 +85,7 @@ const Map<String, String> localizedStringsFr = {
   'confirmed': 'Confirmé',
   'mempool': 'Visiter le Mempool',
 
-// Erreurs et Avertissements
+  // Erreurs et Avertissements
   'error_invalid_address': 'Format d’adresse invalide',
   'error_wallet_creation':
       'Erreur lors de la création du portefeuille avec le descripteur fourni',
@@ -139,7 +139,7 @@ const Map<String, String> localizedStringsFr = {
   'psbt_not_finalized':
       'Ce PSBT n’est pas encore finalisé, partagez-le avec les autres utilisateurs !',
 
-// File (Fichier)
+  // File (Fichier)
   'storage_permission_needed':
       'L’autorisation de stockage est requise pour enregistrer le fichier',
   'file_already_exists': 'Le fichier existe déjà',
@@ -149,7 +149,7 @@ const Map<String, String> localizedStringsFr = {
   'file_uploaded': 'Fichier téléchargé avec succès',
   'failed_upload': 'Échec du téléchargement du fichier',
 
-// Scaffold Messenger (Messages d’alerte)
+  // Scaffold Messenger (Messages d’alerte)
   'copy_to_clipboard': 'Copier dans le presse-papiers',
   'mnemonic_clipboard': 'Phrase mnémonique copiée dans le presse-papiers',
   'pub_key_clipboard': 'Clé publique copiée dans le presse-papiers',
@@ -167,7 +167,7 @@ const Map<String, String> localizedStringsFr = {
   'alias_updated': 'Alias mis à jour avec succès',
   'sw_info_updated': 'Détails du portefeuille partagé mis à jour avec succès',
 
-// Private Data (Données Privées)
+  // Private Data (Données Privées)
   'private_data': 'Données privées',
   'saved_mnemonic': 'Voici votre phrase mnémonique enregistrée',
   'saved_descriptor': 'Voici votre descripteur enregistré',
@@ -175,7 +175,7 @@ const Map<String, String> localizedStringsFr = {
   'download_descriptor': 'Télécharger le descripteur',
   'wallet_data': 'Données Portefeuille',
 
-// Buttons (Boutons)
+  // Buttons (Boutons)
   'close': 'Fermer',
   'save': 'Enregistrer',
   'cancel': 'Annuler',
@@ -191,7 +191,7 @@ const Map<String, String> localizedStringsFr = {
   'decode': 'Décode',
   'retry': 'Réessayer 🔄',
 
-// Spending Summary (Résumé des dépenses)
+  // Spending Summary (Résumé des dépenses)
   'spending_summary': 'Résumé des dépenses',
   'type': 'Type',
   'threshold': 'Seuil',
@@ -203,11 +203,11 @@ const Map<String, String> localizedStringsFr = {
   'abs_timelock': 'Verrouillage temporel absolu',
   'rel_timelock': 'Verrouillage temporel relatif',
 
-// Spending Paths (Chemins de dépenses)
-  'immediately_spend': 'Vous ({x}) pouvez immédiatement dépenser',
+  // Spending Paths (Chemins de dépenses)
+  'immediately_spend': 'Vous ({x}) pouvez immédiatement dépenser avec',
   'cannot_spend': 'Vous ({x}) ne pouvez pas dépenser de sats pour le moment',
   'threshold_required':
-      '\n\nUn seuil de {x} sur {y} est requis. \nVous devez vous coordonner avec ces clés',
+      '\nUn seuil de {x} sur {y} est requis. \nVous devez vous coordonner avec ces clés',
   'spend_alone':
       '\nVous pouvez dépenser seul. \nCes autres clés peuvent également dépenser indépendamment: ',
   'spend_together': '\nVous devez dépenser avec: ',
@@ -221,7 +221,7 @@ const Map<String, String> localizedStringsFr = {
   'spending_paths_available': 'Chemins de dépenses',
   'no_spending_paths_available': 'Aucun chemin de dépenses disponible',
 
-// Synchronisation
+  // Synchronisation
   'no_updates_yet': '⏳ Pas encore de mises à jour ! Réessayez plus tard. 🔄',
   'new_block_transactions_detected':
       '🚀 Nouveau bloc et transactions détectés ! Synchronisation en cours... 🔄',
@@ -275,7 +275,7 @@ const Map<String, String> localizedStringsFr = {
   'enter_after': 'Entrez la condition After',
   'after': 'Après',
 
-// Créer ou Restaurer un Portefeuille Unique
+  // Créer ou Restaurer un Portefeuille Unique
   'create_restore': 'Créer ou Restaurer un Portefeuille',
   'new_mnemonic': 'Nouveau mnémonique généré !',
   'wallet_loaded': 'Portefeuille chargé avec succès !',
@@ -317,17 +317,17 @@ const Map<String, String> localizedStringsFr = {
       'Requête envoyée, vérifiez votre solde dans quelques minutes !',
   'select_custom_fee': 'Sélectionner des frais personnalisés',
 
-// Messages généraux de l'assistant
+  // Messages généraux de l'assistant
   'assistant_welcome':
       'Bonjour ! Je suis Hoshi 🤖, ton assistant sur SharedHaven. Appuie sur l’icône d’aide en haut à droite et maintiens un élément pour obtenir des infos.',
 
-// Configuration et vérification du code PIN
+  // Configuration et vérification du code PIN
   'assistant_pin_setup_page':
       'Crée un code PIN à 6 chiffres pour chiffrer les données de ton portefeuille. **Ne l’oublie pas**—il protège tes fonds. 🔐',
   'assistant_pin_verification_page':
       'Entre ton code PIN pour vérifier l’accès à ton portefeuille. Ta sécurité avant tout !',
 
-// Création et gestion du portefeuille
+  // Création et gestion du portefeuille
   'assistant_ca_wallet_page':
       'Ici, tu peux **générer une nouvelle phrase mnémonique de 12 mots** ou **importer un portefeuille existant**. **Conserve-la en lieu sûr !** 🛡️',
   'assistant_create_wallet':
@@ -335,7 +335,7 @@ const Map<String, String> localizedStringsFr = {
   'assistant_generate_mnemonic':
       'Appuie ici pour **générer une phrase mnémonique**. **Note-la et conserve-la précieusement !** 📝🔑',
 
-// Page du portefeuille personnel
+  // Page du portefeuille personnel
   'assistant_wallet_page':
       'Bienvenue sur votre **tableau de bord du portefeuille personnel**. Ici, vous pouvez consulter vos soldes, envoyer des transactions et gérer vos fonds. 💰',
   'assistant_personal_info_box':
@@ -345,13 +345,13 @@ const Map<String, String> localizedStringsFr = {
   'assistant_personal_available_balance':
       'Ce bouton calcule votre **solde maximal disponible** en fonction du destinataire et des frais de transaction. **Saisissez d\'abord un destinataire** pour garantir l\'exactitude ! 🏦',
 
-// Gestion des clés publiques et privées
+  // Gestion des clés publiques et privées
   'assistant_private_data':
       'Vos données privées sont **protégées par votre code PIN**. Saisissez-le ici pour accéder aux détails chiffrés de votre portefeuille. 🔐',
   'assistant_pub_key_data':
       'Appuyez ici pour récupérer votre **clé publique**—vous en aurez besoin plus tard pour configurer un portefeuille partagé.',
 
-// Boutons de transaction
+  // Boutons de transaction
   'assistant_send_button':
       'Créez une **nouvelle transaction Bitcoin** et envoyez des fonds à un destinataire. 💸',
   'assistant_sign_button':
@@ -361,7 +361,7 @@ const Map<String, String> localizedStringsFr = {
   'assistant_receive_button':
       'Affichez et partagez votre **QR code d\'adresse Bitcoin** pour recevoir des paiements.',
 
-// Fonctionnalités du portefeuille partagé
+  // Fonctionnalités du portefeuille partagé
   'assistant_shared_wallet':
       'Bienvenue dans votre **portefeuille partagé** ! 🚀 Pensez-y comme à un **portefeuille Bitcoin amélioré**, avec des transactions multisig, des règles de dépenses et une sécurité renforcée en équipe.',
   'assistant_shared_spending_path_box':
@@ -373,25 +373,25 @@ const Map<String, String> localizedStringsFr = {
   'assistant_shared_path_dropdown':
       'Vous préférez sélectionner un chemin de dépenses manuellement ? **Choisissez-en un parmi vos options disponibles**. 🔽',
 
-// Envoi de transactions dans un portefeuille partagé
+  // Envoi de transactions dans un portefeuille partagé
   'assistant_send_sw_dialog1':
       'Saisissez d\'abord le **montant**, et les **chemins de dépenses non disponibles seront automatiquement désactivés**. **Plus de confusion, juste de la clarté !** 🎯',
   'assistant_send_dialog2':
       '⚠️ **Vérifiez toujours les adresses des destinataires !** Envoyer des fonds à une mauvaise adresse entraîne **une perte définitive**—les transactions Bitcoin sont irréversibles. 🔍',
 
-// PSBT (Transactions Bitcoin Partiellement Signées)
+  // PSBT (Transactions Bitcoin Partiellement Signées)
   'assistant_psbt_dialog1':
       'Avant de signer une **PSBT**, **vérifiez soigneusement** tous les détails de la transaction. ✅ Le bouton **Décoder** vous permet de voir plus d\'informations—il ne signera rien !',
   'assistant_psbt_dialog2':
       'Cette section fournit un aperçu de votre **PSBT**. **Ne signez que les transactions de sources fiables**—ne signez jamais une PSBT provenant d\'une source inconnue. 🔐',
 
-// Détails des transactions
+  // Détails des transactions
   'assistant_transactions_dialog1':
       'Besoin de plus de détails ? **Consultez l\'explorateur Mempool** pour voir les données de transaction en temps réel, y compris les confirmations et les frais. 🌐',
   'assistant_transactions_dialog2':
       'Voici les **frais de transaction**—une petite somme payée aux mineurs pour **prioriser votre transaction** sur la blockchain. 🏗️',
 
-// Clés publiques et importation de descripteurs
+  // Clés publiques et importation de descripteurs
   'assistant_generate_pub_key':
       'Générez votre **clé publique**, que vous pouvez partager avec d\'autres pour configurer un portefeuille partagé. 🔑',
   'assistant_select_file':
@@ -399,7 +399,7 @@ const Map<String, String> localizedStringsFr = {
   'assistant_import_sw_button':
       'Après avoir vérifié votre **descripteur et votre clé publique**, appuyez ici pour **importer et accéder à votre portefeuille partagé**.',
 
-// Importation d'un portefeuille partagé
+  // Importation d'un portefeuille partagé
   'assistant_import_shared_tip1':
       'Vous saisissez un descripteur manuellement ? Pas de souci—**des noms et alias aléatoires seront générés automatiquement**. Vous pourrez les modifier plus tard !',
   'assistant_import_shared_tip2':
@@ -407,21 +407,21 @@ const Map<String, String> localizedStringsFr = {
   'assistant_import_shared_tip3':
       'Faites attention aux **erreurs affichées au-dessus du champ du descripteur**—elles fournissent **des indices sur ce qui ne va pas dans votre saisie** ! ⚠️',
 
-// Création d'un portefeuille partagé
+  // Création d'un portefeuille partagé
   'assistant_create_shared_tip1':
       'Vous souhaitez supprimer un alias ou un bloc de condition ? **Balayez vers la gauche ou la droite** pour le retirer ! 🔄',
 
-// Seuil & règles multisignatures
+  // Seuil & règles multisignatures
   'assistant_threshold':
       'Le **seuil** représente le nombre de signatures requises parmi les utilisateurs du portefeuille partagé. **Exemple :** Un portefeuille 2-sur-3 nécessite **2 approbations** avant d’autoriser une dépense. Il **ne peut pas dépasser le nombre total d’utilisateurs**. 🔐',
 
-// Ajout de clés publiques à un portefeuille partagé
+  // Ajout de clés publiques à un portefeuille partagé
   'assistant_add_pub_key_tip1':
       'Les alias permettent d’identifier plus facilement **quelle clé publique appartient à quel utilisateur**—pratique pour gérer les signatures. 🏷️',
   'assistant_add_pub_key_tip2':
       'Vous pouvez **modifier les alias plus tard** si nécessaire.',
 
-// Timelock (Conditions de dépense basées sur le temps)
+  // Timelock (Conditions de dépense basées sur le temps)
   'assistant_add_timelock_tip1':
       'La valeur **"Older"** représente le nombre de **blocs** devant être validés avant que les fonds ne deviennent disponibles. **Chaque bloc prend environ 10 minutes.** ⏳',
   'assistant_add_timelock_tip2':
@@ -429,11 +429,11 @@ const Map<String, String> localizedStringsFr = {
   'assistant_add_timelock_tip3':
       'Vous pouvez également ajouter un **seuil à l’intérieur d’une condition timelock**—ce qui signifie que **plusieurs utilisateurs doivent approuver la dépense après un certain temps**.',
 
-// Création d’un descripteur
+  // Création d’un descripteur
   'assistant_create_descriptor':
       'Appuyez sur le bouton ci-dessous pour **générer un récapitulatif de la configuration de votre portefeuille partagé**. 📝✅',
 
-// Configuration & vérification du PIN (Conseils supplémentaires)
+  // Configuration & vérification du PIN (Conseils supplémentaires)
   'assistant_pin_setup_page_tip1':
       'Définissez votre **code PIN** pour commencer votre aventure avec **SharedHaven** ! 🔐',
   'assistant_pin_setup_page_tip2':
@@ -441,7 +441,7 @@ const Map<String, String> localizedStringsFr = {
   'assistant_pin_verify_page_tip1':
       'Vérifiez votre **PIN** pour continuer. Cela garantit que vous seul avez accès à votre portefeuille. ✅',
 
-// Conseils généraux sur la page du portefeuille
+  // Conseils généraux sur la page du portefeuille
   'assistant_wallet_page_tip1':
       'Maintenez enfoncé sur les boutons ou appuyez sur les **icônes "?"** pour afficher des infos et des astuces supplémentaires ! 💡',
   'assistant_wallet_page_tip2':
@@ -449,7 +449,7 @@ const Map<String, String> localizedStringsFr = {
   'assistant_wallet_page_tip3':
       'Pensez à rafraîchir votre portefeuille régulièrement pour **être à jour avec les dernières transactions**. 🔄',
 
-// Conseils généraux & valeurs par défaut
+  // Conseils généraux & valeurs par défaut
   'assistant_shared_page':
       'Gérez ou créez des **portefeuilles partagés** en toute simplicité !',
   'assistant_settings':

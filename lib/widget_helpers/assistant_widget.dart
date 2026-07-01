@@ -89,22 +89,22 @@ class AssistantWidgetState extends State<AssistantWidget>
       // When the widget is being dragged, this defines what remains in place.
       childWhenDragging:
           Container(), // Keeps an empty space while the assistant is being dragged
-
       // Callback triggered when the user stops dragging the widget.
       onDragEnd: (details) {
-        widget.onDragEnd?.call(details
-            .offset); // Updates the assistant's position if a drag end function is provided.
+        widget.onDragEnd?.call(
+          details.offset,
+        ); // Updates the assistant's position if a drag end function is provided.
       },
 
       // The main child that is draggable.
       child: GestureDetector(
         // When the assistant is tapped, cycle to the next message.
         onTap: widget.onNextMessage, // ✅ Tap cycles through messages
-
         // Ensures that the assistant can still be dragged even though GestureDetector is handling taps.
         onPanStart:
-            (details) {}, // ✅ Detects drag gestures, preventing GestureDetector from blocking dragging
-
+            (
+              details,
+            ) {}, // ✅ Detects drag gestures, preventing GestureDetector from blocking dragging
         // Builds the assistant widget, which includes the icon and the speech bubble (if active).
         child: _buildAssistant(),
       ),
@@ -132,8 +132,10 @@ class AssistantWidgetState extends State<AssistantWidget>
                     minWidth: 50,
                     maxWidth: 200,
                   ),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.container(context),
                     borderRadius: BorderRadius.circular(12),
@@ -146,11 +148,13 @@ class AssistantWidgetState extends State<AssistantWidget>
                     ],
                   ),
                   child: Text(
+                    textScaler: TextScaler.linear(
+                      ScaleSize.textScaleFactor(context),
+                    ),
                     AppLocalizations.of(widget.context)!.translate(_message),
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: AppColors.text(widget.context),
-                      fontSize: 14,
                       decoration: TextDecoration.none,
                     ),
                   ),
@@ -160,7 +164,6 @@ class AssistantWidgetState extends State<AssistantWidget>
           ),
 
         const SizedBox(height: 8), // spacing between bubble and icon
-
         // Assistant Icon
         GestureDetector(
           onTap: () {

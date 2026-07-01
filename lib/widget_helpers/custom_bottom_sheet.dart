@@ -18,8 +18,9 @@ class CustomBottomSheet {
     final rootContext = context;
 
     // Localize title with dynamic placeholders
-    String localizedTitle =
-        AppLocalizations.of(rootContext)!.translate(titleKey);
+    String localizedTitle = AppLocalizations.of(
+      rootContext,
+    )!.translate(titleKey);
     if (titleParams != null && titleParams.isNotEmpty) {
       titleParams.forEach((k, v) {
         localizedTitle = localizedTitle.replaceAll('{$k}', v);
@@ -82,10 +83,12 @@ class CustomBottomSheet {
                         Padding(
                           padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
                           child: Text(
+                            textScaler: TextScaler.linear(
+                              ScaleSize.textScaleFactor(context),
+                            ),
                             localizedTitle,
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                              fontSize: 20,
                               fontWeight: FontWeight.bold,
                               color: AppColors.cardTitle(sheetContext),
                             ),
@@ -111,12 +114,14 @@ class CustomBottomSheet {
                                 ? Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: actions
-                                        .map((w) => Padding(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                      horizontal: 6.0),
-                                              child: w,
-                                            ))
+                                        .map(
+                                          (w) => Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 6.0,
+                                            ),
+                                            child: w,
+                                          ),
+                                        )
                                         .toList(),
                                   )
                                 : Column(
@@ -124,12 +129,14 @@ class CustomBottomSheet {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.center,
                                     children: actions
-                                        .map((w) => Padding(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                      vertical: 6.0),
-                                              child: w,
-                                            ))
+                                        .map(
+                                          (w) => Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                              vertical: 6.0,
+                                            ),
+                                            child: w,
+                                          ),
+                                        )
                                         .toList(),
                                   ),
                           ),
@@ -151,7 +158,8 @@ class CustomBottomSheet {
     required Widget Function(
       StateSetter setSheetState,
       void Function(BuildContext, String) updateAssistantMessage,
-    ) contentBuilder,
+    )
+    contentBuilder,
     List<Widget> Function(StateSetter setSheetState)? actionsBuilder,
     bool showAssistant = false,
     List<String> assistantMessages = const [],
@@ -159,6 +167,8 @@ class CustomBottomSheet {
     double minChildSize = 0.5,
     double maxChildSize = 0.95, // <- max size
     bool useRootNavigator = true,
+    bool isDismissible = true,
+    bool enableDrag = true,
   }) {
     final rootContext = context;
     final GlobalKey<AssistantWidgetState> assistantKey =
@@ -173,141 +183,168 @@ class CustomBottomSheet {
       context: rootContext,
       useRootNavigator: useRootNavigator,
       isScrollControlled: true,
-      isDismissible: true,
-      enableDrag: true,
+      isDismissible: isDismissible,
+      enableDrag: enableDrag,
       backgroundColor: AppColors.transaparent(),
       builder: (sheetContext) {
         final media = MediaQuery.of(sheetContext);
 
         return StatefulBuilder(
-            builder: (BuildContext ctx, StateSetter setSheetState) {
-          void updateAssistantMessage(BuildContext context, String message) {
-            setSheetState(() {
-              assistantMessage = message;
-            });
-            assistantKey.currentState?.updateMessage(message);
-          }
+          builder: (BuildContext ctx, StateSetter setSheetState) {
+            void updateAssistantMessage(BuildContext context, String message) {
+              setSheetState(() {
+                assistantMessage = message;
+              });
+              assistantKey.currentState?.updateMessage(message);
+            }
 
-          void onNextAssistantMessage() {
-            if (assistantMessages.isEmpty) return;
-            setSheetState(() {
-              assistantMessageIndex =
-                  (assistantMessageIndex + 1) % assistantMessages.length;
+            void onNextAssistantMessage() {
+              if (assistantMessages.isEmpty) return;
+              setSheetState(() {
+                assistantMessageIndex =
+                    (assistantMessageIndex + 1) % assistantMessages.length;
 
-              assistantMessage = assistantMessages[assistantMessageIndex];
-            });
-            assistantKey.currentState?.updateMessage(assistantMessage);
-          }
+                assistantMessage = assistantMessages[assistantMessageIndex];
+              });
+              assistantKey.currentState?.updateMessage(assistantMessage);
+            }
 
-          return GestureDetector(
-            onTap: () {}, // Prevent taps from leaking to the barrier
-            child: SafeArea(
-              top: false,
-              child: AnimatedPadding(
-                duration: const Duration(milliseconds: 150),
-                padding: EdgeInsets.only(bottom: media.viewInsets.bottom),
-                child: Stack(
-                  children: [
-                    // Sheet Body
-                    DraggableScrollableSheet(
-                      initialChildSize: initialChildSize.clamp(
-                        minChildSize,
-                        maxChildSize,
-                      ),
-                      minChildSize: minChildSize,
-                      maxChildSize: maxChildSize,
-                      builder: (context, scrollController) {
-                        return Material(
-                          color: AppColors.dialog(sheetContext),
-                          elevation: 12,
-                          shadowColor: AppColors.black().opaque(0.25),
-                          borderRadius: BorderRadius.vertical(
-                            top: Radius.circular(20),
-                          ),
-                          clipBehavior: Clip.antiAlias,
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Padding(
-                                padding:
-                                    const EdgeInsets.only(top: 8, bottom: 4),
-                                child: Container(
-                                  width: 44,
-                                  height: 5,
-                                  decoration: BoxDecoration(
-                                    color: AppColors.text(sheetContext)
-                                        .opaque(0.25),
-                                    borderRadius: BorderRadius.circular(3),
-                                  ),
-                                ),
-                              ),
-                              Padding(
-                                padding:
-                                    const EdgeInsets.fromLTRB(20, 16, 20, 8),
-                                child: Text(
-                                  AppLocalizations.of(rootContext)!
-                                      .translate(titleKey),
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.cardTitle(sheetContext),
-                                  ),
-                                ),
-                              ),
-                              Divider(
-                                height: 1,
-                                color: AppColors.text(sheetContext).opaque(0.1),
-                              ),
-                              Expanded(
-                                child: SingleChildScrollView(
-                                  controller: scrollController,
-                                  physics: const BouncingScrollPhysics(),
-                                  padding:
-                                      const EdgeInsets.fromLTRB(20, 16, 20, 16),
-                                  child: contentBuilder(
-                                    setSheetState,
-                                    updateAssistantMessage,
-                                  ),
-                                ),
-                              ),
-                              if (actionsBuilder != null)
-                                Padding(
-                                  padding:
-                                      const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: actionsBuilder(setSheetState),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-
-                    if (showAssistant)
-                      Positioned(
-                        right: 20,
-                        bottom: 80,
-                        child: AssistantWidget(
-                          key: assistantKey,
-                          initialMessage: assistantMessage,
-                          context: rootContext,
-                          onClose: () {
-                            setSheetState(() {
-                              assistantMessage = "";
-                            });
-                          },
-                          onNextMessage: onNextAssistantMessage,
+            return GestureDetector(
+              onTap: () {}, // Prevent taps from leaking to the barrier
+              child: SafeArea(
+                top: false,
+                child: AnimatedPadding(
+                  duration: const Duration(milliseconds: 150),
+                  padding: EdgeInsets.only(bottom: media.viewInsets.bottom),
+                  child: Stack(
+                    children: [
+                      // Sheet Body
+                      DraggableScrollableSheet(
+                        initialChildSize: initialChildSize.clamp(
+                          minChildSize,
+                          maxChildSize,
                         ),
+                        minChildSize: minChildSize,
+                        maxChildSize: maxChildSize,
+                        builder: (context, scrollController) {
+                          return Material(
+                            color: AppColors.dialog(sheetContext),
+                            elevation: 12,
+                            shadowColor: AppColors.black().opaque(0.25),
+                            borderRadius: BorderRadius.vertical(
+                              top: Radius.circular(20),
+                            ),
+                            clipBehavior: Clip.antiAlias,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.only(
+                                    top: 8,
+                                    bottom: 4,
+                                  ),
+                                  child: Container(
+                                    width: 44,
+                                    height: 5,
+                                    decoration: BoxDecoration(
+                                      color: AppColors.text(
+                                        sheetContext,
+                                      ).opaque(0.25),
+                                      borderRadius: BorderRadius.circular(3),
+                                    ),
+                                  ),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.fromLTRB(
+                                    20,
+                                    16,
+                                    20,
+                                    8,
+                                  ),
+                                  child: Text(
+                                    textScaler: TextScaler.linear(
+                                      ScaleSize.textScaleFactor(context),
+                                    ),
+                                    AppLocalizations.of(
+                                      rootContext,
+                                    )!.translate(titleKey),
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize:
+                                          20 *
+                                          MediaQuery.of(
+                                            context,
+                                          ).textScaleFactor,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.cardTitle(sheetContext),
+                                    ),
+                                  ),
+                                ),
+                                Divider(
+                                  height: 1,
+                                  color: AppColors.text(
+                                    sheetContext,
+                                  ).opaque(0.1),
+                                ),
+                                Expanded(
+                                  child: SingleChildScrollView(
+                                    controller: scrollController,
+                                    physics: const BouncingScrollPhysics(),
+                                    padding: const EdgeInsets.fromLTRB(
+                                      20,
+                                      16,
+                                      20,
+                                      16,
+                                    ),
+                                    child: contentBuilder(
+                                      setSheetState,
+                                      updateAssistantMessage,
+                                    ),
+                                  ),
+                                ),
+                                if (actionsBuilder != null)
+                                  Padding(
+                                    padding: const EdgeInsets.fromLTRB(
+                                      16,
+                                      0,
+                                      16,
+                                      16,
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: actionsBuilder(setSheetState),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          );
+                        },
                       ),
-                  ],
+
+                      if (showAssistant)
+                        Positioned(
+                          right: 20,
+                          bottom: 80,
+                          child: AssistantWidget(
+                            key: assistantKey,
+                            initialMessage: assistantMessage,
+                            context: rootContext,
+                            onClose: () {
+                              setSheetState(() {
+                                assistantMessage = "";
+                              });
+                            },
+                            onNextMessage: onNextAssistantMessage,
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          );
-        });
+            );
+          },
+        );
       },
     );
   }

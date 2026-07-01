@@ -21,6 +21,7 @@ class ShWCreationMenuState extends State<ShWCreationMenu> {
     return BaseScaffold(
       key: baseScaffoldKey,
       title: Text(
+        textScaler: TextScaler.linear(ScaleSize.textScaleFactor(context)),
         AppLocalizations.of(context)!.translate('shared_wallet'),
       ),
       body: Column(
@@ -41,10 +42,10 @@ class ShWCreationMenuState extends State<ShWCreationMenu> {
           const SizedBox(height: 20),
           // Add a description
           Text(
+            textScaler: TextScaler.linear(ScaleSize.textScaleFactor(context)),
             AppLocalizations.of(context)!.translate('create_import_message'),
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 16,
               color: AppColors.text(context),
               fontWeight: FontWeight.w500,
             ),
@@ -57,7 +58,9 @@ class ShWCreationMenuState extends State<ShWCreationMenu> {
 
               if (baseScaffoldState != null) {
                 baseScaffoldState.updateAssistantMessage(
-                    context, 'assistant_create_shared');
+                  context,
+                  'assistant_create_shared',
+                );
               }
             },
             child: CustomButton(
@@ -68,8 +71,9 @@ class ShWCreationMenuState extends State<ShWCreationMenu> {
               foregroundColor: AppColors.gradient(context),
               icon: Icons.add_circle,
               iconColor: AppColors.text(context),
-              label: AppLocalizations.of(context)!
-                  .translate('create_shared_wallet'),
+              label: AppLocalizations.of(
+                context,
+              )!.translate('create_shared_wallet'),
               padding: 16.0,
               iconSize: 28.0,
             ),
@@ -82,7 +86,9 @@ class ShWCreationMenuState extends State<ShWCreationMenu> {
 
               if (baseScaffoldState != null) {
                 baseScaffoldState.updateAssistantMessage(
-                    context, 'assistant_import_shared');
+                  context,
+                  'assistant_import_shared',
+                );
               }
             },
             child: CustomButton(
@@ -94,6 +100,34 @@ class ShWCreationMenuState extends State<ShWCreationMenu> {
               icon: Icons.download,
               iconColor: AppColors.gradient(context),
               label: AppLocalizations.of(context)!.translate('import_wallet'),
+              padding: 16.0,
+              iconSize: 28.0,
+            ),
+          ),
+          const SizedBox(height: 16),
+          GestureDetector(
+            onLongPress: () {
+              final BaseScaffoldState? baseScaffoldState =
+                  baseScaffoldKey.currentState;
+
+              if (baseScaffoldState != null) {
+                baseScaffoldState.updateAssistantMessage(
+                  context,
+                  'assistant_import_shared_ro',
+                );
+              }
+            },
+            child: CustomButton(
+              onPressed: () {
+                Navigator.pushNamed(context, '/import_shared_ro');
+              },
+              backgroundColor: AppColors.background(context),
+              foregroundColor: AppColors.text(context),
+              icon: Icons.download,
+              iconColor: AppColors.gradient(context),
+              label: AppLocalizations.of(
+                context,
+              )!.translate('import_wallet_ro'),
               padding: 16.0,
               iconSize: 28.0,
             ),

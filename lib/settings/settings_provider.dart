@@ -1,4 +1,4 @@
-import 'package:bdk_flutter/bdk_flutter.dart';
+import 'package:bdk_dart/bdk.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -28,9 +28,11 @@ class SettingsProvider with ChangeNotifier {
   ThemeData get themeData => _themeData;
   bool get isDarkMode => _isDarkMode;
 
-  Network _network = Network.testnet;
+  Network _network = Network.bitcoin;
+  NetworkKind _networkKind = NetworkKind.main;
 
   Network get network => _network;
+  NetworkKind get networkKind => _networkKind;
 
   bool get isMainnet => _network == Network.bitcoin;
   bool get isTestnet => _network == Network.testnet;
@@ -48,19 +50,17 @@ class SettingsProvider with ChangeNotifier {
     _themeData = _isDarkMode ? darkTheme : lightTheme;
     final networkString = _prefs.getString('network');
 
-    // print(networkString);
     if (networkString != null) {
       if (networkString.contains('bitcoin')) {
         _network = Network.bitcoin;
+        _networkKind = NetworkKind.main;
       } else {
         _network = Network.testnet;
+        _networkKind = NetworkKind.test;
       }
-    }
-    // else if (isTest) {
-    //   _network = Network.testnet;
-    // }
-    else {
-      _network = Network.testnet;
+    } else {
+      _network = Network.bitcoin;
+      _networkKind = NetworkKind.main;
     }
 
     notifyListeners(); // Ensure UI updates after loading
@@ -95,11 +95,16 @@ class SettingsProvider with ChangeNotifier {
 
   void setNetwork(Network newNetwork) async {
     _network = newNetwork;
+    NetworkKind newNetworkKind = newNetwork.toString().contains('bitcoin')
+        ? NetworkKind.main
+        : NetworkKind.test;
+
+    _networkKind = newNetworkKind;
     SharedPreferences prefs = await SharedPreferences.getInstance();
 
-    // print(newNetwork.toString());
-
     await prefs.setString('network', newNetwork.toString());
+    await prefs.setString('networkKind', newNetworkKind.toString());
+
     notifyListeners();
   }
 

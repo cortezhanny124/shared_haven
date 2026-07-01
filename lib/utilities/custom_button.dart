@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_wallet/utilities/app_colors.dart';
 
 class CustomButton extends StatelessWidget {
   final VoidCallback? onPressed;
@@ -32,15 +33,12 @@ class CustomButton extends StatelessWidget {
     final bool hasIcon = icon != null;
 
     final Widget? iconWidget = hasIcon
-        ? Icon(
-            icon,
-            size: iconSize,
-            color: iconColor ?? foregroundColor,
-          )
+        ? Icon(icon, size: iconSize, color: iconColor ?? foregroundColor)
         : null;
 
     final Widget textWidget = hasLabel
         ? Text(
+            textScaler: TextScaler.linear(ScaleSize.textScaleFactor(context)),
             label,
             textAlign: TextAlign.center,
           )
@@ -54,9 +52,9 @@ class CustomButton extends StatelessWidget {
 
     if (hasIcon && hasLabel) {
       // Only add spacing if both exist
-      children.add(verticalLayout
-          ? SizedBox(height: spacing)
-          : SizedBox(width: spacing));
+      children.add(
+        verticalLayout ? SizedBox(height: spacing) : SizedBox(width: spacing),
+      );
     }
 
     if (hasLabel) {
@@ -69,9 +67,7 @@ class CustomButton extends StatelessWidget {
         foregroundColor: foregroundColor,
         backgroundColor: backgroundColor,
         padding: EdgeInsets.symmetric(vertical: padding, horizontal: padding),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
       child: verticalLayout
           ? Column(

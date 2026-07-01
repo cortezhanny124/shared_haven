@@ -44,7 +44,8 @@ class UtilitiesService {
       // Default will be used for the ShareWalletPages since they have multiple parameters required and because of that, don't have a route
       default:
         return localization.translate(
-            "assistant_shared_wallet"); // "How can I assist you today?"
+          "assistant_shared_wallet",
+        ); // "How can I assist you today?"
     }
   }
 

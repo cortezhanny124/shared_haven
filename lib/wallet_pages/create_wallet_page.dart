@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 
-import 'package:bdk_flutter/bdk_flutter.dart';
+import 'package:bdk_dart/bdk.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -61,8 +61,9 @@ class CreateWalletPageState extends State<CreateWalletPage> {
   void initState() {
     super.initState();
 
-    _walletService =
-        WalletService(Provider.of<SettingsProvider>(context, listen: false));
+    _walletService = WalletService(
+      Provider.of<SettingsProvider>(context, listen: false),
+    );
 
     // --- NEW: build 12 controllers/focus nodes ---
     _wordCtrls = List.generate(_wordCount, (_) => TextEditingController());
@@ -123,8 +124,9 @@ class CreateWalletPageState extends State<CreateWalletPage> {
     _squelchMasterListener = true;
     try {
       _mnemonicController.text = joined;
-      _mnemonicController.selection =
-          TextSelection.collapsed(offset: joined.length);
+      _mnemonicController.selection = TextSelection.collapsed(
+        offset: joined.length,
+      );
     } finally {
       scheduleMicrotask(() => _squelchMasterListener = false);
     }
@@ -135,8 +137,11 @@ class CreateWalletPageState extends State<CreateWalletPage> {
 
   // Master controller -> boxes (used at init and when master changes externally)
   void _syncFromMaster(String full) {
-    final words =
-        full.trim().split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
+    final words = full
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((w) => w.isNotEmpty)
+        .toList();
 
     for (int i = 0; i < _wordCount; i++) {
       final newVal = (i < words.length) ? words[i] : '';
@@ -164,8 +169,6 @@ class CreateWalletPageState extends State<CreateWalletPage> {
     for (final c in _wordCtrls) {
       mnemonic += '${c.text} ';
     }
-
-    // print(mnemonic);
 
     UtilitiesService.copyToClipboard(
       context: context,
@@ -250,11 +253,7 @@ class CreateWalletPageState extends State<CreateWalletPage> {
       // shuffle options
       final options = [correct, d1, d2]..shuffle(r);
 
-      rows.add(QuizRow(
-        position: idx + 1,
-        correct: correct,
-        options: options,
-      ));
+      rows.add(QuizRow(position: idx + 1, correct: correct, options: options));
     }
 
     final rootContext = context;
@@ -263,6 +262,8 @@ class CreateWalletPageState extends State<CreateWalletPage> {
     CustomBottomSheet.buildCustomStatefulBottomSheet(
       context: context,
       titleKey: 'verify_mnemonic',
+      isDismissible: false,
+      enableDrag: false,
       contentBuilder: (setDialogState, updateAssistantMessage) {
         bool allAnswered() => selections.every((e) => e != null);
         bool allCorrect() {
@@ -281,8 +282,10 @@ class CreateWalletPageState extends State<CreateWalletPage> {
             const SizedBox(height: 8),
             // instruction
             Text(
-              AppLocalizations.of(rootContext)!
-                  .translate('pick_the_right_word'),
+              textScaler: TextScaler.linear(ScaleSize.textScaleFactor(context)),
+              AppLocalizations.of(
+                rootContext,
+              )!.translate('pick_the_right_word'),
               style: TextStyle(
                 color: AppColors.text(context).opaque(0.9),
                 fontWeight: FontWeight.w600,
@@ -310,12 +313,13 @@ class CreateWalletPageState extends State<CreateWalletPage> {
             // feedback
             if (allAnswered() && !allCorrect()) ...[
               Text(
-                AppLocalizations.of(rootContext)!
-                    .translate('one_or_more_answers_are_wrong'),
-                style: TextStyle(
-                  color: Colors.redAccent.opaque(0.9),
-                  fontSize: 12,
+                textScaler: TextScaler.linear(
+                  ScaleSize.textScaleFactor(context),
                 ),
+                AppLocalizations.of(
+                  rootContext,
+                )!.translate('one_or_more_answers_are_wrong'),
+                style: TextStyle(color: Colors.redAccent.opaque(0.9)),
               ),
               const SizedBox(height: 6),
             ],
@@ -326,9 +330,12 @@ class CreateWalletPageState extends State<CreateWalletPage> {
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () {
-                      Navigator.of(context).pop(); // cancel
+                      Navigator.of(rootContext, rootNavigator: true).pop();
                     },
                     child: Text(
+                      textScaler: TextScaler.linear(
+                        ScaleSize.textScaleFactor(context),
+                      ),
                       AppLocalizations.of(rootContext)!.translate('cancel'),
                     ),
                   ),
@@ -338,13 +345,18 @@ class CreateWalletPageState extends State<CreateWalletPage> {
                   child: ElevatedButton(
                     onPressed: allAnswered() && allCorrect()
                         ? () {
-                            Navigator.of(rootContext, rootNavigator: true)
-                                .pop();
+                            Navigator.of(
+                              rootContext,
+                              rootNavigator: true,
+                            ).pop();
                             // proceed
                             _createWallet();
                           }
                         : null,
                     child: Text(
+                      textScaler: TextScaler.linear(
+                        ScaleSize.textScaleFactor(context),
+                      ),
                       AppLocalizations.of(rootContext)!.translate('confirm'),
                     ),
                   ),
@@ -388,19 +400,15 @@ class CreateWalletPageState extends State<CreateWalletPage> {
 
     if (!mounted) return;
 
-    Navigator.pushReplacementNamed(
-      context,
-      '/wallet_page',
-      arguments: _wallet,
-    );
+    Navigator.pushReplacementNamed(context, '/wallet_page', arguments: _wallet);
   }
 
   Future<void> _generateMnemonic() async {
-    final res = await Mnemonic.create(WordCount.words12);
+    final res = Mnemonic(wordCount: WordCount.words12);
 
     setState(() {
-      _mnemonicController.text = res.asString();
-      _mnemonic = res.asString();
+      _mnemonicController.text = res.toString();
+      _mnemonic = res.toString();
       _status = 'New mnemonic generated!';
     });
   }
@@ -423,8 +431,6 @@ class CreateWalletPageState extends State<CreateWalletPage> {
     _debounceTimer = Timer(const Duration(milliseconds: 500), () async {
       final isValid =
           value.trim().isNotEmpty && await _walletService.checkMnemonic(value);
-
-      // print('Value: $value');
 
       if (_isMnemonicEntered != isValid) {
         if (mounted) {
@@ -463,14 +469,15 @@ class CreateWalletPageState extends State<CreateWalletPage> {
           _getAnimationPath(),
           height: 80,
           width: 80,
-          repeat:
-              !_status.contains('successfully'), // Loop only for non-success
+          repeat: !_status.contains(
+            'successfully',
+          ), // Loop only for non-success
         ),
         // Status Text
         Text(
+          textScaler: TextScaler.linear(ScaleSize.textScaleFactor(context)),
           statusText,
           style: TextStyle(
-            fontSize: 16,
             fontWeight: FontWeight.bold,
             color: AppColors.text(context),
           ),
@@ -485,8 +492,10 @@ class CreateWalletPageState extends State<CreateWalletPage> {
         GlobalKey<BaseScaffoldState>();
 
     return BaseScaffold(
-      title:
-          Text(AppLocalizations.of(context)!.translate('create_single_wallet')),
+      title: Text(
+        textScaler: TextScaler.linear(ScaleSize.textScaleFactor(context)),
+        AppLocalizations.of(context)!.translate('create_single_wallet'),
+      ),
       key: baseScaffoldKey,
       showDrawer: false,
       body: SingleChildScrollView(
@@ -518,18 +527,22 @@ class CreateWalletPageState extends State<CreateWalletPage> {
                               final baseScaffoldState =
                                   baseScaffoldKey.currentState;
                               baseScaffoldState?.updateAssistantMessage(
-                                  context, 'assistant_create_wallet');
+                                context,
+                                'assistant_create_wallet',
+                              );
                             },
                             child: CustomButton(
-                              onPressed:
-                                  _isMnemonicEntered ? _verifyMnemonic : null,
+                              onPressed: _isMnemonicEntered
+                                  ? _verifyMnemonic
+                                  : null,
                               backgroundColor: AppColors.background(context),
                               foregroundColor: AppColors.text(context),
                               icon: Icons.wallet,
                               iconColor: AppColors.gradient(context),
                               verticalLayout: true,
-                              label: AppLocalizations.of(context)!
-                                  .translate('create_wallet'),
+                              label: AppLocalizations.of(
+                                context,
+                              )!.translate('create_wallet'),
                               padding: 16.0,
                               iconSize: 28.0,
                             ),
@@ -545,7 +558,9 @@ class CreateWalletPageState extends State<CreateWalletPage> {
                               final baseScaffoldState =
                                   baseScaffoldKey.currentState;
                               baseScaffoldState?.updateAssistantMessage(
-                                  context, 'assistant_generate_mnemonic');
+                                context,
+                                'assistant_generate_mnemonic',
+                              );
                             },
                             child: CustomButton(
                               onPressed: _generateMnemonic,
@@ -554,8 +569,9 @@ class CreateWalletPageState extends State<CreateWalletPage> {
                               icon: Icons.create,
                               iconColor: AppColors.text(context),
                               verticalLayout: true,
-                              label: AppLocalizations.of(context)!
-                                  .translate('generate_mnemonic'),
+                              label: AppLocalizations.of(
+                                context,
+                              )!.translate('generate_mnemonic'),
                               padding: 16.0,
                               iconSize: 28.0,
                             ),
@@ -571,7 +587,9 @@ class CreateWalletPageState extends State<CreateWalletPage> {
                               final baseScaffoldState =
                                   baseScaffoldKey.currentState;
                               baseScaffoldState?.updateAssistantMessage(
-                                  context, 'assistant_goto_import_wallet');
+                                context,
+                                'assistant_goto_import_wallet',
+                              );
                             },
                             child: CustomButton(
                               onPressed: () {
@@ -585,8 +603,9 @@ class CreateWalletPageState extends State<CreateWalletPage> {
                               backgroundColor: AppColors.background(context),
                               foregroundColor: AppColors.text(context),
                               verticalLayout: true,
-                              label: AppLocalizations.of(context)!
-                                  .translate('goto_import_wallet'),
+                              label: AppLocalizations.of(
+                                context,
+                              )!.translate('goto_import_wallet'),
                               padding: 16.0,
                               iconSize: 28.0,
                             ),
@@ -629,10 +648,7 @@ class CreateWalletPageState extends State<CreateWalletPage> {
                   labelText: '${i + 1}', // shows index label
                   borderColor: AppColors.primary(context),
                 ),
-                style: TextStyle(
-                  color: AppColors.text(context),
-                  fontSize: 14,
-                ),
+                style: TextStyle(color: AppColors.text(context)),
                 onChanged: (v) => _onWordChanged(i, v),
                 onSubmitted: (_) => _focusNext(i),
                 inputFormatters: [
@@ -646,8 +662,9 @@ class CreateWalletPageState extends State<CreateWalletPage> {
         AnimatedBuilder(
           animation: Listenable.merge(_wordCtrls),
           builder: (context, _) {
-            final filled =
-                _wordCtrls.where((c) => c.text.trim().isNotEmpty).length;
+            final filled = _wordCtrls
+                .where((c) => c.text.trim().isNotEmpty)
+                .length;
             final allFilled = filled == _wordCount;
 
             return Column(
@@ -677,8 +694,10 @@ class CreateWalletPageState extends State<CreateWalletPage> {
                 const SizedBox(height: 8),
                 AnimatedContainer(
                   duration: const Duration(milliseconds: 250),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: allFilled
                         ? AppColors.primary(context).opaque(0.15)
@@ -703,6 +722,9 @@ class CreateWalletPageState extends State<CreateWalletPage> {
                       ),
                       const SizedBox(width: 6),
                       Text(
+                        textScaler: TextScaler.linear(
+                          ScaleSize.textScaleFactor(context),
+                        ),
                         '$filled / $_wordCount words',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,

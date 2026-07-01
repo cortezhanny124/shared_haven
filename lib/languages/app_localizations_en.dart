@@ -197,10 +197,10 @@ const Map<String, String> localizedStringsEn = {
   'rel_timelock': 'Relative Timelock',
 
   // Spending Paths
-  'immediately_spend': 'You ({x}) can immediately spend',
+  'immediately_spend': 'You ({x}) can immediately spend with',
   'cannot_spend': 'You ({x}) cannot spend any sats at the moment',
   'threshold_required':
-      '\n\nA threshold of {x} out of {y} is required. \nYou must coordinate with these keys',
+      '\nA threshold of {x} out of {y} is required. \nYou must coordinate with these keys',
   'spend_alone':
       '\nYou can spend alone. \nThese other keys can also spend independently: ',
   'spend_together': '\nYou must spend together with: ',
@@ -317,17 +317,17 @@ const Map<String, String> localizedStringsEn = {
   'request_sent': 'Request sent, check your balance again in a few minutes!',
   'select_custom_fee': 'Select Custom Fee',
 
-// General Assistant Messages
+  // General Assistant Messages
   'assistant_welcome':
       'Hello, I\'m Hoshi! 🤖 I’m here to guide you through SharedHaven. Tap the help icon in the top right and hold down on anything you need help with!',
 
-// PIN Setup & Verification
+  // PIN Setup & Verification
   'assistant_pin_setup_page':
       'Set up a 6-digit PIN to encrypt your wallet data locally. **Make sure to remember it**—this PIN secures your funds! 🔐',
   'assistant_pin_verification_page':
       'Enter your PIN to verify access to your wallet. This keeps your funds secure and ensures only you can use them!',
 
-// Wallet Creation & Mnemonic Handling
+  // Wallet Creation & Mnemonic Handling
   'assistant_ca_wallet_page':
       'Here, you can **generate a new 12-word mnemonic** or **import an existing wallet** using your own mnemonic. This mnemonic is your key to your funds—keep it safe! 🛡️',
   'assistant_create_wallet':
@@ -335,7 +335,7 @@ const Map<String, String> localizedStringsEn = {
   'assistant_generate_mnemonic':
       'Tap here to **generate a new 12-word mnemonic**. **Write it down and store it safely!** Losing this means losing access to your wallet. 📝🔑',
 
-// Personal Wallet Page
+  // Personal Wallet Page
   'assistant_wallet_page':
       'This is your **personal wallet dashboard**. Here, you can view balances, send transactions, and manage your funds. 💰',
   'assistant_personal_info_box':
@@ -345,13 +345,13 @@ const Map<String, String> localizedStringsEn = {
   'assistant_personal_available_balance':
       'This button calculates your **maximum available balance** based on the recipient and transaction fees. **Enter a recipient first** to ensure accuracy! 🏦',
 
-// Public & Private Key Handling
+  // Public & Private Key Handling
   'assistant_private_data':
       'Your private data is **protected by your PIN**. Enter it here to access encrypted wallet details. 🔐',
   'assistant_pub_key_data':
       'Tap here to retrieve your **public key**—you’ll need it later for shared wallet setups.',
 
-// Transaction Buttons
+  // Transaction Buttons
   'assistant_send_button':
       'Create a new **Bitcoin transaction** and send funds to a recipient. 💸',
   'assistant_sign_button':
@@ -361,7 +361,7 @@ const Map<String, String> localizedStringsEn = {
   'assistant_receive_button':
       'View and share your **Bitcoin address QR code** to receive payments.',
 
-// Shared Wallet Features
+  // Shared Wallet Features
   'assistant_shared_wallet':
       'Welcome to your **shared wallet**! 🚀 Think of it as a **Bitcoin wallet with superpowers**—offering multisig transactions, spending rules, and team-based security.',
   'assistant_shared_spending_path_box':
@@ -373,25 +373,25 @@ const Map<String, String> localizedStringsEn = {
   'assistant_shared_path_dropdown':
       'Want more control? **Select a spending path manually** from your available options. 🔽',
 
-// Sending Transactions in Shared Wallets
+  // Sending Transactions in Shared Wallets
   'assistant_send_sw_dialog1':
       'Enter the **amount first**, and any **unavailable spending paths will be automatically disabled**. **No confusion, just clarity!** 🎯',
   'assistant_send_dialog2':
       '⚠️ **Always verify recipient addresses!** Sending funds to the wrong address means **permanent loss**—Bitcoin transactions cannot be undone. 🔍',
 
-// PSBT (Partially Signed Bitcoin Transactions)
+  // PSBT (Partially Signed Bitcoin Transactions)
   'assistant_psbt_dialog1':
       'Before signing a **PSBT**, double-check all transaction details. ✅ The **Decode** button lets you review additional data—it won’t sign anything!',
   'assistant_psbt_dialog2':
       'This section provides an overview of your **PSBT**. **Only sign transactions you trust**—never sign a PSBT from an unknown source. 🔐',
 
-// Transaction Details
+  // Transaction Details
   'assistant_transactions_dialog1':
       'Need more details? **Check the Mempool Explorer** for real-time transaction data, including confirmations and fee rates. 🌐',
   'assistant_transactions_dialog2':
       'This is the **transaction fee**—a small amount of Bitcoin paid to miners to **prioritize your transaction** on the blockchain. 🏗️',
 
-// Public Key & Descriptor Import
+  // Public Key & Descriptor Import
   'assistant_generate_pub_key':
       'Generate your **public key**, which you can share with others to set up a shared wallet. 🔑',
   'assistant_select_file':
@@ -399,7 +399,7 @@ const Map<String, String> localizedStringsEn = {
   'assistant_import_sw_button':
       'After verifying your **descriptor and public key**, tap here to **import and access your shared wallet**.',
 
-// Importing a Shared Wallet
+  // Importing a Shared Wallet
   'assistant_import_shared_tip1':
       'Entering a descriptor manually? Don’t worry—**random names and aliases will be generated automatically**. You can change them later!',
   'assistant_import_shared_tip2':
@@ -407,20 +407,20 @@ const Map<String, String> localizedStringsEn = {
   'assistant_import_shared_tip3':
       'Watch out for **errors above the descriptor field**—they provide **hints on what’s wrong** with your input! ⚠️',
 
-// Creating a Shared Wallet
+  // Creating a Shared Wallet
   'assistant_create_shared_tip1':
       'Want to delete an alias or condition block? **Swipe left or right** to remove it! 🔄',
 
-// Threshold & Multisig Rules
+  // Threshold & Multisig Rules
   'assistant_threshold':
       'The **threshold** is the number of required signers out of the total shared wallet users. **Example:** A 2-of-3 wallet needs 2 approvals before spending. It **cannot exceed the total number of users**. 🔐',
 
-// Adding Public Keys to a Shared Wallet
+  // Adding Public Keys to a Shared Wallet
   'assistant_add_pub_key_tip1':
       'Aliases help identify which **public key** belongs to which user—making it easier to manage signers. 🏷️',
   'assistant_add_pub_key_tip2': 'You can **change aliases later** if needed.',
 
-// Timelock (Time-Based Spending Conditions)
+  // Timelock (Time-Based Spending Conditions)
   'assistant_add_timelock_tip1':
       'The **"Older" value** represents the number of **blocks** that must pass before funds become spendable. **Each block is ~10 minutes.** ⏳',
   'assistant_add_timelock_tip2':
@@ -428,11 +428,11 @@ const Map<String, String> localizedStringsEn = {
   'assistant_add_timelock_tip3':
       'You can also add a **threshold inside a timelock condition**—meaning **multiple users must approve after a set time**.',
 
-// Creating a Descriptor
+  // Creating a Descriptor
   'assistant_create_descriptor':
       'Tap the button below to **generate a summary of your Shared Wallet setup**. 📝✅',
 
-// PIN Setup & Verification (Extra Tips)
+  // PIN Setup & Verification (Extra Tips)
   'assistant_pin_setup_page_tip1':
       'Set your **PIN** to begin your journey with **SharedHaven**! 🔐',
   'assistant_pin_setup_page_tip2':
@@ -440,7 +440,7 @@ const Map<String, String> localizedStringsEn = {
   'assistant_pin_verify_page_tip1':
       'Verify your **PIN** to continue. This ensures only you have access to your wallet. ✅',
 
-// Wallet Page General Tips
+  // Wallet Page General Tips
   'assistant_wallet_page_tip1':
       'Hold down on buttons or tap the **? icons** for extra info and tips! 💡',
   'assistant_wallet_page_tip2':
@@ -448,7 +448,7 @@ const Map<String, String> localizedStringsEn = {
   'assistant_wallet_page_tip3':
       'Refresh your wallet periodically to stay **up to date with the latest transactions**. 🔄',
 
-// General Tips & Defaults
+  // General Tips & Defaults
   'assistant_shared_page': 'Manage or create **shared wallets** with ease!',
   'assistant_settings': 'Customize your experience in **Settings**! 🎛️',
   'assistant_default': 'How can I assist you today? **Tap me for tips!** 🤖',

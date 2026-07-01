@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:bdk_flutter/bdk_flutter.dart';
+import 'package:bdk_dart/bdk.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_file_dialog/flutter_file_dialog.dart';
@@ -16,7 +16,9 @@ import 'package:flutter_wallet/widget_helpers/custom_bottom_sheet.dart';
 import 'package:flutter_wallet/widget_helpers/dialog_helper.dart';
 import 'package:flutter_wallet/widget_helpers/fee_selector.dart';
 import 'package:flutter_wallet/widget_helpers/notification_helper.dart';
+import 'package:flutter_wallet/widget_helpers/qr_code_helper.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:intl/intl.dart';
 
@@ -30,9 +32,10 @@ class WalletSendtxHelpers {
   final Wallet wallet;
   final String mnemonic;
   final bool mounted;
-  final BigInt avBalance;
+  final int avBalance;
   final void Function(String newAddress)? onNewAddressGenerated;
   Future<void> Function() syncWallet;
+  Set<String> myAddresses;
 
   TextEditingController? psbtController;
   TextEditingController? signingAmountController;
@@ -65,6 +68,7 @@ class WalletSendtxHelpers {
     required this.avBalance,
     required this.onNewAddressGenerated,
     required this.syncWallet,
+    required this.myAddresses,
 
     // SharedWallet Variables
     this.psbtController,
@@ -79,7 +83,8 @@ class WalletSendtxHelpers {
   });
 
   Future<void> sendTx(
-    bool isCreating, {
+    bool isCreating,
+    String address, {
     bool isFromSpendingPath = false,
     int? index,
     int? amount,
@@ -90,29 +95,24 @@ class WalletSendtxHelpers {
       return;
     }
 
-    String address = walletService.getAddress(wallet);
+    // String address = walletService.getAddress(wallet);
 
-    onNewAddressGenerated?.call(address);
+    // onNewAddressGenerated?.call(address);
 
-    final extractedData =
-        walletService.extractDataByFingerprint(policy!, myFingerPrint!);
+    final extractedData = walletService.extractDataByFingerprint(
+      policy!,
+      myFingerPrint!,
+    );
 
     if (extractedData.isNotEmpty) {
       selectedPath = index != null ? extractedData[index] : extractedData.first;
       selectedIndex = index ?? 0;
     }
 
-    // print(extractedData);
-    // print('SelectedIndex: $selectedIndex');
-    // print('SelectedPath: $selectedPath');
-
     showPSBT = isCreating;
 
     if (isFromSpendingPath) {
-      await _handleSendAllViaSpendingPath(
-        rootContext,
-        amount!,
-      );
+      await _handleSendAllViaSpendingPath(rootContext, amount!);
     }
 
     await CustomBottomSheet.buildCustomStatefulBottomSheet(
@@ -142,9 +142,12 @@ class WalletSendtxHelpers {
           ),
         ];
       },
-    ).then((_) {
+    ).then((actionPerformed) {
       _resetForm();
-      syncWallet();
+
+      if (actionPerformed == true) {
+        syncWallet();
+      }
     });
   }
 
@@ -153,24 +156,22 @@ class WalletSendtxHelpers {
     int amount,
   ) async {
     try {
-      final sendAllBalance = int.parse((await walletService.createPartialTx(
-        descriptor.toString(),
-        mnemonic,
-        recipientController.text,
-        BigInt.from(amount),
-        selectedIndex,
-        avBalance,
-        isSendAllBalance: true,
-        spendingPaths: spendingPaths,
-        customFeeRate: customFeeRate,
-      ))!);
+      final sendAllBalance = int.parse(
+        (await walletService.createPartialTx(
+          descriptor.toString(),
+          mnemonic,
+          recipientController.text,
+          amount,
+          selectedIndex,
+          avBalance,
+          isSendAllBalance: true,
+          spendingPaths: spendingPaths,
+          customFeeRate: customFeeRate,
+        ))!,
+      );
 
       amountController.text = sendAllBalance.toString();
-    } catch (e, stackTrace) {
-      // Navigator.of(rootContext, rootNavigator: true).pop();
-
-      print(e);
-      print(stackTrace);
+    } catch (e) {
       NotificationHelper.showError(rootContext, message: e.toString());
     }
   }
@@ -216,9 +217,9 @@ class WalletSendtxHelpers {
           address: address,
         );
       },
-      label: AppLocalizations.of(rootContext)!.translate(
-        isCreating ? 'submit' : (isFirstTap ? 'decode' : 'sign'),
-      ),
+      label: AppLocalizations.of(
+        rootContext,
+      )!.translate(isCreating ? 'submit' : (isFirstTap ? 'decode' : 'sign')),
       backgroundColor: AppColors.primary(context),
       textColor: AppColors.text(context),
       icon: isCreating ? Icons.send_to_mobile_outlined : Icons.draw,
@@ -240,11 +241,7 @@ class WalletSendtxHelpers {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (!isCreating)
-          _buildPsbtField(
-            setDialogState,
-            address,
-          ),
+        if (!isCreating) _buildPsbtField(setDialogState, address),
         if (isCreating || showPSBT) _buildRecipientField(),
         if (signersList!.isNotEmpty) _buildSignersList(),
         if (isCreating || showPSBT) _buildAmountField(isCreating),
@@ -338,7 +335,7 @@ class WalletSendtxHelpers {
         if (isSingleWallet) {
           await walletService.sendSingleTx(
             recipientAddress,
-            BigInt.from(amount),
+            Amount.fromSat(satoshi: amount),
             wallet,
             address,
             customFeeRate,
@@ -348,7 +345,7 @@ class WalletSendtxHelpers {
             descriptor.toString(),
             mnemonic,
             recipientAddress,
-            BigInt.from(amount),
+            amount,
             selectedIndex,
             avBalance,
             spendingPaths: spendingPaths,
@@ -357,26 +354,24 @@ class WalletSendtxHelpers {
           );
         }
 
-        Navigator.of(rootContext, rootNavigator: true).pop(); // Close loading
+        Navigator.of(
+          rootContext,
+          rootNavigator: true,
+        ).pop(true); // Close loading
 
         if (result != null) await showPSBTDialog(result, rootContext);
 
-        Navigator.of(rootContext, rootNavigator: true).pop();
+        Navigator.of(rootContext, rootNavigator: true).pop(true);
 
         NotificationHelper.show(
           rootContext,
-          message: AppLocalizations.of(rootContext)!
-              .translate('transaction_created'),
+          message: AppLocalizations.of(
+            rootContext,
+          )!.translate('transaction_created'),
         );
       } else {
         if (isFirstTap) {
-          // print(descriptor);
-
-          await _decodePsbt(
-            extractedData,
-            setDialogState,
-            address,
-          );
+          await _decodePsbt(extractedData, setDialogState, myAddresses);
 
           return;
         }
@@ -426,30 +421,29 @@ class WalletSendtxHelpers {
           spendingPaths,
         );
 
-        Navigator.of(rootContext, rootNavigator: true).pop();
+        Navigator.of(rootContext, rootNavigator: true).pop(true);
 
         if (result != null) {
           await showPSBTDialog(result, rootContext);
           NotificationHelper.show(
             rootContext,
-            message: AppLocalizations.of(rootContext)!
-                .translate('transaction_signed'),
+            message: AppLocalizations.of(
+              rootContext,
+            )!.translate('transaction_signed'),
           );
         } else {
-          Navigator.of(rootContext, rootNavigator: true).pop();
+          Navigator.of(rootContext, rootNavigator: true).pop(true);
 
           NotificationHelper.show(
             rootContext,
-            message: AppLocalizations.of(rootContext)!
-                .translate('transaction_broadcast'),
+            message: AppLocalizations.of(
+              rootContext,
+            )!.translate('transaction_broadcast'),
           );
         }
       }
-    } catch (e, stack) {
-      Navigator.of(rootContext, rootNavigator: true).pop();
-
-      print(stack);
-      print(e);
+    } catch (e) {
+      Navigator.of(rootContext, rootNavigator: true).pop(false);
 
       NotificationHelper.showError(rootContext, message: e.toString());
     }
@@ -458,37 +452,29 @@ class WalletSendtxHelpers {
   Future<void> _decodePsbt(
     List<Map<String, dynamic>>? extractedData,
     void Function(void Function()) setDialogState,
-    String address, {
+    Set<String> myAddresses, {
     Map<String, dynamic>? path,
     bool flagField = true,
   }) async {
     try {
-      final psbt =
-          await PartiallySignedTransaction.fromString(psbtController!.text);
+      final psbt = Psbt(psbtBase64: psbtController!.text);
       final tx = psbt.extractTx();
 
-      // if (extractedData != null) {
-      //   selectedPath = walletService.extractSpendingPathFromPsbt(
-      //     psbt,
-      //     extractedData,
-      //   );
-
-      //   selectedIndex = extractedData.indexOf(selectedPath!);
-      // }
-
       final signers = walletService.extractSignersFromPsbt(psbt);
-      final aliases =
-          walletService.getAliasesFromFingerprint(pubKeysAlias!, signers);
+      final aliases = walletService.getAliasesFromFingerprint(
+        pubKeysAlias!,
+        signers,
+      );
 
       final outputs = tx.output();
       Address? receiverAddress;
       int totalSpent = 0;
 
       for (final output in outputs) {
-        receiverAddress =
-            await walletService.getAddressFromScriptOutput(output);
-        if (receiverAddress.asString() != address) {
-          totalSpent += output.value.toInt();
+        receiverAddress = walletService.getAddressFromScriptOutput(output);
+
+        if (!myAddresses.contains(receiverAddress.toString())) {
+          totalSpent += output.value.toSat();
         }
       }
 
@@ -538,7 +524,7 @@ class WalletSendtxHelpers {
       }
 
       await walletService.syncWallet(wallet);
-      final availableBalance = wallet.getBalance().spendable;
+      final availableBalance = wallet.balance().trustedSpendable;
 
       final recipientAddress = recipientController.text;
       int sendAllBalance = 0;
@@ -552,23 +538,23 @@ class WalletSendtxHelpers {
           customFeeRate: customFeeRate,
         );
       } else {
-        sendAllBalance = int.parse((await walletService.createPartialTx(
-          descriptor.toString(),
-          mnemonic,
-          recipientAddress,
-          availableBalance,
-          selectedIndex,
-          avBalance,
-          isSendAllBalance: true,
-          spendingPaths: spendingPaths,
-          customFeeRate: customFeeRate,
-        ))!);
+        sendAllBalance = int.parse(
+          (await walletService.createPartialTx(
+            descriptor.toString(),
+            mnemonic,
+            recipientAddress,
+            availableBalance.toSat(),
+            selectedIndex,
+            avBalance,
+            isSendAllBalance: true,
+            spendingPaths: spendingPaths,
+            customFeeRate: customFeeRate,
+          ))!,
+        );
       }
 
       amountController.text = sendAllBalance.toString();
     } catch (e) {
-      print("Error: $e");
-
       await DialogHelper.showErrorDialog(
         context: context,
         messageKey:
@@ -577,10 +563,7 @@ class WalletSendtxHelpers {
     }
   }
 
-  Future<void> showPSBTDialog(
-    String result,
-    BuildContext context,
-  ) async {
+  Future<void> showPSBTDialog(String result, BuildContext context) async {
     final rootContext = context;
 
     // TextEditingController psbt = TextEditingController();
@@ -597,10 +580,9 @@ class WalletSendtxHelpers {
           mainAxisSize: MainAxisSize.min, // Prevents unnecessary expansion
           children: [
             Text(
+              textScaler: TextScaler.linear(ScaleSize.textScaleFactor(context)),
               AppLocalizations.of(rootContext)!.translate('psbt_not_finalized'),
-              style: TextStyle(
-                color: AppColors.text(context),
-              ),
+              style: TextStyle(color: AppColors.text(context)),
             ),
             // const SizedBox(height: 10),
           ],
@@ -651,15 +633,17 @@ class WalletSendtxHelpers {
                     mimeTypesFilter: ['text/plain', 'application/octet-stream'],
                   );
 
-                  final savedPath =
-                      await FlutterFileDialog.saveFile(params: params);
+                  final savedPath = await FlutterFileDialog.saveFile(
+                    params: params,
+                  );
 
                   if (savedPath == null) {
                     // User canceled
                     NotificationHelper.show(
                       context,
-                      message: AppLocalizations.of(context)!
-                          .translate('operation_canceled'),
+                      message: AppLocalizations.of(
+                        context,
+                      )!.translate('operation_canceled'),
                     );
                     return;
                   }
@@ -672,8 +656,9 @@ class WalletSendtxHelpers {
                 } catch (e) {
                   NotificationHelper.showError(
                     context,
-                    message: AppLocalizations.of(context)!
-                        .translate('file_save_error'),
+                    message: AppLocalizations.of(
+                      context,
+                    )!.translate('file_save_error'),
                   );
                 }
               },
@@ -703,21 +688,20 @@ class WalletSendtxHelpers {
 
                   // Share text + file
                   await SharePlus.instance.share(
-                    ShareParams(
-                      text: psbtString,
-                      files: [XFile(tmpFile.path)],
-                    ),
+                    ShareParams(text: psbtString, files: [XFile(tmpFile.path)]),
                   );
                   NotificationHelper.show(
                     context,
-                    message: AppLocalizations.of(context)!
-                        .translate('shared_success'),
+                    message: AppLocalizations.of(
+                      context,
+                    )!.translate('shared_success'),
                   );
                 } catch (e) {
                   NotificationHelper.showError(
                     context,
-                    message:
-                        AppLocalizations.of(context)!.translate('share_error'),
+                    message: AppLocalizations.of(
+                      context,
+                    )!.translate('share_error'),
                   );
                 }
               },
@@ -733,10 +717,7 @@ class WalletSendtxHelpers {
     );
   }
 
-  Future<void> showHEXDialog(
-    String result,
-    BuildContext context,
-  ) async {
+  Future<void> showHEXDialog(String result, BuildContext context) async {
     final rootContext = context;
 
     TextEditingController hex = TextEditingController();
@@ -760,9 +741,7 @@ class WalletSendtxHelpers {
                 context: context,
                 labelText: 'psbt_created',
               ),
-              style: TextStyle(
-                color: AppColors.text(context),
-              ),
+              style: TextStyle(color: AppColors.text(context)),
             ),
           ],
         ),
@@ -810,15 +789,17 @@ class WalletSendtxHelpers {
                     mimeTypesFilter: ['text/plain', 'application/octet-stream'],
                   );
 
-                  final savedPath =
-                      await FlutterFileDialog.saveFile(params: params);
+                  final savedPath = await FlutterFileDialog.saveFile(
+                    params: params,
+                  );
 
                   if (savedPath == null) {
                     // User canceled
                     NotificationHelper.show(
                       context,
-                      message: AppLocalizations.of(context)!
-                          .translate('operation_canceled'),
+                      message: AppLocalizations.of(
+                        context,
+                      )!.translate('operation_canceled'),
                     );
                     return;
                   }
@@ -831,8 +812,9 @@ class WalletSendtxHelpers {
                 } catch (e) {
                   NotificationHelper.showError(
                     context,
-                    message: AppLocalizations.of(context)!
-                        .translate('file_save_error'),
+                    message: AppLocalizations.of(
+                      context,
+                    )!.translate('file_save_error'),
                   );
                 }
               },
@@ -868,13 +850,44 @@ class WalletSendtxHelpers {
           controller: recipientController,
           decoration: CustomTextFieldStyles.textFieldDecoration(
             context: context,
-            labelText:
-                AppLocalizations.of(context)!.translate('recipient_address'),
+            labelText: AppLocalizations.of(
+              context,
+            )!.translate('recipient_address'),
             hintText: AppLocalizations.of(context)!.translate('enter_rec_addr'),
+            suffixIcon: IconButton(
+              icon: Icon(
+                Icons.qr_code_scanner_rounded,
+                color: AppColors.cardTitle(context),
+              ),
+              onPressed: () => _scanQrCode(context),
+            ),
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 8),
       ],
+    );
+  }
+
+  void _scanQrCode(BuildContext context) async {
+    final permission = await Permission.camera.request();
+    if (permission != PermissionStatus.granted) {
+      NotificationHelper.showError(
+        context,
+        message: AppLocalizations.of(context)!.translate('permission_required'),
+      );
+
+      return;
+    }
+
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => QRScannerPage(
+          onScan: (String value) {
+            recipientController.text = value;
+          },
+        ),
+      ),
     );
   }
 
@@ -889,8 +902,9 @@ class WalletSendtxHelpers {
             context: context,
             labelText:
                 "${AppLocalizations.of(context)!.translate('amount')} (sats)",
-            hintText:
-                AppLocalizations.of(context)!.translate('enter_amount_sats'),
+            hintText: AppLocalizations.of(
+              context,
+            )!.translate('enter_amount_sats'),
             suffixIcon: isCreating
                 ? IconButton(
                     onPressed: () => _handleAvailableBalanceTap(),
@@ -909,6 +923,7 @@ class WalletSendtxHelpers {
     return Column(
       children: [
         Text(
+          textScaler: TextScaler.linear(ScaleSize.textScaleFactor(context)),
           AppLocalizations.of(context)!.translate('signers'),
           style: TextStyle(
             color: AppColors.cardTitle(context),
@@ -921,14 +936,14 @@ class WalletSendtxHelpers {
           children: signersList!.map((signer) {
             return Chip(
               label: Text(
+                textScaler: TextScaler.linear(
+                  ScaleSize.textScaleFactor(context),
+                ),
                 signer,
                 style: TextStyle(color: AppColors.text(context)),
               ),
               backgroundColor: AppColors.primary(context),
-              avatar: Icon(
-                Icons.verified,
-                color: AppColors.text(context),
-              ),
+              avatar: Icon(Icons.verified, color: AppColors.text(context)),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
               ),
@@ -1009,13 +1024,10 @@ class WalletSendtxHelpers {
             context: context,
             labelText: AppLocalizations.of(context)!.translate('psbt'),
             hintText: AppLocalizations.of(context)!.translate('enter_psbt'),
-            suffixIcon: (psbtController != null &&
-                    psbtController!.text.isNotEmpty)
+            suffixIcon:
+                (psbtController != null && psbtController!.text.isNotEmpty)
                 ? IconButton(
-                    icon: Icon(
-                      Icons.cancel,
-                      color: AppColors.icon(context),
-                    ),
+                    icon: Icon(Icons.cancel, color: AppColors.icon(context)),
                     onPressed: () {
                       setDialogState(() {
                         psbtController?.clear();
@@ -1029,13 +1041,10 @@ class WalletSendtxHelpers {
                     },
                   )
                 : IconButton(
-                    icon: Icon(
-                      Icons.upload,
-                      color: AppColors.icon(context),
-                    ),
+                    icon: Icon(Icons.upload, color: AppColors.icon(context)),
                     onPressed: () async {
                       try {
-                        final result = await FilePicker.platform.pickFiles(
+                        final result = await FilePicker.pickFiles(
                           type: FileType.custom,
                           allowedExtensions: ['psbt', 'txt', 'json'],
                           withData:
@@ -1064,8 +1073,6 @@ class WalletSendtxHelpers {
                           if (decoded is Map && decoded['psbt'] is String) {
                             psbtText = decoded['psbt'] as String;
                             path = decoded['spending_path'];
-
-                            // print(path);
                           } else {
                             throw Exception("JSON file missing 'psbt' field.");
                           }
@@ -1084,16 +1091,17 @@ class WalletSendtxHelpers {
                         // Kick off your PSBT decode flow
                         await _decodePsbt(
                           path: path,
-                          null, // capture from your State or pass in as param
+                          null,
                           setDialogState,
-                          address, // capture from your State or pass in as param
+                          myAddresses,
                           flagField: false,
                         );
                       } catch (e) {
                         NotificationHelper.showError(
                           context,
-                          message: AppLocalizations.of(context)!
-                              .translate('invalid_psbt'),
+                          message: AppLocalizations.of(
+                            context,
+                          )!.translate('invalid_psbt'),
                         );
                       }
                     },

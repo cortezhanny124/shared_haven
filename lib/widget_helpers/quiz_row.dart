@@ -35,6 +35,7 @@ class MnemonicRow extends StatelessWidget {
       children: [
         // e.g., “Select word #7”
         Text(
+          textScaler: TextScaler.linear(ScaleSize.textScaleFactor(context)),
           '${AppLocalizations.of(rootContext)!.translate('select_word')} #${row.position}',
           style: TextStyle(
             color: AppColors.text(context),
@@ -49,7 +50,12 @@ class MnemonicRow extends StatelessWidget {
             final word = row.options[idx];
             final isSelected = selected == idx;
             return ChoiceChip(
-              label: Text(word),
+              label: Text(
+                textScaler: TextScaler.linear(
+                  ScaleSize.textScaleFactor(context),
+                ),
+                word,
+              ),
               selected: isSelected,
               onSelected: (_) => onSelect(idx),
               selectedColor: Colors.orangeAccent.opaque(0.25),

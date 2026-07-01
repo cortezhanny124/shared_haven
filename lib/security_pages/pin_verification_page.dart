@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_wallet/languages/app_localizations.dart';
+import 'package:flutter_wallet/security_pages/auth_guard.dart';
 import 'package:flutter_wallet/utilities/custom_button.dart';
 import 'package:flutter_wallet/utilities/custom_text_field_styles.dart';
 import 'package:flutter_wallet/widget_helpers/base_scaffold.dart';
@@ -38,7 +39,14 @@ class PinVerificationPageState extends State<PinVerificationPage>
     var walletBox = Hive.box('walletBox');
     String? savedPin = walletBox.get('userPin');
 
+    // Simulate network delay for better UX
+    await Future.delayed(const Duration(milliseconds: 500));
+
     if (savedPin == _pinController.text) {
+      // Set authenticated status using AuthGuard
+      await AuthGuard.setAuthenticated(true);
+      await AuthGuard.updateLastActive(); // Set initial timestamp
+
       setState(() {
         _status = 'PIN verified successfully.';
       });
@@ -49,7 +57,14 @@ class PinVerificationPageState extends State<PinVerificationPage>
 
       // Navigate to wallet page after a delay
       Future.delayed(const Duration(seconds: 1), () {
-        Navigator.popAndPushNamed(context, '/wallet_page', arguments: true);
+        if (mounted) {
+          // Check if we need to go to a specific page or just pop
+          if (Navigator.canPop(context)) {
+            Navigator.pop(context, true);
+          } else {
+            Navigator.pushReplacementNamed(context, '/wallet_page');
+          }
+        }
       });
     } else {
       setState(() {
@@ -79,6 +94,7 @@ class PinVerificationPageState extends State<PinVerificationPage>
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
+        textScaler: TextScaler.linear(ScaleSize.textScaleFactor(context)),
         statusText,
         style: const TextStyle(
           color: Colors.white,
@@ -103,7 +119,10 @@ class PinVerificationPageState extends State<PinVerificationPage>
   @override
   Widget build(BuildContext context) {
     return BaseScaffold(
-      title: Text(AppLocalizations.of(context)!.translate('verify_pin')),
+      title: Text(
+        textScaler: TextScaler.linear(ScaleSize.textScaleFactor(context)),
+        AppLocalizations.of(context)!.translate('verify_pin'),
+      ),
       showDrawer: false,
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -114,12 +133,7 @@ class PinVerificationPageState extends State<PinVerificationPage>
             children: [
               const SizedBox(height: 20),
               // Lock Animation
-              Center(
-                child: SizedBox(
-                  height: 150,
-                  child: _buildAnimation(),
-                ),
-              ),
+              Center(child: SizedBox(height: 150, child: _buildAnimation())),
               const SizedBox(height: 20),
               // Status Banner
               _buildStatusBanner(),
@@ -128,16 +142,16 @@ class PinVerificationPageState extends State<PinVerificationPage>
                 controller: _pinController,
                 decoration: CustomTextFieldStyles.textFieldDecoration(
                   context: context,
-                  labelText:
-                      AppLocalizations.of(context)!.translate('enter_pin'),
-                  hintText: AppLocalizations.of(context)!
-                      .translate('enter_6_digits_pin'),
+                  labelText: AppLocalizations.of(
+                    context,
+                  )!.translate('enter_pin'),
+                  hintText: AppLocalizations.of(
+                    context,
+                  )!.translate('enter_6_digits_pin'),
                 ),
                 keyboardType: TextInputType.number,
                 obscureText: true,
-                style: TextStyle(
-                  color: AppColors.text(context),
-                ),
+                style: TextStyle(color: AppColors.text(context)),
               ),
               const SizedBox(height: 20),
               // Verify PIN Button

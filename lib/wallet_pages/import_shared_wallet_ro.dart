@@ -1,8 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:bdk_dart/bdk.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_wallet/exceptions/validation_result.dart';
 import 'package:flutter_wallet/languages/app_localizations.dart';
 import 'package:flutter_wallet/services/utilities_service.dart';
 import 'package:flutter_wallet/settings/settings_provider.dart';
@@ -19,14 +17,14 @@ import 'package:lottie/lottie.dart';
 import 'package:flutter_wallet/utilities/app_colors.dart';
 import 'package:provider/provider.dart';
 
-class ImportSharedWallet extends StatefulWidget {
-  const ImportSharedWallet({super.key});
+class ImportSharedWalletRo extends StatefulWidget {
+  const ImportSharedWalletRo({super.key});
 
   @override
-  ImportSharedWalletState createState() => ImportSharedWalletState();
+  ImportSharedWalletRoState createState() => ImportSharedWalletRoState();
 }
 
-class ImportSharedWalletState extends State<ImportSharedWallet> {
+class ImportSharedWalletRoState extends State<ImportSharedWalletRo> {
   String? publicKey;
   String? _descriptor;
   String? _mnemonic;
@@ -35,7 +33,6 @@ class ImportSharedWalletState extends State<ImportSharedWallet> {
   String _status = 'Idle';
 
   String? initialPubKey;
-  String? initialSecondaryPubKey;
 
   late Box<dynamic> descriptorBox;
 
@@ -44,7 +41,6 @@ class ImportSharedWalletState extends State<ImportSharedWallet> {
   final TextEditingController _descriptorController = TextEditingController();
 
   late final WalletService _walletService;
-  late SettingsProvider settingsProvider;
 
   List<Map<String, String>> _pubKeysAlias = [];
   String _descriptorName = "";
@@ -61,17 +57,13 @@ class ImportSharedWalletState extends State<ImportSharedWallet> {
     _walletService = WalletService(
       Provider.of<SettingsProvider>(context, listen: false),
     );
-    settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
 
-    // Add a listner to the TextEditingController
     _descriptorController.addListener(() {
       if (_descriptorController.text.isNotEmpty) {
         _descriptor = _descriptorController.text;
-        _validateDescriptor(_descriptor.toString());
+        // _validateDescriptor(_descriptor.toString());
       }
     });
-
-    _generatePublicKey();
   }
 
   @override
@@ -79,61 +71,6 @@ class ImportSharedWalletState extends State<ImportSharedWallet> {
     // Dispose of the controller to avoid memory leaks
     _descriptorController.dispose();
     super.dispose();
-  }
-
-  Future<void> _generatePublicKey() async {
-    var walletBox = Hive.box('walletBox');
-
-    String savedMnemonic = walletBox.get('walletMnemonic');
-
-    final mnemonic = Mnemonic.fromString(mnemonic: savedMnemonic);
-
-    DerivationPath hardenedDerivationPath;
-    DerivationPath? hardenedDerivationPath2;
-
-    if (settingsProvider.network == Network.bitcoin) {
-      hardenedDerivationPath = DerivationPath(path: "m/84h/0h/0h");
-      hardenedDerivationPath2 = DerivationPath(path: "m/84h/1h/0h");
-    } else {
-      hardenedDerivationPath = DerivationPath(path: "m/84h/1h/0h");
-    }
-
-    final receivingDerivationPath = DerivationPath(path: "m/0");
-    final changeDerivationPath = DerivationPath(path: "m/1");
-
-    DescriptorSecretKey? receivingSecretKey2;
-    DescriptorPublicKey? receivingPublicKey2;
-
-    if (hardenedDerivationPath2 != null) {
-      (receivingSecretKey2, receivingPublicKey2) = _walletService
-          .deriveDescriptorKeys(
-            hardenedDerivationPath2,
-            receivingDerivationPath,
-            mnemonic,
-          );
-    }
-
-    final (receivingSecretKey, receivingPublicKey) = _walletService
-        .deriveDescriptorKeys(
-          hardenedDerivationPath,
-          receivingDerivationPath,
-          mnemonic,
-        );
-    final (changeSecretKey, changePublicKey) = _walletService
-        .deriveDescriptorKeys(
-          hardenedDerivationPath,
-          changeDerivationPath,
-          mnemonic,
-        );
-
-    _mnemonic = savedMnemonic;
-
-    setState(() {
-      publicKey = receivingPublicKey.toString();
-      initialPubKey = receivingPublicKey.toString();
-      initialSecondaryPubKey = receivingPublicKey2.toString();
-      changeKey = changePublicKey.toString();
-    });
   }
 
   void _uploadFile() async {
@@ -206,82 +143,38 @@ class ImportSharedWalletState extends State<ImportSharedWallet> {
       return;
     }
 
-    bool isValid = await _validateDescriptor(_descriptor!);
+    await _walletService.createSharedWallet(_descriptor!);
+
     setState(() {
       _status = 'Loading';
     });
 
     await Future.delayed(const Duration(milliseconds: 500));
 
-    if (isValid) {
-      setState(() {
-        _status = 'Success';
-      });
+    setState(() {
+      _status = 'Success';
+    });
 
-      await Future.delayed(const Duration(seconds: 1));
+    await Future.delayed(const Duration(seconds: 1));
 
-      // _walletService.printInChunks(_descriptor.toString());
+    // _walletService.printInChunks(_descriptor.toString());
 
-      if (_pubKeysAlias.isEmpty) {
-        setState(() {
-          _pubKeysAlias = _walletService.extractPublicKeysWithAliases(
-            _descriptor.toString(),
-          );
-        });
-      }
-
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => SharedWallet(
-            descriptor: _descriptor!,
-            mnemonic: _mnemonic!,
-            pubKeysAlias: _pubKeysAlias,
-            descriptorName: _descriptorName,
-          ),
+    if (_pubKeysAlias.isEmpty) {
+      _pubKeysAlias = _walletService.extractPublicKeysWithAliases(
+        _descriptor.toString(),
+      );
+    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SharedWallet(
+          descriptor: _descriptor!,
+          mnemonic: _mnemonic,
+          pubKeysAlias: _pubKeysAlias,
+          descriptorName: _descriptorName,
         ),
-      );
-    } else {
-      setState(() {
-        _status = 'Cannot navigate: Invalid Descriptor';
-      });
-    }
-  }
-
-  // Asynchronous method to validate the descriptor
-  Future<bool> _validateDescriptor(String descriptor) async {
-    try {
-      ValidationResult result = await _walletService.isValidDescriptor(
-        descriptor,
-        initialPubKey.toString(),
-        context,
-      );
-
-      if (result.isValid == false &&
-          settingsProvider.network == Network.bitcoin) {
-        result = await _walletService.isValidDescriptor(
-          descriptor,
-          initialSecondaryPubKey.toString(),
-          context,
-        );
-
-        oldCase = true;
-      }
-
-      setState(() {
-        _isDescriptorValid = result.isValid;
-        _status = result.isValid
-            ? 'Descriptor is valid'
-            : result.errorMessage ?? 'Invalid Descriptor';
-      });
-      return result.isValid;
-    } catch (e) {
-      setState(() {
-        _isDescriptorValid = false;
-        _status = 'Error validating Descriptor: $e';
-      });
-      return false;
-    }
+      ),
+    );
   }
 
   Widget _buildStatusBar() {
@@ -348,7 +241,7 @@ class ImportSharedWalletState extends State<ImportSharedWallet> {
     return BaseScaffold(
       title: Text(
         textScaler: TextScaler.linear(ScaleSize.textScaleFactor(context)),
-        AppLocalizations.of(context)!.translate('import_wallet'),
+        AppLocalizations.of(context)!.translate('import_wallet_ro'),
       ),
       key: baseScaffoldKey,
       body: SingleChildScrollView(

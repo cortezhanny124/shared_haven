@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:bdk_flutter/bdk_flutter.dart';
+import 'package:bdk_dart/bdk.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
@@ -104,24 +104,27 @@ class WalletPageState extends State<WalletPage> {
       String savedMnemonic = walletBox.get('walletMnemonic');
 
       // Convert mnemonic to object
-      Mnemonic trueMnemonic = await Mnemonic.fromString(savedMnemonic);
+      Mnemonic trueMnemonic = Mnemonic.fromString(mnemonic: savedMnemonic);
 
       // Define derivation paths
-      final hardenedDerivationPath =
-          await DerivationPath.create(path: "m/84h/1h/0h");
-      final receivingDerivationPath = await DerivationPath.create(path: "m/0");
+      DerivationPath hardenedDerivationPath;
+
+      if (settingsProvider.network == Network.bitcoin) {
+        hardenedDerivationPath = DerivationPath(path: "m/84h/0h/0h");
+      } else {
+        hardenedDerivationPath = DerivationPath(path: "m/84h/1h/0h");
+      }
+      final receivingDerivationPath = DerivationPath(path: "m/0");
 
       // Derive descriptor keys
-      final (receivingSecretKey, receivingPublicKey) =
-          await walletService.deriveDescriptorKeys(
-        hardenedDerivationPath,
-        receivingDerivationPath,
-        trueMnemonic,
-      );
+      final (receivingSecretKey, receivingPublicKey) = walletService
+          .deriveDescriptorKeys(
+            hardenedDerivationPath,
+            receivingDerivationPath,
+            trueMnemonic,
+          );
 
-      // print('secretKey: ${receivingSecretKey.asString()}');
-
-      // print('pubkey: $receivingPublicKey');
+      _convertCurrency();
 
       // Extract spending paths
       setState(() {
@@ -132,7 +135,6 @@ class WalletPageState extends State<WalletPage> {
         isInitialized = true; // Mark as loaded
       });
     } catch (e) {
-      // print("Error initializing spending paths: $e");
       throw ("Error initializing spending paths: $e");
     }
   }
@@ -141,12 +143,12 @@ class WalletPageState extends State<WalletPage> {
     // Restore wallet from the saved mnemonic
     wallet = await walletService.loadSavedWallet();
 
-    for (int i = 0; i < 20; i++) {
-      final addressInfo = wallet.getAddress(
-        addressIndex: AddressIndex.peek(index: i),
-      );
-      myAddresses.add(addressInfo.address.toString());
-    }
+    final List<AddressInfo> addressList = wallet.revealAddressesTo(
+      keychain: KeychainKind.external_,
+      index: 100,
+    );
+
+    myAddresses.addAll(addressList.map((ai) => ai.address.toString()));
 
     setState(() {
       isWalletInitialized = true;
@@ -165,15 +167,11 @@ class WalletPageState extends State<WalletPage> {
     });
 
     String walletId = wallet
-        .getAddress(addressIndex: AddressIndex.peek(index: 0))
+        .peekAddress(keychain: KeychainKind.external_, index: 0)
         .address
-        .asString();
-
-    // print(walletId);
+        .toString();
 
     _walletData = await _walletStorageService.loadWalletData(walletId);
-
-    // print('address: ${_walletData!.address}');
 
     if (_walletData != null) {
       // If offline data is available, use it to update the UI
@@ -195,8 +193,8 @@ class WalletPageState extends State<WalletPage> {
   }
 
   Future<void> _checkInternetAndSync() async {
-    final List<ConnectivityResult> connectivityResult =
-        await (Connectivity().checkConnectivity());
+    final List<ConnectivityResult> connectivityResult = await (Connectivity()
+        .checkConnectivity());
 
     if (connectivityResult.contains(ConnectivityResult.none)) {
       _showNetworkDialog();
@@ -212,11 +210,9 @@ class WalletPageState extends State<WalletPage> {
       context: context,
       titleKey: 'no_connection',
       content: Text(
+        textScaler: TextScaler.linear(ScaleSize.textScaleFactor(context)),
         AppLocalizations.of(rootContext)!.translate('connect_internet'),
-        style: TextStyle(
-          color: AppColors.text(context),
-          fontSize: 16,
-        ),
+        style: TextStyle(color: AppColors.text(context)),
       ),
       actions: [
         TextButton(
@@ -225,10 +221,9 @@ class WalletPageState extends State<WalletPage> {
             _checkInternetAndSync();
           },
           child: Text(
+            textScaler: TextScaler.linear(ScaleSize.textScaleFactor(context)),
             AppLocalizations.of(rootContext)!.translate('retry'),
-            style: TextStyle(
-              color: AppColors.text(context),
-            ),
+            style: TextStyle(color: AppColors.text(context)),
           ),
         ),
       ],
@@ -240,58 +235,56 @@ class WalletPageState extends State<WalletPage> {
           final prevout = vin['prevout'];
           return prevout != null && prevout['scriptpubkey_address'] == address;
         }) ||
-        (tx['vout'] as List)
-            .any((vout) => vout['scriptpubkey_address'] == address);
+        (tx['vout'] as List).any(
+          (vout) => vout['scriptpubkey_address'] == address,
+        );
   }
 
   Future<void> _syncWallet() async {
-    // print(_isSyncing);
-    // Prevent overlapping syncs (tap-spam, lifecycle, etc.)
-    if (_isSyncing) return;
+    if (_isSyncing) {
+      return;
+    }
 
-    // Optional: if you want a spinner immediately, you can setState here.
     _isSyncing = true;
 
     try {
-      final w = wallet; // local alias, avoids race on 'wallet'
-      final refreshedAt = DateTime.now();
+      final w = wallet;
+      final syncStart = DateTime.now();
 
-      // 1) Do all side-effects and I/O first (no setState here)
       await walletService.syncWallet(w);
 
       final currentHeight = await walletService.fetchCurrentBlockHeight();
-      final blockTimestamp =
-          await walletService.fetchBlockTimestamp(currentHeight);
 
-      // Resolve address locally
-      String nextAddress = address;
-      if (nextAddress.isEmpty) {
-        nextAddress = w
-            .getAddress(addressIndex: AddressIndex.peek(index: 0))
-            .address
-            .asString();
-      }
+      final blockTimestamp = await walletService.fetchBlockTimestamp(
+        currentHeight,
+      );
 
-      // Query balance/txs for that address
+      String nextAddress = w
+          .listUnusedAddresses(keychain: KeychainKind.external_)
+          .first
+          .address
+          .toString();
+
       final balance = await walletService.getBitcoinBalance(nextAddress);
 
-      List<Map<String, dynamic>> transactions =
-          await walletService.getTransactions(nextAddress);
+      List<Map<String, dynamic>> transactions = await walletService
+          .getTransactions();
 
       transactions = walletService.sortTransactionsByConfirmations(
         transactions,
         currentHeight,
       );
-      bool isAddressUsed =
-          transactions.any((tx) => isAddressinTransaction(tx, address));
-      if (isAddressUsed && !myAddresses.contains(address)) {
+
+      if (!myAddresses.contains(address)) {
         myAddresses.add(address);
       }
 
-      // 2) Bail out if the widget got disposed mid-await
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
-      // 3) Single, batched UI update
+      _convertCurrency();
+
       setState(() {
         _currentHeight = currentHeight;
         _timeStamp = blockTimestamp;
@@ -299,28 +292,36 @@ class WalletPageState extends State<WalletPage> {
         avBalance = balance['confirmedBalance'] ?? 0;
         ledBalance = balance['pendingBalance'] ?? 0;
         _transactions = transactions;
-        _lastRefreshed = refreshedAt;
+        _lastRefreshed = syncStart;
         _isSyncing = false;
       });
 
-      // 4) Persist after state update (you can move this before setState if you prefer)
-      await walletService.saveLocalData(w, refreshedAt, myAddresses);
-    } catch (e, stackTrace) {
-      debugPrint("Error during _syncWallet: $e");
-      debugPrint(stackTrace.toString());
-      setState(() {
-        _isSyncing = false;
-      });
-
-      throw Exception("Sync Error: ${e.toString()}");
+      await walletService.saveLocalData(
+        wallet: w,
+        address: nextAddress,
+        currentHeight: currentHeight,
+        timestamp: blockTimestamp,
+        availableBalance: balance['confirmedBalance'] ?? 0,
+        ledgerBalance: balance['pendingBalance'] ?? 0,
+        transactions: transactions,
+        lastRefreshed: syncStart,
+        myAddresses: myAddresses,
+      );
+    } catch (e) {
+      setState(() => _isSyncing = false);
+      throw Exception("Sync Error: $e");
     }
   }
 
   void _convertCurrency() async {
     final currencyLedUsd = await walletService.convertSatoshisToCurrency(
-        ledBalance, settingsProvider.currency);
+      ledBalance,
+      settingsProvider.currency,
+    );
     final currencyAvUsd = await walletService.convertSatoshisToCurrency(
-        avBalance, settingsProvider.currency);
+      avBalance,
+      settingsProvider.currency,
+    );
 
     setState(() {
       ledCurrencyBalance = currencyLedUsd;
@@ -340,14 +341,13 @@ class WalletPageState extends State<WalletPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              SpinKitFadingCircle(
-                color: Colors.blue,
-                size: 50.0,
-              ),
+              SpinKitFadingCircle(color: Colors.blue, size: 50.0),
               SizedBox(height: 20),
               Text(
+                textScaler: TextScaler.linear(
+                  ScaleSize.textScaleFactor(context),
+                ),
                 AppLocalizations.of(context)!.translate('setting_wallet'),
-                style: TextStyle(fontSize: 18),
               ),
             ],
           ),
@@ -390,7 +390,7 @@ class WalletPageState extends State<WalletPage> {
       mounted: mounted,
       wallet: wallet,
       baseScaffoldKey: baseScaffoldKey,
-      avBalance: BigInt.from(avBalance),
+      avBalance: avBalance,
       myAddresses: myAddresses,
       onNewAddressGenerated: (newAddr) {
         setState(() {
@@ -402,8 +402,8 @@ class WalletPageState extends State<WalletPage> {
 
     return BaseScaffold(
       title: Text(
+        textScaler: TextScaler.linear(ScaleSize.textScaleFactor(context)),
         AppLocalizations.of(context)!.translate('personal_wallet'),
-        style: TextStyle(fontSize: 18),
       ),
       key: baseScaffoldKey,
       body: Stack(
@@ -424,6 +424,8 @@ class WalletPageState extends State<WalletPage> {
                   _syncWallet,
                   connectivityResult,
                   context,
+                  getCurrentHeight: () => _currentHeight,
+                  getTransactions: () => _transactions,
                 );
               } catch (e) {
                 NotificationHelper.showError(context, message: 'syncing_error');
@@ -440,7 +442,7 @@ class WalletPageState extends State<WalletPage> {
               children: [
                 Expanded(
                   child: ListView(
-                    padding: const EdgeInsets.all(8.0),
+                    padding: const EdgeInsets.all(2.0),
                     children: [
                       GestureDetector(
                         onLongPress: () {
@@ -449,11 +451,13 @@ class WalletPageState extends State<WalletPage> {
 
                           if (baseScaffoldState != null) {
                             baseScaffoldState.updateAssistantMessage(
-                                context, 'assistant_personal_info_box');
+                              context,
+                              'assistant_personal_info_box',
+                            );
                           }
                         },
                         child: walletUiHelpers.buildWalletInfoBox(
-                          AppLocalizations.of(context)!.translate('address'),
+                          AppLocalizations.of(context)!.translate('info_box'),
                           onTap: () {
                             _convertCurrency();
                           },
@@ -467,21 +471,21 @@ class WalletPageState extends State<WalletPage> {
 
                           if (baseScaffoldState != null) {
                             baseScaffoldState.updateAssistantMessage(
-                                context, 'assistant_personal_transactions_box');
+                              context,
+                              'assistant_personal_transactions_box',
+                            );
                           }
                         },
-                        child: walletUiHelpers.buildTransactionsBox(),
+                        child: walletUiHelpers.buildTransactionsBoxTest(),
                       ),
                     ],
                   ),
                 ),
                 SafeArea(
                   child: Padding(
-                    padding: const EdgeInsets.all(8.0),
+                    padding: const EdgeInsets.all(2.0),
                     child: Column(
-                      children: [
-                        walletButtonsHelper.buildButtons(),
-                      ],
+                      children: [walletButtonsHelper.buildButtons()],
                     ),
                   ),
                 ),

@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:bdk_flutter/bdk_flutter.dart';
+import 'package:bdk_dart/bdk.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_file_dialog/flutter_file_dialog.dart';
@@ -16,10 +16,12 @@ import 'package:flutter_wallet/utilities/inkwell_button.dart';
 import 'package:flutter_wallet/widget_helpers/custom_bottom_sheet.dart';
 import 'package:flutter_wallet/widget_helpers/notification_helper.dart';
 import 'package:flutter_wallet/wallet_pages/shared_wallet.dart';
+import 'package:flutter_wallet/widget_helpers/qr_code_helper.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hive/hive.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter_wallet/utilities/app_colors.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
 
@@ -32,9 +34,10 @@ class CreateSharedWallet extends StatefulWidget {
 
 class CreateSharedWalletState extends State<CreateSharedWallet> {
   late final WalletService _walletService;
+  late SettingsProvider settingsProvider;
 
   List<TextEditingController> additionalPublicKeyControllers = [
-    TextEditingController()
+    TextEditingController(),
   ];
   final TextEditingController _descriptorNameController =
       TextEditingController();
@@ -72,8 +75,10 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
   void initState() {
     super.initState();
 
-    _walletService =
-        WalletService(Provider.of<SettingsProvider>(context, listen: false));
+    _walletService = WalletService(
+      Provider.of<SettingsProvider>(context, listen: false),
+    );
+    settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
 
     _getCurrHeight();
 
@@ -86,12 +91,12 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
   }
 
   Future<void> _getCurrHeight() async {
-    final settingsProvider =
-        Provider.of<SettingsProvider>(context, listen: false);
+    final settingsProvider = Provider.of<SettingsProvider>(
+      context,
+      listen: false,
+    );
     final wallServ = WalletService(settingsProvider);
     final url = '${await wallServ.baseUrl}blocks/tip/height';
-
-    print(url);
 
     final resp = await http.get(Uri.parse(url));
     setState(() {
@@ -101,9 +106,6 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
 
   void _validateInputs() {
     setState(() {
-      // print(_publicKey);
-      // print(publicKeysWithAlias);
-      // print(threshold);
       _isYourPubKeyMissing = !publicKeysWithAlias.any((entry) {
         return entry['publicKey'] == initialPubKey;
       });
@@ -118,23 +120,23 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
     try {
       final walletBox = Hive.box('walletBox');
       final savedMnemonic = walletBox.get('walletMnemonic');
-      final mnemonic = await Mnemonic.fromString(savedMnemonic);
+      final mnemonic = Mnemonic.fromString(mnemonic: savedMnemonic);
 
-      // print('Mnemonic: $savedMnemonic');
+      DerivationPath hardenedDerivationPath;
 
-      final hardenedDerivationPath =
-          await DerivationPath.create(path: "m/84h/1h/0h");
-      final receivingDerivationPath = await DerivationPath.create(path: "m/0");
+      if (settingsProvider.network == Network.bitcoin) {
+        hardenedDerivationPath = DerivationPath(path: "m/84h/0h/0h");
+      } else {
+        hardenedDerivationPath = DerivationPath(path: "m/84h/1h/0h");
+      }
 
-      final (_, receivingPublicKey) = await _walletService.deriveDescriptorKeys(
+      final receivingDerivationPath = DerivationPath(path: "m/0");
+
+      final (_, receivingPublicKey) = _walletService.deriveDescriptorKeys(
         hardenedDerivationPath,
         receivingDerivationPath,
         mnemonic,
       );
-
-      // print(receivingPublicKey
-      //     .toString()
-      //     .substring(0, receivingPublicKey.toString().length - 2));
 
       setState(() {
         _publicKey = receivingPublicKey.toString();
@@ -142,7 +144,7 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
         _mnemonic = savedMnemonic;
       });
     } catch (e) {
-      print("Error generating public key: $e");
+      throw Exception("Error generating public key: $e");
     } finally {
       setState(() => isLoading = false);
     }
@@ -157,8 +159,6 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
         context,
       );
 
-      // print(result.toString());
-
       return result.isValid;
     } catch (e) {
       return false;
@@ -167,11 +167,8 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
 
   void _navigateToSharedWallet() async {
     bool isValid = await _validateDescriptor(_finalDescriptor);
-    // print(isValid);
 
     if (isValid) {
-      // _walletService.printInChunks(_finalDescriptor.toString());
-
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -210,12 +207,11 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
 
     // Iterate through all keys and check if any key contains the same descriptor name
     for (var key in descriptorBox.keys) {
-      // print('Key: $key');
       if (key.toString().contains(descriptorName.trim())) {
-        return true; // Duplicate found
+        return true;
       }
     }
-    return false; // No duplicate found
+    return false;
   }
 
   String _generateSectionErrorMessage(List<Map<String, dynamic>> conditions) {
@@ -234,11 +230,9 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
   Widget build(BuildContext context) {
     return BaseScaffold(
       title: Text(
+        textScaler: TextScaler.linear(ScaleSize.textScaleFactor(context)),
         AppLocalizations.of(context)!.translate('create_shared_wallet'),
-        style: GoogleFonts.poppins(
-          fontWeight: FontWeight.w600,
-          fontSize: 18,
-        ),
+        style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
       ),
       key: baseScaffoldKey,
       body: SingleChildScrollView(
@@ -248,10 +242,10 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
           children: [
             // Section: Descriptor Name
             Text(
+              textScaler: TextScaler.linear(ScaleSize.textScaleFactor(context)),
               AppLocalizations.of(context)!.translate('descriptor_name'),
               style: GoogleFonts.poppins(
                 fontWeight: FontWeight.w600,
-                fontSize: 16,
                 color: _isDescriptorNameMissing
                     ? AppColors.error(context)
                     : AppColors.text(context),
@@ -260,21 +254,25 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
             // Error Message
             if (_isDescriptorNameMissing || _isDuplicateDescriptor)
               Text(
+                textScaler: TextScaler.linear(
+                  ScaleSize.textScaleFactor(context),
+                ),
                 _generateSectionErrorMessage([
                   {
                     'condition': _isDescriptorNameMissing,
-                    'message': AppLocalizations.of(context)!
-                        .translate('descriptor_name_missing')
+                    'message': AppLocalizations.of(
+                      context,
+                    )!.translate('descriptor_name_missing'),
                   },
                   {
                     'condition': _isDuplicateDescriptor,
-                    'message': AppLocalizations.of(context)!
-                        .translate('descriptor_name_exists')
+                    'message': AppLocalizations.of(
+                      context,
+                    )!.translate('descriptor_name_exists'),
                   },
                 ]),
                 style: GoogleFonts.poppins(
                   fontWeight: FontWeight.w400,
-                  fontSize: 14,
                   color: AppColors.error(context),
                 ),
               ),
@@ -285,31 +283,32 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                 setState(() {
                   _descriptorName = _descriptorNameController.text.trim();
 
-                  _isDuplicateDescriptor =
-                      _isDuplicateDescriptorName(_descriptorName);
+                  _isDuplicateDescriptor = _isDuplicateDescriptorName(
+                    _descriptorName,
+                  );
                 });
               },
               decoration: CustomTextFieldStyles.textFieldDecoration(
                 context: context,
-                labelText: AppLocalizations.of(context)!
-                    .translate('enter_descriptor_name'),
+                labelText: AppLocalizations.of(
+                  context,
+                )!.translate('enter_descriptor_name'),
                 hintText: 'E.g., MySharedWallet',
                 borderColor: _isDescriptorNameMissing
                     ? AppColors.error(context)
                     : AppColors.text(context),
               ),
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
             ),
             const SizedBox(height: 20),
             // Section 1: Generate Public Key
             Text(
+              textScaler: TextScaler.linear(ScaleSize.textScaleFactor(context)),
               '1. ${AppLocalizations.of(context)!.translate('generate_public_key')}',
               style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
-                  color: AppColors.text(context)),
+                fontWeight: FontWeight.w600,
+                color: AppColors.text(context),
+              ),
             ),
             const SizedBox(height: 10),
 
@@ -318,9 +317,11 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
               children: [
                 Expanded(
                   child: Text(
+                    textScaler: TextScaler.linear(
+                      ScaleSize.textScaleFactor(context),
+                    ),
                     '${AppLocalizations.of(context)!.translate('pub_key')}: $_publicKey',
                     style: TextStyle(
-                      fontSize: 16,
                       color: AppColors.text(context),
                       fontWeight: FontWeight.w500,
                     ),
@@ -328,12 +329,10 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                   ),
                 ),
                 IconButton(
-                  icon: Icon(
-                    Icons.copy,
-                    color: AppColors.icon(context),
-                  ),
-                  tooltip: AppLocalizations.of(context)!
-                      .translate('copy_to_clipboard'),
+                  icon: Icon(Icons.copy, color: AppColors.icon(context)),
+                  tooltip: AppLocalizations.of(
+                    context,
+                  )!.translate('copy_to_clipboard'),
                   onPressed: () {
                     UtilitiesService.copyToClipboard(
                       context: context,
@@ -352,15 +351,17 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Section Title
-
                 Row(
                   children: [
                     Text(
+                      textScaler: TextScaler.linear(
+                        ScaleSize.textScaleFactor(context),
+                      ),
                       '2. ${AppLocalizations.of(context)!.translate('enter_pub_keys')}',
                       style: GoogleFonts.poppins(
                         fontWeight: FontWeight.w600,
-                        fontSize: 16,
-                        color: (_isThresholdMissing ||
+                        color:
+                            (_isThresholdMissing ||
                                 _arePublicKeysMissing ||
                                 _isYourPubKeyMissing)
                             ? AppColors.error(context)
@@ -374,13 +375,12 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
 
                         if (baseScaffoldState != null) {
                           baseScaffoldState.updateAssistantMessage(
-                              context, 'assistant_enter_pub_keys');
+                            context,
+                            'assistant_enter_pub_keys',
+                          );
                         }
                       },
-                      icon: Icon(
-                        Icons.help,
-                        color: AppColors.icon(context),
-                      ),
+                      icon: Icon(Icons.help, color: AppColors.icon(context)),
                     ),
                   ],
                 ),
@@ -407,13 +407,12 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                     children: publicKeysWithAlias.map((key) {
                       return Dismissible(
                         key: ValueKey(
-                            key['publicKey']), // Unique key for each item
+                          key['publicKey'],
+                        ), // Unique key for each item
                         direction: DismissDirection
                             .horizontal, // Allow swipe to the left and righty
                         onDismissed: (direction) {
                           setState(() {
-                            // print(key['publicKey']);
-
                             publicKeysWithAlias.remove(key); // Remove the key
 
                             for (var condition in timelockConditions) {
@@ -425,7 +424,8 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
 
                             // Remove the entire condition if no pubkeys remain in it
                             timelockConditions.removeWhere(
-                                (condition) => condition['pubkeys'].isEmpty);
+                              (condition) => condition['pubkeys'].isEmpty,
+                            );
                           });
 
                           NotificationHelper.showError(
@@ -455,15 +455,18 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                             decoration: BoxDecoration(
                               color: AppColors.background(context).opaque(0.2),
                               borderRadius: BorderRadius.circular(8.0),
-                              border:
-                                  Border.all(color: AppColors.primary(context)),
+                              border: Border.all(
+                                color: AppColors.primary(context),
+                              ),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Text(
+                                  textScaler: TextScaler.linear(
+                                    ScaleSize.textScaleFactor(context),
+                                  ),
                                   key['alias']!,
-                                  style: const TextStyle(fontSize: 14),
                                 ),
                               ],
                             ),
@@ -486,11 +489,14 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                   Row(
                     children: [
                       Text(
+                        textScaler: TextScaler.linear(
+                          ScaleSize.textScaleFactor(context),
+                        ),
                         '3. ${AppLocalizations.of(context)!.translate('enter_multisig')}',
                         style: GoogleFonts.poppins(
                           fontWeight: FontWeight.w600,
-                          fontSize: 16,
-                          color: (_isThresholdMissing ||
+                          color:
+                              (_isThresholdMissing ||
                                   _arePublicKeysMissing ||
                                   _isYourPubKeyMissing)
                               ? AppColors.error(context)
@@ -504,13 +510,12 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
 
                           if (baseScaffoldState != null) {
                             baseScaffoldState.updateAssistantMessage(
-                                context, 'assistant_enter_multisig');
+                              context,
+                              'assistant_enter_multisig',
+                            );
                           }
                         },
-                        icon: Icon(
-                          Icons.help,
-                          color: AppColors.icon(context),
-                        ),
+                        icon: Icon(Icons.help, color: AppColors.icon(context)),
                       ),
                     ],
                   ),
@@ -534,19 +539,29 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                             child: Card(
                               color: AppColors.background(context),
                               margin: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 4),
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
                               child: Padding(
-                                padding:
-                                    const EdgeInsets.all(6), // smaller padding
+                                padding: const EdgeInsets.all(
+                                  6,
+                                ), // smaller padding
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   mainAxisSize: MainAxisSize
                                       .min, // don't expand vertically
                                   children: [
                                     Text(
+                                      textScaler: TextScaler.linear(
+                                        ScaleSize.textScaleFactor(context),
+                                      ),
                                       "Threshold: $threshold",
                                       style: TextStyle(
-                                        fontSize: 13, // smaller text
+                                        fontSize:
+                                            13 *
+                                            MediaQuery.of(
+                                              context,
+                                            ).textScaleFactor, // smaller text
                                         fontWeight: FontWeight.w600,
                                         color: AppColors.text(context),
                                       ),
@@ -559,12 +574,21 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                                             .compact, // tighter vertical space
                                         contentPadding: EdgeInsets
                                             .zero, // remove side padding
-                                        leading:
-                                            const Icon(Icons.vpn_key, size: 16),
+                                        leading: const Icon(
+                                          Icons.vpn_key,
+                                          size: 16,
+                                        ),
                                         title: Text(
+                                          textScaler: TextScaler.linear(
+                                            ScaleSize.textScaleFactor(context),
+                                          ),
                                           pk['alias'] ?? "Unknown",
                                           style: TextStyle(
-                                            fontSize: 12,
+                                            fontSize:
+                                                12 *
+                                                MediaQuery.of(
+                                                  context,
+                                                ).textScaleFactor,
                                             color: AppColors.text(context),
                                           ),
                                         ),
@@ -584,26 +608,31 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                       _arePublicKeysMissing ||
                       _isYourPubKeyMissing)
                     Text(
+                      textScaler: TextScaler.linear(
+                        ScaleSize.textScaleFactor(context),
+                      ),
                       _generateSectionErrorMessage([
                         {
                           'condition': _isThresholdMissing,
-                          'message': AppLocalizations.of(context)!
-                              .translate('threshold_missing')
+                          'message': AppLocalizations.of(
+                            context,
+                          )!.translate('threshold_missing'),
                         },
                         {
                           'condition': _arePublicKeysMissing,
-                          'message': AppLocalizations.of(context)!
-                              .translate('public_keys_missing')
+                          'message': AppLocalizations.of(
+                            context,
+                          )!.translate('public_keys_missing'),
                         },
                         {
                           'condition': _isYourPubKeyMissing,
-                          'message': AppLocalizations.of(context)!
-                              .translate('your_public_key_missing')
+                          'message': AppLocalizations.of(
+                            context,
+                          )!.translate('your_public_key_missing'),
                         },
                       ]),
                       style: GoogleFonts.poppins(
                         fontWeight: FontWeight.w400,
-                        fontSize: 14,
                         color: AppColors.error(context),
                       ),
                     ),
@@ -619,11 +648,14 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                   Row(
                     children: [
                       Text(
+                        textScaler: TextScaler.linear(
+                          ScaleSize.textScaleFactor(context),
+                        ),
                         '4. ${AppLocalizations.of(context)!.translate('enter_timelock_conditions')}',
                         style: GoogleFonts.poppins(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 16,
-                            color: AppColors.text(context)),
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.text(context),
+                        ),
                       ),
                       IconButton(
                         onPressed: () {
@@ -632,13 +664,12 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
 
                           if (baseScaffoldState != null) {
                             baseScaffoldState.updateAssistantMessage(
-                                context, 'assistant_enter_timelock');
+                              context,
+                              'assistant_enter_timelock',
+                            );
                           }
                         },
-                        icon: Icon(
-                          Icons.help,
-                          color: AppColors.icon(context),
-                        ),
+                        icon: Icon(Icons.help, color: AppColors.icon(context)),
                       ),
                     ],
                   ),
@@ -657,43 +688,36 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                       spacing: 8.0,
                       runSpacing: 8.0,
                       children: timelockConditions.map((condition) {
-                        // print('condition: $condition');
-
                         // Retrieve aliases for the selected public keys
-                        List<dynamic> aliases = (condition['pubkeys'] is String
-                                ? jsonDecode(condition['pubkeys'])
-                                : condition['pubkeys'])
-                            .map((pubkeyEntry) {
-                          // Extract the publicKey from the current entry
-                          String publicKey = pubkeyEntry['publicKey'];
+                        List<dynamic> aliases =
+                            (condition['pubkeys'] is String
+                                    ? jsonDecode(condition['pubkeys'])
+                                    : condition['pubkeys'])
+                                .map((pubkeyEntry) {
+                                  // Extract the publicKey from the current entry
+                                  String publicKey = pubkeyEntry['publicKey'];
 
-                          // print('Searching for publicKey: $publicKey');
-
-                          // Debugging: Log all available public keys
-                          // publicKeysWithAlias.forEach((entry) {
-                          //   print('Available publicKey: ${entry['publicKey']}');
-                          // });
-
-                          // Find the alias for the publicKey in publicKeysWithAlias
-                          return publicKeysWithAlias.firstWhere(
-                            (entry) =>
-                                entry['publicKey']!.trim().substring(
-                                    0, entry['publicKey']!.length - 3) ==
-                                publicKey
-                                    .trim()
-                                    .substring(0, publicKey.length - 3),
-                            orElse: () => {'alias': 'Unknown'},
-                          )['alias'];
-                        }).toList();
-
-                        // print('aliases: $aliases');
+                                  // Find the alias for the publicKey in publicKeysWithAlias
+                                  return publicKeysWithAlias.firstWhere(
+                                    (entry) =>
+                                        entry['publicKey']!.trim().substring(
+                                          0,
+                                          entry['publicKey']!.length - 3,
+                                        ) ==
+                                        publicKey.trim().substring(
+                                          0,
+                                          publicKey.length - 3,
+                                        ),
+                                    orElse: () => {'alias': 'Unknown'},
+                                  )['alias'];
+                                })
+                                .toList();
 
                         return Dismissible(
                           key: ValueKey(condition),
                           direction: DismissDirection.horizontal,
                           onDismissed: (direction) {
                             setState(() {
-                              // print(condition);
                               timelockConditions.remove(condition);
                             });
 
@@ -734,7 +758,9 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                           child: GestureDetector(
                             onTap: () {
                               _showAddTimelockDialog(
-                                  condition: condition, isUpdating: true);
+                                condition: condition,
+                                isUpdating: true,
+                              );
                             },
                             child: Container(
                               padding: const EdgeInsets.all(8.0),
@@ -742,26 +768,39 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                                 color: AppColors.primary(context).opaque(0.2),
                                 borderRadius: BorderRadius.circular(8.0),
                                 border: Border.all(
-                                    color: AppColors.primary(context)),
+                                  color: AppColors.primary(context),
+                                ),
                               ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
+                                    textScaler: TextScaler.linear(
+                                      ScaleSize.textScaleFactor(context),
+                                    ),
                                     '${AppLocalizations.of(context)!.translate('threshold')}: ${condition['threshold']}',
-                                    style: const TextStyle(fontSize: 14),
                                   ),
+                                  if (condition['older'] != null &&
+                                      condition['older'].toString().isNotEmpty)
+                                    Text(
+                                      textScaler: TextScaler.linear(
+                                        ScaleSize.textScaleFactor(context),
+                                      ),
+                                      '${AppLocalizations.of(context)!.translate('older')}: ${condition['older']}',
+                                    ),
+                                  if (condition['after'] != null &&
+                                      condition['after'].toString().isNotEmpty)
+                                    Text(
+                                      textScaler: TextScaler.linear(
+                                        ScaleSize.textScaleFactor(context),
+                                      ),
+                                      '${AppLocalizations.of(context)!.translate('after')}: ${condition['after']}',
+                                    ),
                                   Text(
-                                    '${AppLocalizations.of(context)!.translate('older')}: ${condition['older']}',
-                                    style: const TextStyle(fontSize: 14),
-                                  ),
-                                  Text(
-                                    '${AppLocalizations.of(context)!.translate('after')}: ${condition['after']}',
-                                    style: const TextStyle(fontSize: 14),
-                                  ),
-                                  Text(
+                                    textScaler: TextScaler.linear(
+                                      ScaleSize.textScaleFactor(context),
+                                    ),
                                     '${AppLocalizations.of(context)!.translate('pub_keys')}: ${aliases.join(', ')}',
-                                    style: const TextStyle(fontSize: 14),
                                   ),
                                 ],
                               ),
@@ -781,11 +820,14 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                   Row(
                     children: [
                       Text(
+                        textScaler: TextScaler.linear(
+                          ScaleSize.textScaleFactor(context),
+                        ),
                         '5. ${AppLocalizations.of(context)!.translate('create_descriptor')}',
                         style: GoogleFonts.poppins(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 16,
-                            color: AppColors.text(context)),
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.text(context),
+                        ),
                       ),
                       IconButton(
                         onPressed: () {
@@ -794,31 +836,27 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
 
                           if (baseScaffoldState != null) {
                             baseScaffoldState.updateAssistantMessage(
-                                context, 'assistant_create_descriptor');
+                              context,
+                              'assistant_create_descriptor',
+                            );
                           }
                         },
-                        icon: Icon(
-                          Icons.help,
-                          color: AppColors.icon(context),
-                        ),
+                        icon: Icon(Icons.help, color: AppColors.icon(context)),
                       ),
                     ],
                   ),
                   const SizedBox(height: 10),
                   CustomButton(
                     onPressed: () {
-                      print(threshold);
-
-                      print(publicKeysWithAliasMultisig);
-
                       _createDescriptor();
                     },
                     backgroundColor: AppColors.background(context),
                     foregroundColor: AppColors.text(context),
                     icon: Icons.create,
                     iconColor: AppColors.gradient(context),
-                    label: AppLocalizations.of(context)!
-                        .translate('create_descriptor'),
+                    label: AppLocalizations.of(
+                      context,
+                    )!.translate('create_descriptor'),
                   ),
                 ],
               ),
@@ -865,15 +903,28 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                     controller: publicKeyController,
                     decoration: CustomTextFieldStyles.textFieldDecoration(
                       context: context,
-                      labelText: AppLocalizations.of(rootContext)!
-                          .translate('enter_pub_key'),
-                      hintText: AppLocalizations.of(rootContext)!
-                          .translate('enter_pub_key'),
+                      labelText: AppLocalizations.of(
+                        rootContext,
+                      )!.translate('enter_pub_key'),
+                      hintText: AppLocalizations.of(
+                        rootContext,
+                      )!.translate('enter_pub_key'),
                       borderColor: AppColors.background(context),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          Icons.qr_code_scanner_rounded,
+                          color: AppColors.cardTitle(context),
+                        ),
+                        onPressed: () async {
+                          final result = await scanQrCode(context);
+
+                          setState(() {
+                            publicKeyController.text = result;
+                          });
+                        },
+                      ),
                     ),
-                    style: TextStyle(
-                      color: AppColors.text(context),
-                    ),
+                    style: TextStyle(color: AppColors.text(context)),
                   ),
                 ),
               ],
@@ -883,23 +934,24 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
               controller: aliasController,
               decoration: CustomTextFieldStyles.textFieldDecoration(
                 context: context,
-                labelText:
-                    AppLocalizations.of(rootContext)!.translate('enter_alias'),
-                hintText:
-                    AppLocalizations.of(rootContext)!.translate('enter_alias'),
+                labelText: AppLocalizations.of(
+                  rootContext,
+                )!.translate('enter_alias'),
+                hintText: AppLocalizations.of(
+                  rootContext,
+                )!.translate('enter_alias'),
                 borderColor: AppColors.background(context),
               ),
-              style: TextStyle(
-                color: AppColors.text(context),
-              ),
+              style: TextStyle(color: AppColors.text(context)),
             ),
             if (errorMessage != null) ...[
               const SizedBox(height: 10),
               Text(
-                errorMessage!,
-                style: TextStyle(
-                  color: AppColors.error(context),
+                textScaler: TextScaler.linear(
+                  ScaleSize.textScaleFactor(context),
                 ),
+                errorMessage!,
+                style: TextStyle(color: AppColors.error(context)),
               ),
             ],
           ],
@@ -917,33 +969,61 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
 
                   if (newPublicKey.isEmpty || newAlias.isEmpty) {
                     setDialogState(() {
-                      errorMessage = AppLocalizations.of(rootContext)!
-                          .translate('both_fields_required');
+                      errorMessage = AppLocalizations.of(
+                        rootContext,
+                      )!.translate('both_fields_required');
                     });
                     return;
                   }
 
                   // Exclude the current key when checking for duplicates
-                  bool publicKeyExists = publicKeysWithAlias.any((entry) =>
-                      entry['publicKey']?.toLowerCase() ==
-                          newPublicKey.toLowerCase() &&
-                      entry['publicKey']?.toLowerCase() !=
-                          currentPublicKey?.toLowerCase());
+                  bool publicKeyExists = publicKeysWithAlias.any(
+                    (entry) =>
+                        entry['publicKey']?.toLowerCase() ==
+                            newPublicKey.toLowerCase() &&
+                        entry['publicKey']?.toLowerCase() !=
+                            currentPublicKey?.toLowerCase(),
+                  );
 
-                  bool aliasExists = publicKeysWithAlias.any((entry) =>
-                      entry['alias']?.toLowerCase() == newAlias.toLowerCase() &&
-                      entry['alias']?.toLowerCase() !=
-                          currentAlias?.toLowerCase());
+                  bool hasTestnetPath = false;
+                  if (settingsProvider.network == Network.bitcoin) {
+                    hasTestnetPath =
+                        newPublicKey.contains("84'/1'/0'") ||
+                        newPublicKey.contains('84h/1h/0h') ||
+                        publicKeysWithAlias.any((entry) {
+                          final pubKey =
+                              entry['publicKey']?.toLowerCase() ?? '';
+                          // Check for the testnet pattern [fingerprint/84'/1'/0']
+                          return pubKey.contains("84'/1'/0'") ||
+                              pubKey.contains('84h/1h/0h');
+                        });
+                  }
+
+                  bool aliasExists = publicKeysWithAlias.any(
+                    (entry) =>
+                        entry['alias']?.toLowerCase() ==
+                            newAlias.toLowerCase() &&
+                        entry['alias']?.toLowerCase() !=
+                            currentAlias?.toLowerCase(),
+                  );
 
                   if (publicKeyExists) {
                     setDialogState(() {
-                      errorMessage = AppLocalizations.of(rootContext)!
-                          .translate('pub_key_exists');
+                      errorMessage = AppLocalizations.of(
+                        rootContext,
+                      )!.translate('pub_key_exists');
+                    });
+                  } else if (hasTestnetPath) {
+                    setDialogState(() {
+                      errorMessage = AppLocalizations.of(
+                        rootContext,
+                      )!.translate('old_public_key');
                     });
                   } else if (aliasExists) {
                     setDialogState(() {
-                      errorMessage = AppLocalizations.of(rootContext)!
-                          .translate('alias_exists');
+                      errorMessage = AppLocalizations.of(
+                        rootContext,
+                      )!.translate('alias_exists');
                     });
                   } else {
                     if (isUpdating) {
@@ -955,8 +1035,9 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
 
                       NotificationHelper.show(
                         rootContext,
-                        message: AppLocalizations.of(rootContext)!
-                            .translate('multisig_updated'),
+                        message: AppLocalizations.of(
+                          rootContext,
+                        )!.translate('multisig_updated'),
                       );
                     } else {
                       setState(() {
@@ -969,8 +1050,9 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                     }
                   }
                 },
-                label: AppLocalizations.of(rootContext)!
-                    .translate(isUpdating ? 'save' : 'add'),
+                label: AppLocalizations.of(
+                  rootContext,
+                )!.translate(isUpdating ? 'save' : 'add'),
                 backgroundColor: AppColors.background(context),
                 textColor: AppColors.text(context),
                 icon: isUpdating ? Icons.save : Icons.add_task,
@@ -983,6 +1065,33 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
     );
   }
 
+  Future<String> scanQrCode(BuildContext context) async {
+    final permission = await Permission.camera.request();
+    if (permission != PermissionStatus.granted) {
+      NotificationHelper.showError(
+        context,
+        message: AppLocalizations.of(context)!.translate('permission_required'),
+      );
+
+      return "";
+    }
+
+    String result = "";
+
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => QRScannerPage(
+          onScan: (String value) {
+            result = value;
+          },
+        ),
+      ),
+    );
+
+    return result;
+  }
+
   void _showAddMultisigDialog(bool isUpdating) {
     final TextEditingController thresholdController = TextEditingController();
 
@@ -991,8 +1100,6 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
       thresholdController.text = threshold!;
     }
 
-    print(publicKeysWithAliasMultisig);
-    print(selectedPubKeys);
     final rootContext = context;
 
     CustomBottomSheet.buildCustomStatefulBottomSheet(
@@ -1012,21 +1119,24 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
               Wrap(
                 spacing: 8.0,
                 children: publicKeysWithAlias.map((key) {
-                  bool isSelected = selectedPubKeys.any((selectedKey) =>
-                      selectedKey['publicKey'] == key['publicKey']);
+                  bool isSelected = selectedPubKeys.any(
+                    (selectedKey) =>
+                        selectedKey['publicKey'] == key['publicKey'],
+                  );
                   return GestureDetector(
                     onTap: () {
                       setDialogState(() {
                         if (isSelected) {
-                          selectedPubKeys.removeWhere((selectedKey) =>
-                              selectedKey['publicKey'] == key['publicKey']);
+                          selectedPubKeys.removeWhere(
+                            (selectedKey) =>
+                                selectedKey['publicKey'] == key['publicKey'],
+                          );
                         } else {
                           selectedPubKeys.add({
                             'publicKey': key['publicKey']!,
-                            'alias': key['alias']!
+                            'alias': key['alias']!,
                           });
                         }
-                        // print(selectedPubKeys);
                       });
                     },
                     child: Container(
@@ -1036,13 +1146,13 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                             ? AppColors.background(context).opaque(0.8)
                             : AppColors.background(context).opaque(0.2),
                         borderRadius: BorderRadius.circular(8.0),
-                        border: Border.all(
-                          color: AppColors.primary(context),
-                        ),
+                        border: Border.all(color: AppColors.primary(context)),
                       ),
                       child: Text(
+                        textScaler: TextScaler.linear(
+                          ScaleSize.textScaleFactor(context),
+                        ),
                         key['alias']!,
-                        style: const TextStyle(fontSize: 14),
                       ),
                     ),
                   );
@@ -1060,14 +1170,14 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                         if (int.tryParse(value) != null &&
                             int.parse(value) > selectedPubKeys.length) {
                           // If the entered value exceeds the max, reset it to the max
-                          thresholdController.text =
-                              selectedPubKeys.length.toString();
+                          thresholdController.text = selectedPubKeys.length
+                              .toString();
                           thresholdController.selection =
                               TextSelection.fromPosition(
-                            TextPosition(
-                              offset: thresholdController.text.length,
-                            ),
-                          );
+                                TextPosition(
+                                  offset: thresholdController.text.length,
+                                ),
+                              );
                         } else {
                           thresholdController.text = value;
                         }
@@ -1075,15 +1185,15 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                     },
                     decoration: CustomTextFieldStyles.textFieldDecoration(
                       context: context,
-                      labelText: AppLocalizations.of(rootContext)!
-                          .translate('threshold'),
-                      hintText: AppLocalizations.of(rootContext)!
-                          .translate('threshold'),
+                      labelText: AppLocalizations.of(
+                        rootContext,
+                      )!.translate('threshold'),
+                      hintText: AppLocalizations.of(
+                        rootContext,
+                      )!.translate('threshold'),
                       borderColor: AppColors.background(context),
                     ),
-                    style: TextStyle(
-                      color: AppColors.text(context),
-                    ),
+                    style: TextStyle(color: AppColors.text(context)),
                     keyboardType: TextInputType.number,
                   ),
                 ],
@@ -1105,8 +1215,9 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                       .toList(growable: false); // <-- eager snapshot
 
                   final toAdd = converted.where(
-                    (m) => !publicKeysWithAliasMultisig
-                        .any((x) => x['pubkey'] == m['pubkey']),
+                    (m) => !publicKeysWithAliasMultisig.any(
+                      (x) => x['pubkey'] == m['pubkey'],
+                    ),
                   );
                   publicKeysWithAliasMultisig.addAll(toAdd);
 
@@ -1117,8 +1228,9 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
 
                   Navigator.of(context, rootNavigator: true).pop();
                 },
-                label: AppLocalizations.of(rootContext)!
-                    .translate(isUpdating ? 'save' : 'add'),
+                label: AppLocalizations.of(
+                  rootContext,
+                )!.translate(isUpdating ? 'save' : 'add'),
                 backgroundColor: AppColors.background(context),
                 textColor: AppColors.text(context),
                 icon: isUpdating ? Icons.save : Icons.add_task,
@@ -1131,8 +1243,10 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
     );
   }
 
-  void _showAddTimelockDialog(
-      {Map<String, dynamic>? condition, isUpdating = false}) {
+  void _showAddTimelockDialog({
+    Map<String, dynamic>? condition,
+    isUpdating = false,
+  }) {
     final TextEditingController thresholdController = TextEditingController();
     final TextEditingController olderController = TextEditingController();
     final TextEditingController afterController = TextEditingController();
@@ -1142,29 +1256,32 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
 
     String? currentThreshold;
     String? currentOlder;
+    String? currentAfter;
     List<Map<String, dynamic>> updatedPubkeys = [];
 
     if (isUpdating && condition != null) {
       currentThreshold = condition['threshold']?.toString();
       currentOlder = condition['older']?.toString();
+      currentAfter = condition['after']?.toString();
       thresholdController.text = currentThreshold ?? '';
       olderController.text = currentOlder ?? '';
+
+      afterController.text = currentAfter ?? '';
 
       // Ensure pubkeys is correctly extracted as a list
       if (condition['pubkeys'] is String) {
         // Decode JSON string if needed
-        updatedPubkeys =
-            List<Map<String, dynamic>>.from(jsonDecode(condition['pubkeys']));
+        updatedPubkeys = List<Map<String, dynamic>>.from(
+          jsonDecode(condition['pubkeys']),
+        );
       } else if (condition['pubkeys'] is List) {
-        updatedPubkeys =
-            List<Map<String, dynamic>>.from(condition['pubkeys'] as List);
+        updatedPubkeys = List<Map<String, dynamic>>.from(
+          condition['pubkeys'] as List,
+        );
       }
 
       selectedPubKeys = updatedPubkeys.map((entry) {
-        return {
-          'publicKey': entry['publicKey']!,
-          'alias': entry['alias']!,
-        };
+        return {'publicKey': entry['publicKey']!, 'alias': entry['alias']!};
       }).toList();
     }
 
@@ -1187,21 +1304,24 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
               Wrap(
                 spacing: 8.0,
                 children: publicKeysWithAlias.map((key) {
-                  bool isSelected = selectedPubKeys.any((selectedKey) =>
-                      selectedKey['publicKey'] == key['publicKey']);
+                  bool isSelected = selectedPubKeys.any(
+                    (selectedKey) =>
+                        selectedKey['publicKey'] == key['publicKey'],
+                  );
                   return GestureDetector(
                     onTap: () {
                       setDialogState(() {
                         if (isSelected) {
-                          selectedPubKeys.removeWhere((selectedKey) =>
-                              selectedKey['publicKey'] == key['publicKey']);
+                          selectedPubKeys.removeWhere(
+                            (selectedKey) =>
+                                selectedKey['publicKey'] == key['publicKey'],
+                          );
                         } else {
                           selectedPubKeys.add({
                             'publicKey': key['publicKey']!,
-                            'alias': key['alias']!
+                            'alias': key['alias']!,
                           });
                         }
-                        // print(selectedPubKeys);
                       });
                     },
                     child: Container(
@@ -1211,13 +1331,13 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                             ? AppColors.background(context).opaque(0.8)
                             : AppColors.background(context).opaque(0.2),
                         borderRadius: BorderRadius.circular(8.0),
-                        border: Border.all(
-                          color: AppColors.primary(context),
-                        ),
+                        border: Border.all(color: AppColors.primary(context)),
                       ),
                       child: Text(
+                        textScaler: TextScaler.linear(
+                          ScaleSize.textScaleFactor(context),
+                        ),
                         key['alias']!,
-                        style: const TextStyle(fontSize: 14),
                       ),
                     ),
                   );
@@ -1235,14 +1355,14 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                         if (int.tryParse(value) != null &&
                             int.parse(value) > selectedPubKeys.length) {
                           // If the entered value exceeds the max, reset it to the max
-                          thresholdController.text =
-                              selectedPubKeys.length.toString();
+                          thresholdController.text = selectedPubKeys.length
+                              .toString();
                           thresholdController.selection =
                               TextSelection.fromPosition(
-                            TextPosition(
-                              offset: thresholdController.text.length,
-                            ),
-                          );
+                                TextPosition(
+                                  offset: thresholdController.text.length,
+                                ),
+                              );
                         } else {
                           thresholdController.text = value;
                         }
@@ -1250,15 +1370,15 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                     },
                     decoration: CustomTextFieldStyles.textFieldDecoration(
                       context: context,
-                      labelText: AppLocalizations.of(rootContext)!
-                          .translate('threshold'),
-                      hintText: AppLocalizations.of(rootContext)!
-                          .translate('threshold'),
+                      labelText: AppLocalizations.of(
+                        rootContext,
+                      )!.translate('threshold'),
+                      hintText: AppLocalizations.of(
+                        rootContext,
+                      )!.translate('threshold'),
                       borderColor: AppColors.background(context),
                     ),
-                    style: TextStyle(
-                      color: AppColors.text(context),
-                    ),
+                    style: TextStyle(color: AppColors.text(context)),
                     keyboardType: TextInputType.number,
                   ),
 
@@ -1272,8 +1392,8 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                         final n = int.tryParse(value);
                         if (n != null && n > 65535) {
                           olderController.text = '65535';
-                          olderController.selection =
-                              TextSelection.fromPosition(
+                          olderController
+                              .selection = TextSelection.fromPosition(
                             TextPosition(offset: olderController.text.length),
                           );
                         } else {
@@ -1288,45 +1408,50 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                         }
                       });
                     },
-                    decoration: CustomTextFieldStyles.textFieldDecoration(
-                      context: context,
-                      labelText: AppLocalizations.of(rootContext)!
-                          .translate('enter_older'),
-                      hintText:
-                          AppLocalizations.of(rootContext)!.translate('older'),
-                      borderColor: AppColors.background(context),
-                    ).copyWith(
-                      // add a time-picker button on the right
-                      suffixIcon: IconButton(
-                        tooltip: AppLocalizations.of(rootContext)!
-                            .translate('pick_time'),
-                        icon: const Icon(Icons.schedule),
-                        color: AppColors.icon(context),
-                        onPressed: () async {
-                          // initial from current blocks (if any)
-                          final currentBlocks =
-                              int.tryParse(olderController.text) ?? 0;
-                          final pickedBlocks =
-                              await _pickBlocksFromTime(context, currentBlocks);
-                          if (pickedBlocks != null) {
-                            setDialogState(() {
-                              final blocks = pickedBlocks.clamp(0, 65535);
-                              olderController.text = blocks.toString();
-                              olderController.selection =
-                                  TextSelection.fromPosition(
-                                TextPosition(
-                                    offset: olderController.text.length),
+                    decoration:
+                        CustomTextFieldStyles.textFieldDecoration(
+                          context: context,
+                          labelText: AppLocalizations.of(
+                            rootContext,
+                          )!.translate('enter_older'),
+                          hintText: AppLocalizations.of(
+                            rootContext,
+                          )!.translate('older'),
+                          borderColor: AppColors.background(context),
+                        ).copyWith(
+                          // add a time-picker button on the right
+                          suffixIcon: IconButton(
+                            tooltip: AppLocalizations.of(
+                              rootContext,
+                            )!.translate('pick_time'),
+                            icon: const Icon(Icons.schedule),
+                            color: AppColors.icon(context),
+                            onPressed: () async {
+                              // initial from current blocks (if any)
+                              final currentBlocks =
+                                  int.tryParse(olderController.text) ?? 0;
+                              final pickedBlocks = await _pickBlocksFromTime(
+                                context,
+                                currentBlocks,
                               );
-                              // mirror your existing rule: filling 'older' clears 'after'
-                              afterController.clear();
-                            });
-                          }
-                        },
-                      ),
-                    ),
-                    style: TextStyle(
-                      color: AppColors.text(context),
-                    ),
+                              if (pickedBlocks != null) {
+                                setDialogState(() {
+                                  final blocks = pickedBlocks.clamp(0, 65535);
+                                  olderController.text = blocks.toString();
+                                  olderController.selection =
+                                      TextSelection.fromPosition(
+                                        TextPosition(
+                                          offset: olderController.text.length,
+                                        ),
+                                      );
+                                  // mirror your existing rule: filling 'older' clears 'after'
+                                  afterController.clear();
+                                });
+                              }
+                            },
+                          ),
+                        ),
+                    style: TextStyle(color: AppColors.text(context)),
                     keyboardType: TextInputType.number,
                   ),
 
@@ -1336,11 +1461,14 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                   TextFormField(
                     controller: afterController,
                     onChanged: (value) async {
-                      final settingsProvider =
-                          Provider.of<SettingsProvider>(context, listen: false);
+                      final settingsProvider = Provider.of<SettingsProvider>(
+                        context,
+                        listen: false,
+                      );
 
-                      final WalletService wallServ =
-                          WalletService(settingsProvider);
+                      final WalletService wallServ = WalletService(
+                        settingsProvider,
+                      );
                       final String blockApiUrl =
                           '${wallServ.baseUrl}/blocks/tip/height';
 
@@ -1358,9 +1486,10 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                               afterController.text = yearLimit5.toString();
                               afterController.selection =
                                   TextSelection.fromPosition(
-                                TextPosition(
-                                    offset: afterController.text.length),
-                              );
+                                    TextPosition(
+                                      offset: afterController.text.length,
+                                    ),
+                                  );
                             } else {
                               afterController.text = enteredValue.toString();
                             }
@@ -1371,49 +1500,55 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                         });
                       } catch (e) {
                         // Handle network or parse error gracefully
-                        print("Error fetching block height: $e");
+                        throw Exception("Error fetching block height: $e");
                       }
                     },
-                    decoration: CustomTextFieldStyles.textFieldDecoration(
-                      context: context,
-                      labelText: AppLocalizations.of(rootContext)!
-                          .translate('enter_after'),
-                      hintText:
-                          AppLocalizations.of(rootContext)!.translate('after'),
-                      borderColor: AppColors.background(context),
-                    ).copyWith(
-                      suffixIcon: IconButton(
-                        tooltip: AppLocalizations.of(rootContext)!
-                            .translate('pick_time'),
-                        icon: const Icon(Icons.schedule),
-                        color: AppColors.icon(context),
-                        onPressed: () async {
-                          // Pass current target height (if any) so picker can prefill a duration
-                          final int? currentTarget =
-                              int.tryParse(afterController.text.trim());
-                          final pickedTargetHeight =
-                              await _pickAfterHeightFromTime(context,
-                                  currentTargetHeight: currentTarget);
-
-                          if (pickedTargetHeight != null) {
-                            setDialogState(() {
-                              afterController.text =
-                                  pickedTargetHeight.toString();
-                              afterController.selection =
-                                  TextSelection.fromPosition(
-                                TextPosition(
-                                    offset: afterController.text.length),
+                    decoration:
+                        CustomTextFieldStyles.textFieldDecoration(
+                          context: context,
+                          labelText: AppLocalizations.of(
+                            rootContext,
+                          )!.translate('enter_after'),
+                          hintText: AppLocalizations.of(
+                            rootContext,
+                          )!.translate('after'),
+                          borderColor: AppColors.background(context),
+                        ).copyWith(
+                          suffixIcon: IconButton(
+                            tooltip: AppLocalizations.of(
+                              rootContext,
+                            )!.translate('pick_time'),
+                            icon: const Icon(Icons.schedule),
+                            color: AppColors.icon(context),
+                            onPressed: () async {
+                              // Pass current target height (if any) so picker can prefill a duration
+                              final int? currentTarget = int.tryParse(
+                                afterController.text.trim(),
                               );
-                              // Mirror your rule: setting 'after' clears 'older'
-                              olderController.clear();
-                            });
-                          }
-                        },
-                      ),
-                    ),
-                    style: TextStyle(
-                      color: AppColors.text(context),
-                    ),
+                              final pickedTargetHeight =
+                                  await _pickAfterHeightFromTime(
+                                    context,
+                                    currentTargetHeight: currentTarget,
+                                  );
+
+                              if (pickedTargetHeight != null) {
+                                setDialogState(() {
+                                  afterController.text = pickedTargetHeight
+                                      .toString();
+                                  afterController.selection =
+                                      TextSelection.fromPosition(
+                                        TextPosition(
+                                          offset: afterController.text.length,
+                                        ),
+                                      );
+                                  // Mirror your rule: setting 'after' clears 'older'
+                                  olderController.clear();
+                                });
+                              }
+                            },
+                          ),
+                        ),
+                    style: TextStyle(color: AppColors.text(context)),
                     keyboardType: TextInputType.number,
                   ),
                 ],
@@ -1435,23 +1570,48 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                       !(olderController.text.isNotEmpty &&
                           afterController.text.isNotEmpty)) {
                     // Convert input to integer for accurate comparison
-                    int newOlder = int.tryParse(olderController.text) ?? -1;
+                    int? newOlder = int.tryParse(olderController.text);
+                    int? newAfter = int.tryParse(afterController.text);
+
                     final newPubkeys = selectedPubKeys;
                     final String newThreshold = thresholdController.text.trim();
 
                     // Check if older value already exists in the list
-                    bool isDuplicateOlder = timelockConditions.any(
-                      (existingCondition) =>
-                          int.tryParse(existingCondition['older'].toString()) ==
-                              newOlder &&
-                          existingCondition['older'].toString() != currentOlder,
-                    );
+                    bool isDuplicateOlder = timelockConditions.any((
+                      existingCondition,
+                    ) {
+                      var existingOlder = int.tryParse(
+                        existingCondition['older']?.toString() ?? '',
+                      );
+                      var isMatch =
+                          existingOlder != null && existingOlder == newOlder;
+                      return isMatch;
+                    });
 
+                    bool isDuplicateAfter = timelockConditions.any((
+                      existingCondition,
+                    ) {
+                      var existingAfter = int.tryParse(
+                        existingCondition['after']?.toString() ?? '',
+                      );
+                      var isMatch =
+                          existingAfter != null && existingAfter == newAfter;
+                      return isMatch;
+                    });
                     if (isDuplicateOlder) {
                       NotificationHelper.show(
                         rootContext,
-                        message: AppLocalizations.of(rootContext)!
-                            .translate('error_older'),
+                        message: AppLocalizations.of(
+                          rootContext,
+                        )!.translate('error_older'),
+                        color: AppColors.error(rootContext),
+                      );
+                    } else if (isDuplicateAfter) {
+                      NotificationHelper.show(
+                        rootContext,
+                        message: AppLocalizations.of(
+                          rootContext,
+                        )!.translate('error_after'),
                         color: AppColors.error(rootContext),
                       );
                     } else {
@@ -1459,7 +1619,8 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                         setState(() {
                           // Update the condition with new values
                           condition!['threshold'] = newThreshold;
-                          condition['older'] = newOlder.toString();
+                          condition['older'] = newOlder ?? "";
+                          condition['after'] = newAfter ?? "";
                           condition['pubkeys'] = jsonEncode(newPubkeys);
                         });
 
@@ -1467,19 +1628,20 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
 
                         NotificationHelper.show(
                           rootContext,
-                          message: AppLocalizations.of(rootContext)!
-                              .translate('timelock_updated'),
+                          message: AppLocalizations.of(
+                            rootContext,
+                          )!.translate('timelock_updated'),
                         );
                       } else {
                         setState(() {
-                          // Add the new timelock condition to the list
                           timelockConditions.add({
                             'threshold': thresholdController.text,
-                            'older': olderController.text,
-                            'after': afterController.text,
                             'pubkeys': jsonEncode(newPubkeys),
+                            if (olderController.text.isNotEmpty)
+                              'older': olderController.text,
+                            if (afterController.text.isNotEmpty)
+                              'after': afterController.text,
                           });
-                          print(timelockConditions);
                         });
 
                         // Close the dialog after adding the condition
@@ -1487,12 +1649,12 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                       }
                     }
                   } else {
-                    // print('Validation Failed: One or more fields are empty');
                     throw ('Validation Failed: One or more fields are empty');
                   }
                 },
-                label: AppLocalizations.of(rootContext)!
-                    .translate(isUpdating ? 'save' : 'add'),
+                label: AppLocalizations.of(
+                  rootContext,
+                )!.translate(isUpdating ? 'save' : 'add'),
                 backgroundColor: AppColors.background(context),
                 textColor: AppColors.text(context),
                 icon: isUpdating ? Icons.save : Icons.add_task,
@@ -1507,64 +1669,59 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
 
   void _handleTimelocks() {
     final regex = RegExp(
-        r'\/(\d+)(?=\/\*)'); // Matches the last number in the derivation path before '/*'
+      r'\/(\d+)(?=\/\*)',
+    ); // Matches the last number in the derivation path before '/*'
 
     setState(() {
       Set<String> seenPubKeys = {}; // Track already-seen public keys
 
       // Add already-used public keys to the set
-      seenPubKeys
-          .addAll(publicKeysWithAlias.map((entry) => entry['publicKey']!));
+      seenPubKeys.addAll(
+        publicKeysWithAlias.map((entry) => entry['publicKey']!),
+      );
 
       // Process each timelock condition
       timelockConditions = timelockConditions.map((condition) {
-        // print('ConditionHandling: ${condition['pubkeys']}');
-
         // Extract and process pubkeys while preserving aliases
         List<Map<String, String>> updatedPubKeys =
             (condition['pubkeys'] is String
                     ? List<Map<String, dynamic>>.from(
-                        jsonDecode(condition['pubkeys']))
+                        jsonDecode(condition['pubkeys']),
+                      )
                     : List<Map<String, dynamic>>.from(
-                        condition['pubkeys'] as List<dynamic>))
+                        condition['pubkeys'] as List<dynamic>,
+                      ))
                 .map((key) {
-          // Extract the original key and alias
-          String originalKey = key['publicKey'] as String;
-          String alias = key['alias'] as String;
+                  // Extract the original key and alias
+                  String originalKey = key['publicKey'] as String;
+                  String alias = key['alias'] as String;
 
-          // Resolve duplicate public keys
-          while (seenPubKeys.contains(originalKey)) {
-            // Modify the key by incrementing the last number in the derivation path
-            originalKey = originalKey.replaceFirstMapped(regex, (match) {
-              int currentValue = int.parse(match.group(1)!);
-              return '/${currentValue + 1}';
-            });
-          }
+                  // Resolve duplicate public keys
+                  while (seenPubKeys.contains(originalKey)) {
+                    // Modify the key by incrementing the last number in the derivation path
+                    originalKey = originalKey.replaceFirstMapped(regex, (
+                      match,
+                    ) {
+                      int currentValue = int.parse(match.group(1)!);
+                      return '/${currentValue + 1}';
+                    });
+                  }
 
-          // Add the (possibly modified) key to the set of seen keys
-          seenPubKeys.add(originalKey);
+                  // Add the (possibly modified) key to the set of seen keys
+                  seenPubKeys.add(originalKey);
 
-          // Return the updated key with its alias
-          return {
-            'publicKey': originalKey,
-            'alias': alias,
-          };
-        }).toList();
+                  // Return the updated key with its alias
+                  return {'publicKey': originalKey, 'alias': alias};
+                })
+                .toList();
 
         // Update the condition with the resolved pubkeys
-        return {
-          ...condition,
-          'pubkeys': updatedPubKeys,
-        };
+        return {...condition, 'pubkeys': updatedPubKeys};
       }).toList();
     });
-
-    // print('Updated Timelock Conditions: $timelockConditions');
   }
 
   void _createDescriptor() {
-    // print('Starting descriptor creation...');
-
     // Validate inputs
     _validateInputs();
 
@@ -1572,28 +1729,24 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
         _isThresholdMissing ||
         _arePublicKeysMissing ||
         _isYourPubKeyMissing) {
-      // print('Validation failed: Missing descriptor fields.');
       return;
     }
 
     // Extract and sort public keys
-    List<String> extractedPublicKeys = publicKeysWithAliasMultisig
-        .map((entry) => entry['publicKey']!)
-        .toList()
-      ..sort();
+    List<String> extractedPublicKeys =
+        publicKeysWithAliasMultisig.map((entry) => entry['publicKey']!).toList()
+          ..sort();
 
-    // print('Extracted public keys: $extractedPublicKeys');
-
-    String formattedKeys =
-        extractedPublicKeys.toString().replaceAll(RegExp(r'^\[|\]$'), '');
+    String formattedKeys = extractedPublicKeys.toString().replaceAll(
+      RegExp(r'^\[|\]$'),
+      '',
+    );
 
     String multi = 'multi($threshold,$formattedKeys)';
-    // print('Multi condition: $multi');
 
     String finalDescriptor;
 
     _handleTimelocks(); // Optional: Add debug log inside that method if needed
-    // print('Timelock conditions after handling: $timelockConditions');
 
     if (timelockConditions.isNotEmpty) {
       timelockConditions.sort((a, b) {
@@ -1602,26 +1755,22 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
         return getTimeLock(a).compareTo(getTimeLock(b));
       });
 
-      // print('Sorted timelock conditions: $timelockConditions');
-
       List<String> formattedTimelocks = timelockConditions.map((condition) {
         String threshold = condition['threshold'];
-        String older = condition['older'];
-        String after = condition['after'];
+        String older = condition['older'].toString();
+        String after = condition['after'].toString();
 
-        // print('olderCondition: $older');
-        // print('afterCondition: $after');
-
-        String timeCondition = older.isNotEmpty
+        String timeCondition = older != "null"
             ? 'older($older)'
-            : after.isNotEmpty
-                ? 'after($after)'
-                : throw Exception('Missing TimeLock condition');
+            : after != "null"
+            ? 'after($after)'
+            : throw Exception('Missing TimeLock condition');
 
-        List<String> pubkeys = (condition['pubkeys'] as List)
-            .map((key) => key['publicKey'] as String)
-            .toList()
-          ..sort();
+        List<String> pubkeys =
+            (condition['pubkeys'] as List)
+                .map((key) => key['publicKey'] as String)
+                .toList()
+              ..sort();
 
         String pubkeysString = pubkeys.join(',');
         String multiCondition = pubkeys.length > 1
@@ -1629,26 +1778,20 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
             : 'pk(${pubkeys.first})';
 
         String result = 'and_v(v:$timeCondition,$multiCondition)';
-        // print('Formatted timelock: $result');
 
         return result;
       }).toList();
 
       String timelockCondition = buildTimelockCondition(formattedTimelocks);
-      // print('Combined timelock condition: $timelockCondition');
 
       finalDescriptor = 'wsh(or_d($multi,$timelockCondition))';
     } else {
       finalDescriptor = 'wsh($multi)';
     }
 
-    // print('Final descriptor before cleaning: $finalDescriptor');
-
     setState(() {
       _finalDescriptor = finalDescriptor.replaceAll(' ', '');
     });
-
-    // print('Final descriptor stored: $_finalDescriptor');
 
     _createDescriptorDialog(context);
   }
@@ -1669,9 +1812,7 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
             padding: const EdgeInsets.all(12.0),
             decoration: BoxDecoration(
               color: AppColors.container(context),
-              border: Border.all(
-                color: AppColors.background(context),
-              ),
+              border: Border.all(color: AppColors.background(context)),
               borderRadius: BorderRadius.circular(8.0),
             ),
             child: Row(
@@ -1679,9 +1820,11 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
               children: [
                 Expanded(
                   child: Text(
+                    textScaler: TextScaler.linear(
+                      ScaleSize.textScaleFactor(context),
+                    ),
                     _finalDescriptor,
                     style: TextStyle(
-                      fontSize: 16,
                       color: Theme.of(context).colorScheme.onSurface,
                       fontWeight: FontWeight.w500,
                     ),
@@ -1690,8 +1833,9 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                 ),
                 IconButton(
                   icon: Icon(Icons.copy, color: AppColors.primary(context)),
-                  tooltip: AppLocalizations.of(rootContext)!
-                      .translate('copy_to_clipboard'),
+                  tooltip: AppLocalizations.of(
+                    rootContext,
+                  )!.translate('copy_to_clipboard'),
                   onPressed: () {
                     UtilitiesService.copyToClipboard(
                       context: rootContext,
@@ -1706,10 +1850,10 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
           const SizedBox(height: 20),
           // Display conditions
           Text(
+            textScaler: TextScaler.linear(ScaleSize.textScaleFactor(context)),
             AppLocalizations.of(rootContext)!.translate('conditions'),
             style: GoogleFonts.poppins(
               fontWeight: FontWeight.bold,
-              fontSize: 16,
               color: AppColors.cardTitle(context),
             ),
           ),
@@ -1736,7 +1880,6 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                     RichText(
                       text: TextSpan(
                         style: GoogleFonts.poppins(
-                          fontSize: 14,
                           fontWeight: FontWeight.w500,
                           color: AppColors.text(context),
                         ),
@@ -1762,48 +1905,50 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                     RichText(
                       text: TextSpan(
                         style: GoogleFonts.poppins(
-                          fontSize: 14,
                           fontWeight: FontWeight.w500,
                           color: AppColors.text(context),
                         ),
                         children: [
-                          TextSpan(
-                            text:
-                                '${AppLocalizations.of(rootContext)!.translate('older')}: ',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.cardTitle(context),
+                          if (condition['older'] != null) ...[
+                            TextSpan(
+                              text:
+                                  '${AppLocalizations.of(rootContext)!.translate('older')}: ',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.cardTitle(context),
+                              ),
                             ),
-                          ),
-                          TextSpan(
-                            text: '${condition['older']}',
-                            style: TextStyle(
-                              fontWeight: FontWeight.normal,
-                              color: AppColors.text(context),
+                            TextSpan(
+                              text: '${condition['older']}',
+                              style: TextStyle(
+                                fontWeight: FontWeight.normal,
+                                color: AppColors.text(context),
+                              ),
                             ),
-                          ),
-                          TextSpan(
-                            text:
-                                '${AppLocalizations.of(rootContext)!.translate('after')}: ',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.cardTitle(context),
+                          ],
+                          if (condition['after'] != null) ...[
+                            TextSpan(
+                              text:
+                                  '${AppLocalizations.of(rootContext)!.translate('after')}: ',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.cardTitle(context),
+                              ),
                             ),
-                          ),
-                          TextSpan(
-                            text: '${condition['after']}',
-                            style: TextStyle(
-                              fontWeight: FontWeight.normal,
-                              color: AppColors.text(context),
+                            TextSpan(
+                              text: '${condition['after']}',
+                              style: TextStyle(
+                                fontWeight: FontWeight.normal,
+                                color: AppColors.text(context),
+                              ),
                             ),
-                          ),
+                          ],
                         ],
                       ),
                     ),
                     RichText(
                       text: TextSpan(
                         style: GoogleFonts.poppins(
-                          fontSize: 14,
                           fontWeight: FontWeight.w500,
                           color: Theme.of(context).colorScheme.onSurface,
                         ),
@@ -1834,10 +1979,10 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
           const SizedBox(height: 20),
           // Display public keys with aliases
           Text(
+            textScaler: TextScaler.linear(ScaleSize.textScaleFactor(context)),
             AppLocalizations.of(rootContext)!.translate('pub_keys'),
             style: GoogleFonts.poppins(
               fontWeight: FontWeight.bold,
-              fontSize: 16,
               color: AppColors.cardTitle(context),
             ),
           ),
@@ -1858,7 +2003,6 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                     RichText(
                       text: TextSpan(
                         style: GoogleFonts.poppins(
-                          fontSize: 14,
                           fontWeight: FontWeight.w500,
                           color: Theme.of(context).colorScheme.onSurface,
                         ),
@@ -1884,7 +2028,6 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                     RichText(
                       text: TextSpan(
                         style: GoogleFonts.poppins(
-                          fontSize: 14,
                           fontWeight: FontWeight.w500,
                           color: Theme.of(context).colorScheme.onSurface,
                         ),
@@ -1942,8 +2085,9 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
               // User canceled
               NotificationHelper.show(
                 rootContext,
-                message: AppLocalizations.of(rootContext)!
-                    .translate('operation_canceled'),
+                message: AppLocalizations.of(
+                  rootContext,
+                )!.translate('operation_canceled'),
               );
               return;
             }
@@ -1958,15 +2102,13 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
             foregroundColor: AppColors.primary(context),
           ),
           child: Text(
+            textScaler: TextScaler.linear(ScaleSize.textScaleFactor(context)),
             AppLocalizations.of(rootContext)!.translate('download_descriptor'),
-            style: TextStyle(
-              color: AppColors.background(context),
-            ),
+            style: TextStyle(color: AppColors.background(context)),
           ),
         ),
         TextButton(
           onPressed: () {
-            // print('_mnemonic: $_mnemonic');
             Navigator.of(context, rootNavigator: true).pop();
 
             _navigateToSharedWallet();
@@ -1975,10 +2117,9 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
             foregroundColor: AppColors.primary(context),
           ),
           child: Text(
+            textScaler: TextScaler.linear(ScaleSize.textScaleFactor(context)),
             AppLocalizations.of(rootContext)!.translate('navigate_wallet'),
-            style: TextStyle(
-              color: AppColors.background(context),
-            ),
+            style: TextStyle(color: AppColors.background(context)),
           ),
         ),
       ],
@@ -1989,10 +2130,13 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
   /// Lets the user pick a relative time and converts it to blocks (≈10 min per block).
   /// Returns the computed number of blocks, or null if cancelled.
   Future<int?> _pickBlocksFromTime(
-      BuildContext context, int initialBlocks) async {
+    BuildContext context,
+    int initialBlocks,
+  ) async {
     final maxBlocks = 65535;
-    final initial =
-        Duration(minutes: (initialBlocks * 10).clamp(0, maxBlocks * 10));
+    final initial = Duration(
+      minutes: (initialBlocks * 10).clamp(0, maxBlocks * 10),
+    );
     final max = Duration(minutes: maxBlocks * 10);
 
     final dur = await _pickRelativeDuration(
@@ -2012,7 +2156,6 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
     int? currentTargetHeight,
   }) async {
     try {
-      print(_currHeight);
       const int maxBlocksAhead = 262800; // ~5 years
       final int initialBlocksAhead = (() {
         if (currentTargetHeight == null) return 0;
@@ -2036,7 +2179,6 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
       final estTargetHeight = _currHeight + estBlocks;
       return estTargetHeight;
     } catch (e) {
-      print('Error in _pickAfterHeightFromTime: $e');
       return null;
     }
   }
@@ -2078,7 +2220,9 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
 
     // Ensure initial days fit for the initial years
     days = days.clamp(
-        0, daysCapForYears(years) == 0 ? 0 : daysCapForYears(years) - 1);
+      0,
+      daysCapForYears(years) == 0 ? 0 : daysCapForYears(years) - 1,
+    );
 
     return showModalBottomSheet<Duration>(
       context: context,
@@ -2104,15 +2248,18 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
               double width = 90,
             }) {
               // guard selected bounds
-              final safeSelected =
-                  selected.clamp(0, (itemCount - 1).clamp(0, itemCount - 1));
+              final safeSelected = selected.clamp(
+                0,
+                (itemCount - 1).clamp(0, itemCount - 1),
+              );
               return SizedBox(
                 width: width,
                 height: 200,
                 child: CupertinoPicker(
                   itemExtent: 34,
-                  scrollController:
-                      FixedExtentScrollController(initialItem: safeSelected),
+                  scrollController: FixedExtentScrollController(
+                    initialItem: safeSelected,
+                  ),
                   useMagnifier: true,
                   magnification: 1.08,
                   onSelectedItemChanged: onSelected,
@@ -2120,6 +2267,9 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                     itemCount,
                     (i) => Center(
                       child: Text(
+                        textScaler: TextScaler.linear(
+                          ScaleSize.textScaleFactor(context),
+                        ),
                         label(i),
                         style: textStyle,
                       ),
@@ -2131,8 +2281,9 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
 
             // dynamic cap for days based on current years
             final int daysCap = daysCapForYears(years);
-            final int daysCount =
-                daysCap == 0 ? 1 : (years == maxYears ? daysCap + 0 : 365);
+            final int daysCount = daysCap == 0
+                ? 1
+                : (years == maxYears ? daysCap + 0 : 365);
             // if user scrolled years so days is now out of range, clamp it
             if (daysCount > 0 && days >= daysCount) {
               days = daysCount - 1;
@@ -2159,7 +2310,8 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                   ],
                 ),
                 padding: EdgeInsets.only(
-                    bottom: MediaQuery.of(sheetCtx).viewInsets.bottom),
+                  bottom: MediaQuery.of(sheetCtx).viewInsets.bottom,
+                ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -2168,11 +2320,9 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                       width: 36,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: Theme.of(sheetCtx)
-                            .textTheme
-                            .bodyMedium
-                            ?.color
-                            ?.opaque(0.25),
+                        color: Theme.of(
+                          sheetCtx,
+                        ).textTheme.bodyMedium?.color?.opaque(0.25),
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -2221,8 +2371,10 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                         // Minutes (stepped)
                         col(
                           itemCount: (60 ~/ minuteStep),
-                          selected: (minutes ~/ minuteStep)
-                              .clamp(0, (60 ~/ minuteStep) - 1),
+                          selected: (minutes ~/ minuteStep).clamp(
+                            0,
+                            (60 ~/ minuteStep) - 1,
+                          ),
                           onSelected: (i) =>
                               setState(() => minutes = i * minuteStep),
                           label: (i) => '${i * minuteStep} m',
@@ -2235,6 +2387,9 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 10),
                       child: Text(
+                        textScaler: TextScaler.linear(
+                          ScaleSize.textScaleFactor(context),
+                        ),
                         '${chosen.inDays ~/ 365}y ${(chosen.inDays % 365)}d '
                         '${chosen.inHours % 24}h ${chosen.inMinutes % 60}m   '
                         '≈ $estBlocks blocks',
@@ -2246,17 +2401,29 @@ class CreateSharedWalletState extends State<CreateSharedWallet> {
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         TextButton(
-                          onPressed: () =>
-                              Navigator.of(sheetCtx, rootNavigator: true)
-                                  .pop(null),
-                          child: const Text('Cancel'),
+                          onPressed: () => Navigator.of(
+                            sheetCtx,
+                            rootNavigator: true,
+                          ).pop(null),
+                          child: Text(
+                            textScaler: TextScaler.linear(
+                              ScaleSize.textScaleFactor(context),
+                            ),
+                            'Cancel',
+                          ),
                         ),
                         const SizedBox(width: 4),
                         TextButton(
-                          onPressed: () =>
-                              Navigator.of(sheetCtx, rootNavigator: true)
-                                  .pop(chosen > max ? max : chosen),
-                          child: const Text('Confirm'),
+                          onPressed: () => Navigator.of(
+                            sheetCtx,
+                            rootNavigator: true,
+                          ).pop(chosen > max ? max : chosen),
+                          child: Text(
+                            textScaler: TextScaler.linear(
+                              ScaleSize.textScaleFactor(context),
+                            ),
+                            'Confirm',
+                          ),
                         ),
                         const SizedBox(width: 12),
                       ],

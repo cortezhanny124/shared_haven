@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:bdk_flutter/bdk_flutter.dart';
+import 'package:bdk_dart/bdk.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_wallet/languages/app_localizations.dart';
 import 'package:flutter_wallet/services/utilities_service.dart';
@@ -11,6 +11,7 @@ import 'package:flutter_wallet/widget_helpers/assistant_widget.dart';
 import 'package:flutter_wallet/widget_helpers/custom_bottom_sheet.dart';
 import 'package:flutter_wallet/widget_helpers/dialog_helper.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:line_icons/line_icons.dart';
 import 'package:provider/provider.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:flutter_wallet/utilities/app_colors.dart';
@@ -66,8 +67,9 @@ class BaseScaffoldState extends State<BaseScaffold> {
   void initState() {
     super.initState();
 
-    walletService =
-        WalletService(Provider.of<SettingsProvider>(context, listen: false));
+    walletService = WalletService(
+      Provider.of<SettingsProvider>(context, listen: false),
+    );
 
     _descriptorBox = Hive.box<dynamic>('descriptorBox');
     _getVersion();
@@ -77,8 +79,9 @@ class BaseScaffoldState extends State<BaseScaffold> {
     setState(() {
       _showAssistant = !_showAssistant;
     });
-    String initialMessage =
-        utilitiesService.getAssistantGreetingForRoute(context);
+    String initialMessage = utilitiesService.getAssistantGreetingForRoute(
+      context,
+    );
     _assistantMessages = utilitiesService.getAssistantTipsForRoute(context);
 
     // Show initial message when turning on
@@ -98,8 +101,9 @@ class BaseScaffoldState extends State<BaseScaffold> {
     });
 
     if (_assistantKey.currentState != null) {
-      _assistantKey.currentState!
-          .updateMessage(_assistantMessages[_assistantMessageIndex]);
+      _assistantKey.currentState!.updateMessage(
+        _assistantMessages[_assistantMessageIndex],
+      );
     }
   }
 
@@ -132,7 +136,6 @@ class BaseScaffoldState extends State<BaseScaffold> {
 
     // Iterate through all keys and check if any key contains the same descriptor name
     for (var key in descriptorBox.keys) {
-      // print('Key: $key');
       if (key.toString().contains(descriptorName.trim()) &&
           !(key.toString().contains(firstName.trim()))) {
         return true; // Duplicate found
@@ -166,17 +169,17 @@ class BaseScaffoldState extends State<BaseScaffold> {
       return uniqueAliases.length != aliasValues.length;
     }
 
-    TextEditingController descriptorNameController =
-        TextEditingController(text: descriptorName);
+    TextEditingController descriptorNameController = TextEditingController(
+      text: descriptorName,
+    );
 
     String updatedDescriptorName = '';
-
-    // print('CompositeKey: $compositeKey');
 
     final localizationContext = Navigator.of(context).context;
 
     return (await CustomBottomSheet.buildCustomStatefulBottomSheet<
-        EditAliasResult>(
+      EditAliasResult
+    >(
       context: context,
       titleKey: 'edit_sw_info',
       contentBuilder: (setDialogState, updateAssistantMessage) {
@@ -193,17 +196,17 @@ class BaseScaffoldState extends State<BaseScaffold> {
               child: Column(
                 children: [
                   Text(
-                    AppLocalizations.of(localizationContext)!
-                        .translate('descriptor_name'),
-                    style: TextStyle(
-                      color: AppColors.text(context),
+                    textScaler: TextScaler.linear(
+                      ScaleSize.textScaleFactor(context),
                     ),
+                    AppLocalizations.of(
+                      localizationContext,
+                    )!.translate('descriptor_name'),
+                    style: TextStyle(color: AppColors.text(context)),
                   ),
                   TextField(
                     controller: descriptorNameController,
-                    style: TextStyle(
-                      color: AppColors.text(context),
-                    ),
+                    style: TextStyle(color: AppColors.text(context)),
                     decoration: InputDecoration(
                       hintStyle: const TextStyle(color: Colors.grey),
                       filled: true,
@@ -213,21 +216,19 @@ class BaseScaffoldState extends State<BaseScaffold> {
                         borderSide: BorderSide.none,
                       ),
                       errorText: _isDuplicate
-                          ? AppLocalizations.of(context)!
-                              .translate('descriptor_name_exists')
+                          ? AppLocalizations.of(
+                              context,
+                            )!.translate('descriptor_name_exists')
                           : null,
                     ),
                     onChanged: (value) {
                       final descName = value.trim();
 
-                      // print(descName);
-                      // print(descriptorName);
-
                       setDialogState(() {
                         _isDuplicate = _isDuplicateDescriptorName(
-                            descriptorName, descName);
-
-                        // print(_isDuplicate);
+                          descriptorName,
+                          descName,
+                        );
 
                         if (!_isDuplicate) {
                           updatedDescriptorName = descName;
@@ -253,19 +254,17 @@ class BaseScaffoldState extends State<BaseScaffold> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "${AppLocalizations.of(localizationContext)!.translate('pub_key')}: ${entry['publicKey']}",
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: AppColors.text(context),
+                        textScaler: TextScaler.linear(
+                          ScaleSize.textScaleFactor(context),
                         ),
+                        "${AppLocalizations.of(localizationContext)!.translate('pub_key')}: ${entry['publicKey']}",
+                        style: TextStyle(color: AppColors.text(context)),
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(width: 10),
                       TextField(
                         controller: aliasControllers[entry['publicKey']],
-                        style: TextStyle(
-                          color: AppColors.text(context),
-                        ),
+                        style: TextStyle(color: AppColors.text(context)),
                         decoration: InputDecoration(
                           hintStyle: const TextStyle(color: Colors.grey),
                           filled: true,
@@ -293,8 +292,9 @@ class BaseScaffoldState extends State<BaseScaffold> {
                 onTap: () {
                   Navigator.of(context, rootNavigator: true).pop(null);
                 },
-                label: AppLocalizations.of(localizationContext)!
-                    .translate('cancel'),
+                label: AppLocalizations.of(
+                  localizationContext,
+                )!.translate('cancel'),
                 backgroundColor: AppColors.gradient(context),
                 textColor: AppColors.text(context),
                 icon: Icons.cancel_rounded,
@@ -305,8 +305,6 @@ class BaseScaffoldState extends State<BaseScaffold> {
                     ? null
                     : () async {
                         if (hasDuplicateAliases()) {
-                          _log(
-                              '❌ Duplicate aliases detected. Aborting update.');
                           DialogHelper.showErrorDialog(
                             context: context,
                             messageKey: 'duplicate_aliases_error',
@@ -314,26 +312,20 @@ class BaseScaffoldState extends State<BaseScaffold> {
                           return;
                         }
 
-                        _log(
-                            '✅ No duplicate aliases. Proceeding to update pubKeysAlias from controllers.');
-
-// Update all aliases in pubKeysAlias
+                        // Update all aliases in pubKeysAlias
                         for (var entry in pubKeysAlias) {
                           final pk = entry['publicKey'];
                           final controller = aliasControllers[pk];
                           final newAlias = controller?.text ?? '';
-                          _log(
-                              '↪ Updating alias for pubKey=${pk?.toString().substring(0, 12)}... to "$newAlias"');
+
                           entry['alias'] = newAlias;
                         }
 
-// Extract descriptor name from composite key
-                        _log('🔧 Parsing compositeKey: "$compositeKey"');
-                        List<String> keyParts =
-                            compositeKey.split('_descriptor_');
+                        // Extract descriptor name from composite key
+                        List<String> keyParts = compositeKey.split(
+                          '_descriptor_',
+                        );
                         if (keyParts.length != 2) {
-                          _log(
-                              '❌ Invalid composite key format. Expected "<prefix>_descriptor_<name>". Got: "$compositeKey"');
                           return;
                         }
 
@@ -341,72 +333,48 @@ class BaseScaffoldState extends State<BaseScaffold> {
                           setState(() {
                             updatedDescriptorName = descriptorName;
                           });
-                          _log(
-                              'ℹ️ updatedDescriptorName was empty. Falling back to existing descriptorName="$descriptorName"');
                         }
 
-// Create the new composite key
+                        // Create the new composite key
                         String newCompositeKey =
                             "${keyParts[0]}_descriptor_$updatedDescriptorName";
-                        _log(
-                            '🧩 Computed newCompositeKey="$newCompositeKey" from old compositeKey="$compositeKey"');
 
-// Store the old composite key BEFORE modifying it
+                        // Store the old composite key BEFORE modifying it
                         String oldCompositeKey = compositeKey;
-                        _log('📌 oldCompositeKey="$oldCompositeKey"');
 
-// Retrieve existing data from the old key
+                        // Retrieve existing data from the old key
                         var rawValue = box.get(oldCompositeKey);
                         if (rawValue != null) {
-                          _log(
-                              '📦 Retrieved raw value for oldCompositeKey (length=${rawValue.toString().length}). Attempting JSON decode...');
                           try {
                             // Parse JSON
                             final parsedValue =
                                 jsonDecode(rawValue) as Map<String, dynamic>;
-                            _log(
-                                '✅ JSON decode successful. Keys: ${parsedValue.keys.toList()}');
 
                             // Update pubKeysAlias
                             parsedValue['pubKeysAlias'] = pubKeysAlias;
-                            _log(
-                                '📝 Updated "pubKeysAlias" with ${pubKeysAlias.length} entries.');
 
-                            _log(
-                                '🔐 Writing updated value under newCompositeKey="$newCompositeKey"...');
                             box.put(newCompositeKey, jsonEncode(parsedValue));
 
                             // Confirm it's saved
                             var savedData = box.get(newCompositeKey);
-                            if (savedData != null) {
-                              _log(
-                                  '✅ Successfully saved to new key: $newCompositeKey (length=${savedData.toString().length})');
-                            } else {
-                              _log(
-                                  '❌ Save verification failed: data not found under new key.');
-                            }
+                            if (savedData != null) {}
 
                             // Check if old key exists before deleting
                             if (box.containsKey(oldCompositeKey)) {
-                              _log('🧹 Deleting old key: $oldCompositeKey');
                               box.delete(oldCompositeKey);
-                            } else {
-                              _log('ℹ️ Old key not found, skipping deletion.');
                             }
 
                             // Force Hive to commit changes
-                            _log(
-                                '🗜️ Calling box.compact() and box.flush() to persist changes...');
+
                             await box.compact();
                             await box.flush();
-                            _log('✅ Box compact/flush completed.');
 
                             // Close the dialog
-                            _log(
-                                '🚪 Closing dialog with success. updatedDescriptorName="$updatedDescriptorName"');
-                            Navigator.of(localizationContext,
-                                    rootNavigator: true)
-                                .pop(
+
+                            Navigator.of(
+                              localizationContext,
+                              rootNavigator: true,
+                            ).pop(
                               EditAliasResult(
                                 success: true,
                                 descriptorName: updatedDescriptorName,
@@ -414,17 +382,14 @@ class BaseScaffoldState extends State<BaseScaffold> {
                             );
 
                             // _log('updatedDescriptorName: $updatedDescriptorName');
-                          } catch (e, st) {
-                            _log('💥 Error updating Hive box: $e');
-                            _log('🧵 Stacktrace: $st');
+                          } catch (e) {
+                            throw Exception('Error updating Hive box: $e');
                           }
-                        } else {
-                          _log(
-                              '❌ Original composite key not found in Hive: "$oldCompositeKey"');
                         }
                       },
-                label:
-                    AppLocalizations.of(localizationContext)!.translate('save'),
+                label: AppLocalizations.of(
+                  localizationContext,
+                )!.translate('save'),
                 backgroundColor: AppColors.gradient(context),
                 textColor: AppColors.text(context),
                 icon: Icons.save_rounded,
@@ -447,22 +412,24 @@ class BaseScaffoldState extends State<BaseScaffold> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             widget.title,
-            if (settingsProvider
-                .isTestnet) // Show the Testnet banner if `isTestnet` is true
+            // Show the Testnet banner if `isTestnet` is true
+            if (settingsProvider.isTestnet)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                 decoration: BoxDecoration(
                   color: AppColors.container(context).opaque(0.8),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: AppColors.error(context),
-                    width: 1,
-                  ),
+                  border: Border.all(color: AppColors.error(context), width: 1),
                 ),
                 child: Text(
+                  textScaler: TextScaler.linear(
+                    ScaleSize.textScaleFactor(context),
+                  ),
                   AppLocalizations.of(context)!.translate('network_banner'),
                   style: TextStyle(
-                    fontSize: 16, // Bigger font
+                    fontSize:
+                        16 *
+                        MediaQuery.of(context).textScaleFactor, // Bigger font
                     fontWeight: FontWeight.bold,
                     color: AppColors.error(context), // High contrast color
                   ),
@@ -473,10 +440,7 @@ class BaseScaffoldState extends State<BaseScaffold> {
         flexibleSpace: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [
-                AppColors.accent(context),
-                AppColors.gradient(context),
-              ],
+              colors: [AppColors.accent(context), AppColors.gradient(context)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -509,8 +473,10 @@ class BaseScaffoldState extends State<BaseScaffold> {
               color: AppColors.icon(context),
             ),
             onPressed: () {
-              Provider.of<SettingsProvider>(context, listen: false)
-                  .toggleTheme();
+              Provider.of<SettingsProvider>(
+                context,
+                listen: false,
+              ).toggleTheme();
               setState(() {});
             },
           ),
@@ -563,7 +529,7 @@ class BaseScaffoldState extends State<BaseScaffold> {
                         gradient: LinearGradient(
                           colors: [
                             AppColors.accent(context),
-                            AppColors.gradient(context)
+                            AppColors.gradient(context),
                           ],
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
@@ -581,7 +547,7 @@ class BaseScaffoldState extends State<BaseScaffold> {
                     gradient: LinearGradient(
                       colors: [
                         AppColors.accent(context),
-                        AppColors.gradient(context)
+                        AppColors.gradient(context),
                       ],
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
@@ -622,10 +588,7 @@ class BaseScaffoldState extends State<BaseScaffold> {
     return DrawerHeader(
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            AppColors.accent(context),
-            AppColors.gradient(context),
-          ],
+          colors: [AppColors.accent(context), AppColors.gradient(context)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -634,20 +597,31 @@ class BaseScaffoldState extends State<BaseScaffold> {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          GestureDetector(
-            child: Icon(Icons.settings),
-            onTap: () {
-              Navigator.of(context).pushNamed('/settings');
-            },
+          Row(
+            children: [
+              GestureDetector(
+                child: Icon(Icons.settings),
+                onTap: () {
+                  Navigator.of(context).pushNamed('/settings');
+                },
+              ),
+              const SizedBox(width: 10),
+              GestureDetector(
+                child: Icon(LineIcons.donate),
+                onTap: () {
+                  Navigator.of(context).pushNamed('/donate_page');
+                },
+              ),
+            ],
           ),
           const SizedBox(height: 10),
           Flexible(
             flex: 1,
             child: Text(
+              textScaler: TextScaler.linear(ScaleSize.textScaleFactor(context)),
               AppLocalizations.of(context)!.translate('welcome'),
               style: TextStyle(
                 color: AppColors.text(context),
-                fontSize: 20,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -655,21 +629,17 @@ class BaseScaffoldState extends State<BaseScaffold> {
           Flexible(
             flex: 1,
             child: Text(
+              textScaler: TextScaler.linear(ScaleSize.textScaleFactor(context)),
               AppLocalizations.of(context)!.translate('welcoming_description'),
-              style: TextStyle(
-                color: AppColors.text(context).opaque(0.8),
-                fontSize: 14,
-              ),
+              style: TextStyle(color: AppColors.text(context).opaque(0.8)),
             ),
           ),
           Flexible(
             flex: 1,
             child: Text(
+              textScaler: TextScaler.linear(ScaleSize.textScaleFactor(context)),
               '${AppLocalizations.of(context)!.translate('version')}: $_version',
-              style: TextStyle(
-                color: AppColors.text(context),
-                fontSize: 16,
-              ),
+              style: TextStyle(color: AppColors.text(context)),
             ),
           ),
         ],
@@ -682,25 +652,22 @@ class BaseScaffoldState extends State<BaseScaffold> {
       elevation: 6,
       color: AppColors.gradient(context),
       shadowColor: AppColors.background(context),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ListTile(
-        leading: Icon(
-          Icons.wallet,
-          color: AppColors.cardTitle(context),
-        ),
+        leading: Icon(Icons.wallet, color: AppColors.cardTitle(context)),
         title: Text(
+          textScaler: TextScaler.linear(ScaleSize.textScaleFactor(context)),
           AppLocalizations.of(context)!.translate('personal_wallet'),
           style: TextStyle(
-            fontSize: 16,
             fontWeight: FontWeight.w600,
             color: AppColors.text(context),
           ),
         ),
         onTap: () {
           Navigator.of(context).pushNamedAndRemoveUntil(
-              '/wallet_page', (Route<dynamic> route) => false);
+            '/wallet_page',
+            (Route<dynamic> route) => false,
+          );
         },
       ),
     );
@@ -708,8 +675,8 @@ class BaseScaffoldState extends State<BaseScaffold> {
 
   Widget _buildSharedWalletTiles(BuildContext context) {
     return ValueListenableBuilder(
-      valueListenable:
-          _descriptorBox!.listenable(), // Listen for changes in the box
+      valueListenable: _descriptorBox!
+          .listenable(), // Listen for changes in the box
       builder: (context, Box<dynamic> box, _) {
         List<Widget> sharedWalletCards = [];
 
@@ -719,13 +686,14 @@ class BaseScaffoldState extends State<BaseScaffold> {
 
           // Split the composite key into mnemonic and descriptor name
           final keyParts = compositeKey.split('_descriptor');
-          final mnemonic =
-              keyParts.isNotEmpty ? keyParts[0] : 'Unknown Mnemonic';
+          var mnemonic = keyParts.isNotEmpty ? keyParts[0] : 'Unknown Mnemonic';
           String descriptorName = keyParts.length > 1
               ? keyParts[1].replaceFirst('_', '')
               : 'Unnamed Descriptor';
 
-          // print('descriptorName: $compositeKey');
+          if (mnemonic.toString().startsWith('read')) {
+            mnemonic = null;
+          }
 
           // Parse the raw value (JSON) into a Map
           Map<String, dynamic>? parsedValue;
@@ -733,7 +701,6 @@ class BaseScaffoldState extends State<BaseScaffold> {
             try {
               parsedValue = jsonDecode(rawValue);
             } catch (e) {
-              // print('Error parsing descriptor JSON: $e');
               throw ('Error parsing descriptor JSON: $e');
             }
           }
@@ -748,33 +715,46 @@ class BaseScaffoldState extends State<BaseScaffold> {
 
           sharedWalletCards.add(
             FutureBuilder<DescriptorPublicKey?>(
-              future: walletService.getpubkey(pubKeyFutures, mnemonic),
+              future: walletService.getPubKey(pubKeyFutures, mnemonic),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const CircularProgressIndicator(); // Show a loader while waiting
                 } else if (snapshot.hasError) {
-                  return const Text('Error fetching public key');
+                  return Text(
+                    textScaler: TextScaler.linear(
+                      ScaleSize.textScaleFactor(context),
+                    ),
+                    'Error fetching public key',
+                  );
                 }
 
+                String displayAlias;
                 final pubKey = snapshot.data;
+
                 if (pubKey == null) {
-                  return const Text('Public key not found');
+                  displayAlias = 'readOnly';
+                } else {
+                  // Extract the content inside square brackets
+                  final RegExp regex = RegExp(r'\[([^\]]+)\]');
+                  final Match? match = regex.firstMatch(pubKey.toString());
+
+                  // Handle case where match might be null
+                  if (match != null) {
+                    final String targetFingerprint = match
+                        .group(1)!
+                        .split('/')[0];
+
+                    final matchingAliasEntry = pubKeysAlias.firstWhere(
+                      (entry) =>
+                          entry['publicKey']!.contains(targetFingerprint),
+                      orElse: () => {'alias': 'Unknown Alias'},
+                    );
+
+                    displayAlias = matchingAliasEntry['alias'] ?? 'No Alias';
+                  } else {
+                    displayAlias = 'Unknown';
+                  }
                 }
-
-                // Extract the content inside square brackets
-                final RegExp regex = RegExp(r'\[([^\]]+)\]');
-                final Match? match = regex.firstMatch(pubKey.asString());
-
-                final String targetFingerprint = match!.group(1)!.split('/')[0];
-
-                final matchingAliasEntry = pubKeysAlias.firstWhere(
-                  (entry) => entry['publicKey']!.contains(targetFingerprint),
-                  orElse: () => {
-                    'alias': 'Unknown Alias'
-                  }, // Fallback if no match is found
-                );
-
-                final displayAlias = matchingAliasEntry['alias'] ?? 'No Alias';
 
                 return Card(
                   elevation: 6,
@@ -789,19 +769,21 @@ class BaseScaffoldState extends State<BaseScaffold> {
                       color: AppColors.cardTitle(context),
                     ),
                     title: Text(
+                      textScaler: TextScaler.linear(
+                        ScaleSize.textScaleFactor(context),
+                      ),
                       '${descriptorName}_$displayAlias',
                       style: TextStyle(
-                        fontSize: 16,
                         fontWeight: FontWeight.w600,
                         color: AppColors.text(context),
                       ),
                     ),
                     subtitle: Text(
-                      descriptor,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.text(context),
+                      textScaler: TextScaler.linear(
+                        ScaleSize.textScaleFactor(context),
                       ),
+                      descriptor,
+                      style: TextStyle(color: AppColors.text(context)),
                       overflow: TextOverflow.ellipsis,
                     ),
                     onLongPress: () async {
@@ -819,7 +801,6 @@ class BaseScaffoldState extends State<BaseScaffold> {
                           descriptorName = result.descriptorName;
                         });
 
-                        // print('descriptorNameAfterChanging: $descriptorName');
                         if (result.success) {
                           Navigator.push(
                             rootContext,
@@ -834,9 +815,6 @@ class BaseScaffoldState extends State<BaseScaffold> {
                           );
                         }
                       }
-                      //  else {
-                      //   print("Dialog dismissed without changes.");
-                      // }
                     },
                     onTap: () {
                       Navigator.push(
@@ -863,34 +841,27 @@ class BaseScaffoldState extends State<BaseScaffold> {
     );
   }
 
-  void _log(String msg) {
-    // Using debugPrint avoids truncation of long lines in Flutter logs.
-    debugPrint('[EditAliases ${DateTime.now().toIso8601String()}] $msg');
-  }
-
   Widget _buildCreateSharedWalletTile(BuildContext context) {
     return Card(
       elevation: 6,
       color: AppColors.gradient(context),
       shadowColor: AppColors.background(context),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ListTile(
-        leading: Icon(
-          Icons.add_circle,
-          color: AppColors.cardTitle(context),
-        ),
+        leading: Icon(Icons.add_circle, color: AppColors.cardTitle(context)),
         title: Text(
+          textScaler: TextScaler.linear(ScaleSize.textScaleFactor(context)),
           AppLocalizations.of(context)!.translate('create_shared_wallet'),
           style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: AppColors.text(context)),
+            fontWeight: FontWeight.w600,
+            color: AppColors.text(context),
+          ),
         ),
         onTap: () {
           Navigator.of(context).pushNamedAndRemoveUntil(
-              '/shared_wallet', (Route<dynamic> route) => false);
+            '/shared_wallet',
+            (Route<dynamic> route) => false,
+          );
         },
       ),
     );

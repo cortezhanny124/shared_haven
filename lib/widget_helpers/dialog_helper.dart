@@ -18,8 +18,9 @@ class DialogHelper {
     final rootContext = context;
 
     // Get the translated string and replace placeholders dynamically
-    String localizedTitle =
-        AppLocalizations.of(rootContext)!.translate(titleKey);
+    String localizedTitle = AppLocalizations.of(
+      rootContext,
+    )!.translate(titleKey);
     if (titleParams != null) {
       titleParams.forEach((key, value) {
         localizedTitle = localizedTitle.replaceAll('{$key}', value);
@@ -48,10 +49,12 @@ class DialogHelper {
                           horizontal: 24.0,
                         ),
                         child: Text(
+                          textScaler: TextScaler.linear(
+                            ScaleSize.textScaleFactor(context),
+                          ),
                           localizedTitle,
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            fontSize: 20,
                             fontWeight: FontWeight.bold,
                             color: AppColors.cardTitle(context),
                           ),
@@ -85,8 +88,9 @@ class DialogHelper {
                       child: content,
                     ),
                   ),
-                  actionsPadding:
-                      EdgeInsets.only(bottom: 10), // Adjust bottom padding
+                  actionsPadding: EdgeInsets.only(
+                    bottom: 10,
+                  ), // Adjust bottom padding
                   actionsAlignment: MainAxisAlignment.center, // Center actions
                   actions: actions != null && actions.isNotEmpty
                       ? [
@@ -115,11 +119,13 @@ class DialogHelper {
   static Future<T?> buildCustomStatefulDialog<T>({
     required BuildContext context,
     required String titleKey, // Localization key for the title
-    required Widget Function(void Function(void Function()) setDialogState,
-            void Function(BuildContext, String) updateAssistant)
-        contentBuilder,
+    required Widget Function(
+      void Function(void Function()) setDialogState,
+      void Function(BuildContext, String) updateAssistant,
+    )
+    contentBuilder,
     List<Widget> Function(StateSetter setDialogState)?
-        actionsBuilder, // Actions builder
+    actionsBuilder, // Actions builder
     bool showCloseButton = true, // Default: Show the close button
     bool showAssistant = false, // Show the assistant in this dialog
     List<String> assistantMessages =
@@ -154,16 +160,10 @@ class DialogHelper {
             void onNextAssistantMessage() {
               if (assistantMessage.isNotEmpty) {
                 setDialogState(() {
-                  // print("Index before: $assistantMessageIndex");
-
                   assistantMessageIndex =
                       (assistantMessageIndex + 1) % assistantMessages.length;
                   assistantMessage = assistantMessages[assistantMessageIndex];
                 });
-
-                // print("Index after: $assistantMessageIndex");
-
-                // print("Next message: $assistantMessage");
 
                 if (assistantKey.currentState != null) {
                   assistantKey.currentState!.updateMessage(assistantMessage);
@@ -187,10 +187,12 @@ class DialogHelper {
                           horizontal: 24.0,
                         ),
                         child: Text(
+                          textScaler: TextScaler.linear(
+                            ScaleSize.textScaleFactor(context),
+                          ),
                           AppLocalizations.of(rootContext)!.translate(titleKey),
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            fontSize: 20,
                             fontWeight: FontWeight.bold,
                             color: AppColors.cardTitle(context),
                           ),
@@ -203,8 +205,10 @@ class DialogHelper {
                           right: 8,
                           top: 8,
                           child: IconButton(
-                            icon: Icon(Icons.close,
-                                color: AppColors.text(context)),
+                            icon: Icon(
+                              Icons.close,
+                              color: AppColors.text(context),
+                            ),
                             onPressed: () {
                               Navigator.of(context, rootNavigator: true).pop();
                             },
@@ -218,19 +222,23 @@ class DialogHelper {
                     ),
                     child: SingleChildScrollView(
                       physics: BouncingScrollPhysics(),
-                      child: contentBuilder(setDialogState,
-                          updateAssistantMessage), // Pass StateSetter
+                      child: contentBuilder(
+                        setDialogState,
+                        updateAssistantMessage,
+                      ), // Pass StateSetter
                     ),
                   ),
-                  actionsPadding:
-                      EdgeInsets.only(bottom: 10), // Adjust bottom padding
+                  actionsPadding: EdgeInsets.only(
+                    bottom: 10,
+                  ), // Adjust bottom padding
                   actionsAlignment: MainAxisAlignment.center, // Center actions
                   actions: actionsBuilder != null
                       ? [
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: actionsBuilder(
-                                setDialogState), // Pass StateSetter to actions
+                              setDialogState,
+                            ), // Pass StateSetter to actions
                           ),
                         ]
                       : null, // Hide actions row if not provided
@@ -298,8 +306,12 @@ class DialogHelper {
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        AppLocalizations.of(rootContext)!
-                            .translate(messageKey ?? 'processing'),
+                        textScaler: TextScaler.linear(
+                          ScaleSize.textScaleFactor(context),
+                        ),
+                        AppLocalizations.of(
+                          rootContext,
+                        )!.translate(messageKey ?? 'processing'),
                         style: TextStyle(
                           color: AppColors.text(context),
                           fontWeight: FontWeight.w500,
@@ -333,12 +345,12 @@ class DialogHelper {
           ),
           title: Row(
             children: [
-              Icon(
-                Icons.error,
-                color: AppColors.error(context),
-              ),
+              Icon(Icons.error, color: AppColors.error(context)),
               SizedBox(width: 8),
               Text(
+                textScaler: TextScaler.linear(
+                  ScaleSize.textScaleFactor(context),
+                ),
                 'Error',
                 style: TextStyle(
                   color: AppColors.text(context),
@@ -348,6 +360,7 @@ class DialogHelper {
             ],
           ),
           content: Text(
+            textScaler: TextScaler.linear(ScaleSize.textScaleFactor(context)),
             AppLocalizations.of(rootContext)!.translate(messageKey),
             style: TextStyle(color: AppColors.text(context)),
           ),
@@ -355,6 +368,9 @@ class DialogHelper {
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
               child: Text(
+                textScaler: TextScaler.linear(
+                  ScaleSize.textScaleFactor(context),
+                ),
                 'OK',
                 style: TextStyle(
                   color: AppColors.primary(context),

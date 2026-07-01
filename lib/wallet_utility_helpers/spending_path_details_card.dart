@@ -21,8 +21,8 @@ class SpendingPathDetailsCard extends StatelessWidget {
     final String timelockType = path!['type'].contains('RELATIVETIMELOCK')
         ? 'older'
         : path!['type'].contains('ABSOLUTETIMELOCK')
-            ? 'after'
-            : 'none';
+        ? 'after'
+        : 'none';
 
     final isTimelock = timelockType != 'none';
     final threshold = path!['threshold'];
@@ -46,9 +46,9 @@ class SpendingPathDetailsCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
+              textScaler: TextScaler.linear(ScaleSize.textScaleFactor(context)),
               AppLocalizations.of(rootContext)!.translate('spending_path'),
               style: TextStyle(
-                fontSize: 16,
                 fontWeight: FontWeight.bold,
                 color: AppColors.text(context),
               ),
@@ -56,7 +56,7 @@ class SpendingPathDetailsCard extends StatelessWidget {
             const SizedBox(height: 8),
             RichText(
               text: TextSpan(
-                style: TextStyle(fontSize: 14, color: AppColors.text(context)),
+                style: TextStyle(color: AppColors.text(context)),
                 children: [
                   TextSpan(
                     text:

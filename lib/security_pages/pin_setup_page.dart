@@ -1,4 +1,4 @@
-import 'package:bdk_flutter/bdk_flutter.dart';
+import 'package:bdk_dart/bdk.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_wallet/languages/app_localizations.dart';
 import 'package:flutter_wallet/services/wallet_service.dart';
@@ -23,13 +23,7 @@ class PinSetupPageState extends State<PinSetupPage> {
   final _formKey = GlobalKey<FormState>();
   final _networkFieldKey = GlobalKey<FormFieldState<Network>>();
 
-  final languages = [
-    'en',
-    'es',
-    'it',
-    'fr',
-    'ru',
-  ];
+  final languages = ['en', 'es', 'it', 'fr', 'ru'];
 
   String _status = '';
 
@@ -81,6 +75,7 @@ class PinSetupPageState extends State<PinSetupPage> {
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
+        textScaler: TextScaler.linear(ScaleSize.textScaleFactor(context)),
         statusText,
         style: TextStyle(
           color: AppColors.text(context),
@@ -98,7 +93,10 @@ class PinSetupPageState extends State<PinSetupPage> {
     final rootContext = context;
 
     return BaseScaffold(
-      title: Text(AppLocalizations.of(context)!.translate('set_pin')),
+      title: Text(
+        textScaler: TextScaler.linear(ScaleSize.textScaleFactor(context)),
+        AppLocalizations.of(context)!.translate('set_pin'),
+      ),
       showDrawer: false,
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -124,17 +122,20 @@ class PinSetupPageState extends State<PinSetupPage> {
                   controller: _pinController,
                   decoration: CustomTextFieldStyles.textFieldDecoration(
                     context: context,
-                    labelText:
-                        AppLocalizations.of(context)!.translate('enter_pin'),
-                    hintText: AppLocalizations.of(context)!
-                        .translate('enter_6_digits_pin'),
+                    labelText: AppLocalizations.of(
+                      context,
+                    )!.translate('enter_pin'),
+                    hintText: AppLocalizations.of(
+                      context,
+                    )!.translate('enter_6_digits_pin'),
                   ),
                   keyboardType: TextInputType.number,
                   obscureText: true,
                   validator: (value) {
                     if (value == null || value.length != 6) {
-                      return AppLocalizations.of(context)!
-                          .translate('pin_must_be_six');
+                      return AppLocalizations.of(
+                        context,
+                      )!.translate('pin_must_be_six');
                     }
                     return null;
                   },
@@ -149,23 +150,24 @@ class PinSetupPageState extends State<PinSetupPage> {
                   controller: _confirmPinController,
                   decoration: CustomTextFieldStyles.textFieldDecoration(
                     context: context,
-                    labelText:
-                        AppLocalizations.of(context)!.translate('confirm_pin'),
-                    hintText:
-                        AppLocalizations.of(context)!.translate('re_enter_pin'),
+                    labelText: AppLocalizations.of(
+                      context,
+                    )!.translate('confirm_pin'),
+                    hintText: AppLocalizations.of(
+                      context,
+                    )!.translate('re_enter_pin'),
                   ),
                   keyboardType: TextInputType.number,
                   obscureText: true,
                   validator: (value) {
                     if (value != _pinController.text) {
-                      return AppLocalizations.of(context)!
-                          .translate('pin_mismatch');
+                      return AppLocalizations.of(
+                        context,
+                      )!.translate('pin_mismatch');
                     }
                     return null;
                   },
-                  style: TextStyle(
-                    color: AppColors.text(context),
-                  ),
+                  style: TextStyle(color: AppColors.text(context)),
                 ),
 
                 const SizedBox(height: 20),
@@ -184,9 +186,11 @@ class PinSetupPageState extends State<PinSetupPage> {
                 const SizedBox(height: 16),
 
                 Text(
+                  textScaler: TextScaler.linear(
+                    ScaleSize.textScaleFactor(context),
+                  ),
                   AppLocalizations.of(context)!.translate('network'),
                   style: TextStyle(
-                    fontSize: 18,
                     fontWeight: FontWeight.bold,
                     color: AppColors.cardTitle(context),
                   ),
@@ -196,20 +200,28 @@ class PinSetupPageState extends State<PinSetupPage> {
 
                 DropdownButtonFormField<Network>(
                   key: _networkFieldKey,
-                  value: settingsProvider.network,
-                  items: Network.values.where((network) {
-                    return network == Network.bitcoin ||
-                        network == Network.testnet;
-                  }).map((network) {
-                    final displayName = network == Network.bitcoin
-                        ? 'Mainnet'
-                        : network.name.capitalize();
+                  initialValue: settingsProvider.network,
+                  items: Network.values
+                      .where((network) {
+                        return network == Network.bitcoin ||
+                            network == Network.testnet;
+                      })
+                      .map((network) {
+                        final displayName = network == Network.bitcoin
+                            ? 'Mainnet'
+                            : network.name.capitalize();
 
-                    return DropdownMenuItem(
-                      value: network,
-                      child: Text(displayName),
-                    );
-                  }).toList(),
+                        return DropdownMenuItem(
+                          value: network,
+                          child: Text(
+                            textScaler: TextScaler.linear(
+                              ScaleSize.textScaleFactor(context),
+                            ),
+                            displayName,
+                          ),
+                        );
+                      })
+                      .toList(),
                   onChanged: (value) async {
                     if (value == null) return;
 
@@ -218,26 +230,42 @@ class PinSetupPageState extends State<PinSetupPage> {
                         context: context,
                         builder: (context) => AlertDialog(
                           title: Text(
-                            AppLocalizations.of(rootContext)!
-                                .translate('mainnet_switch'),
+                            textScaler: TextScaler.linear(
+                              ScaleSize.textScaleFactor(context),
+                            ),
+                            AppLocalizations.of(
+                              rootContext,
+                            )!.translate('mainnet_switch'),
                           ),
                           content: Text(
-                            AppLocalizations.of(rootContext)!
-                                .translate('mainnet_switch_text'),
+                            textScaler: TextScaler.linear(
+                              ScaleSize.textScaleFactor(context),
+                            ),
+                            AppLocalizations.of(
+                              rootContext,
+                            )!.translate('mainnet_switch_text'),
                           ),
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.pop(context, false),
                               child: Text(
-                                AppLocalizations.of(rootContext)!
-                                    .translate('cancel'),
+                                textScaler: TextScaler.linear(
+                                  ScaleSize.textScaleFactor(context),
+                                ),
+                                AppLocalizations.of(
+                                  rootContext,
+                                )!.translate('cancel'),
                               ),
                             ),
                             ElevatedButton(
                               onPressed: () => Navigator.pop(context, true),
                               child: Text(
-                                AppLocalizations.of(rootContext)!
-                                    .translate('continue'),
+                                textScaler: TextScaler.linear(
+                                  ScaleSize.textScaleFactor(context),
+                                ),
+                                AppLocalizations.of(
+                                  rootContext,
+                                )!.translate('continue'),
                               ),
                             ),
                           ],
@@ -248,8 +276,9 @@ class PinSetupPageState extends State<PinSetupPage> {
                         settingsProvider.setNetwork(value);
                       } else {
                         // Visually revert the dropdown to the provider's current value
-                        _networkFieldKey.currentState
-                            ?.didChange(settingsProvider.network);
+                        _networkFieldKey.currentState?.didChange(
+                          settingsProvider.network,
+                        );
                       }
                     } else {
                       settingsProvider.setNetwork(value);
@@ -257,8 +286,9 @@ class PinSetupPageState extends State<PinSetupPage> {
                   },
                   decoration: InputDecoration(
                     enabledBorder: OutlineInputBorder(
-                      borderSide:
-                          BorderSide(color: AppColors.background(context)),
+                      borderSide: BorderSide(
+                        color: AppColors.background(context),
+                      ),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     focusedBorder: OutlineInputBorder(
@@ -282,9 +312,11 @@ class PinSetupPageState extends State<PinSetupPage> {
 
                 // Language Selection
                 Text(
+                  textScaler: TextScaler.linear(
+                    ScaleSize.textScaleFactor(context),
+                  ),
                   AppLocalizations.of(context)!.translate('language'),
                   style: TextStyle(
-                    fontSize: 18,
                     fontWeight: FontWeight.bold,
                     color: AppColors.cardTitle(context),
                   ),
@@ -293,11 +325,16 @@ class PinSetupPageState extends State<PinSetupPage> {
                 const SizedBox(height: 20),
 
                 DropdownButtonFormField<String>(
-                  value: settingsProvider.languageCode,
+                  initialValue: settingsProvider.languageCode,
                   items: languages.map((language) {
                     return DropdownMenuItem(
                       value: language,
-                      child: Text(language),
+                      child: Text(
+                        textScaler: TextScaler.linear(
+                          ScaleSize.textScaleFactor(context),
+                        ),
+                        language,
+                      ),
                     );
                   }).toList(),
                   onChanged: (value) {
@@ -307,8 +344,9 @@ class PinSetupPageState extends State<PinSetupPage> {
                   },
                   decoration: InputDecoration(
                     enabledBorder: OutlineInputBorder(
-                      borderSide:
-                          BorderSide(color: AppColors.background(context)),
+                      borderSide: BorderSide(
+                        color: AppColors.background(context),
+                      ),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     focusedBorder: OutlineInputBorder(
